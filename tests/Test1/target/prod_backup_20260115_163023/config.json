@@ -1,0 +1,4 @@
+{
+  "connection": "Server=ProdDB;User=admin;",
+  "debug": true
+}

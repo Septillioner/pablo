@@ -1,0 +1,32 @@
+name: "demo-app"
+version: "1.0.0"
+type: "demo"
+
+hooks:
+  pre: "echo 'Pre-deploy hook executed'"
+  post: "echo 'Post-deploy hook executed'"
+
+source:
+  path: "."
+  build_command: "echo 'Build command executed'"
+
+artifacts:
+  base_path: "."
+  exclude: ["*.log"]
+  include: ["*.json", "*.exe"]
+
+environments:
+  test:
+    target_path: "../target/test"
+    strategy: "overwrite"
+    variables:
+      DB_CONN: "Server=TestDB;User=pablo;"
+  prod:
+    target_path: "../target/prod"
+    strategy: "backup"
+    variables:
+      DB_CONN: "Server=ProdDB;User=admin;"
+
+pipeline:
+  on_success: "echo 'Success notification sent!'"
+  health_check: "" # Skip health check for local file test unless I mock a server
