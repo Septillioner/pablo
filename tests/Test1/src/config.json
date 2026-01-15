@@ -1,0 +1,4 @@
+{
+  "connection": "{{DB_CONN}}",
+  "debug": true
+}
