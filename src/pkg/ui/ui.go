@@ -20,7 +20,7 @@ var (
 )
 
 // Header prints the ASCII art title for Pablo
-func Header() {
+func Header(version string) {
 	pabloArt := `    ┓ ┓  
 ┏┓┏┓┣┓┃┏┓
 ┣┛┗┻┗┛┗┗┛
@@ -28,7 +28,7 @@ func Header() {
 `
 	fmt.Println(ThemeColor(pabloArt))
 	fmt.Println(GrayColor(strings.Repeat("=", 40)))
-	fmt.Println(ThemeColor(BoldColor("  PUBLISH HELPER - v1.1.0")))
+	fmt.Println(ThemeColor(BoldColor(fmt.Sprintf("  PUBLISH HELPER - v%s", version))))
 	fmt.Println(GrayColor("  Author: egeismailkosedag@gmail.com"))
 	fmt.Println(GrayColor("  Github: github.com/septillioner"))
 	fmt.Println(GrayColor(strings.Repeat("=", 40)))

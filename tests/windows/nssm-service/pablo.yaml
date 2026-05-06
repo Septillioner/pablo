@@ -1,0 +1,29 @@
+name: win-service-test
+version: 1.0.0
+
+profiles:
+  default:
+    type: binary
+    
+    environments:
+      local:
+        build:
+          path: ./src
+          command: "go build -o ../dist/myservice.exe ."
+        
+        deploy:
+          source:
+            dir: ./dist
+            include: ["myservice.exe"]
+          target_path: "C:\\PabloTest\\Service"
+          strategy: overwrite
+          
+          # Using post_commands to manage NSSM since native support is WIP
+          post_commands:
+            - "nssm install PabloTestService C:\\PabloTest\\Service\\myservice.exe || echo Service setup might already exist"
+            - "nssm set PabloTestService AppDirectory C:\\PabloTest\\Service"
+            - "nssm start PabloTestService || nssm restart PabloTestService"
+
+    pipeline:
+      health_check: http://localhost:8075
+      on_success: "echo Service deployed and verified successfully!"

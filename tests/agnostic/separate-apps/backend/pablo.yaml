@@ -1,0 +1,60 @@
+name: backend-api
+version: 1.5.0
+
+credentials:
+  prod_server:
+    type: ssh
+    username: deploy
+    key: ~/.ssh/id_rsa
+  
+  github:
+    type: token
+    value: ghp_backend_token
+
+profiles:
+  default:
+    type: docker
+    
+    git:
+      repo: https://github.com/company/backend-api.git
+      branch: main
+      credential: github
+    
+    hooks:
+      pre: echo 'Pulling latest code...'
+      post: echo 'Backend containers started!'
+    
+    environments:
+      staging:
+        build:
+          variables:
+            DB_HOST: staging-db
+            DB_USER: staging_user
+
+        deploy:
+          target_path: /opt/backend-staging
+          docker:
+            compose_file: docker-compose.yml
+            build: true
+            command: up -d
+      
+      production:
+        build:
+          variables:
+            DB_HOST: prod-db.internal
+            DB_USER: prod_user
+
+        remote:
+          method: ssh
+          host: 192.168.1.101
+          credential: prod_server
+        
+        deploy:
+          target_path: /opt/backend-prod
+          docker:
+            compose_file: docker-compose.prod.yml
+            build: true
+            command: up -d --build
+    
+    pipeline:
+      health_check: http://localhost:8080/api/health

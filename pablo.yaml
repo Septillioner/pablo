@@ -1,0 +1,69 @@
+name: pablo
+version: 1.3.0
+# credentials:
+#   server-ssh:
+#     type: ssh
+#     username: root
+#     key: ~/.ssh/id_rsa
+profiles:
+  default:
+    type: binary
+    environments:
+      macos-local:
+        build:
+          path: ./src
+          command: "go build -o ../build/pablo ."
+        deploy:
+          source:
+            dir: ./build
+            include: ["pablo"]
+            exclude: ["*.tmp"]
+          target_path: /opt/pablo
+          strategy: overwrite
+        register_path:
+          scope: user
+      windows-local:
+        build:
+          path: ./src
+          command: "GOOS=windows GOARCH=amd64 go build -o ../build/pablo.exe ."
+        deploy:
+          source:
+            dir: ./build
+            include: ["pablo.exe"]
+            exclude: ["*.tmp"]
+          target_path: "C:\\Program Files\\Pablo"
+          strategy: overwrite
+        register_path:
+          scope: system
+      linux-local:
+        build:
+          path: ./src
+          command: "GOOS=linux GOARCH=amd64 go build -o ../build/pablo ."
+        deploy:
+          source:
+            dir: ./build
+            include: ["pablo"]
+            exclude: ["*.tmp"]
+          target_path: /opt/pablo
+          strategy: overwrite
+        register_path:
+          scope: system
+      linux-remote:
+        build:
+          path: ./src
+          command: "GOOS=linux GOARCH=amd64 go build -o ../build/pablo ."
+        
+        remote:
+          method: ssh
+          host: lysep.com
+          credential: server-ssh
+        
+        deploy:
+          source:
+            dir: ./build
+            include: ["pablo"]
+            exclude: ["*.tmp"]
+          target_path: /opt/pablo
+          strategy: overwrite
+        register_path:
+          scope: system

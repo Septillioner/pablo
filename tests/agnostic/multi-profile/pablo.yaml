@@ -1,0 +1,246 @@
+name: multi-profile-deployment
+version: 1.0.0
+
+credentials:
+  prod_server:
+    type: ssh
+    username: deploy
+    key: ~/.ssh/id_rsa
+  
+  staging_server:
+    type: ssh
+    username: deploy
+    password: staging_pass
+  
+  github_token:
+    type: token
+    value: ghp_example_token_12345
+  
+  docker_registry:
+    type: basic
+    username: dockeruser
+    password: dockerpass
+
+profiles:
+  frontend:
+    type: static
+    hooks:
+      pre: "echo 'Frontend: Running tests...'"
+      post: "echo 'Frontend: Deployment completed!'"
+    
+    environments:
+      development:
+        build:
+          command: npm run build
+          path: ./
+          variables:
+            API_URL: http://localhost:3000
+            ENV: development
+            DEBUG: "true"
+        
+        remote:
+          method: ssh
+          host: 192.168.1.100
+          credential: staging_server
+        
+        deploy:
+          source:
+            dir: ./dist
+            include: ["**/*"]
+            exclude: ["*.map", "*.log", "*.DS_Store"]
+          target_path: /var/www/dev-frontend
+          strategy: overwrite
+      
+      production:
+        build:
+          command: npm run build
+          path: ./
+          variables:
+            API_URL: https://api.example.com
+            ENV: production
+            DEBUG: "false"
+        
+        remote:
+          method: ssh
+          host: 192.168.1.100
+          credential: prod_server
+        
+        deploy:
+          source:
+            dir: ./dist
+            include: ["**/*"]
+            exclude: ["*.map", "*.log", "*.DS_Store"]
+          target_path: /var/www/html
+          strategy: backup
+    
+    pipeline:
+      on_success: "echo 'Frontend deployed successfully!'"
+      on_failure: "echo 'Frontend deployment failed!'"
+      health_check: http://localhost/health
+
+  backend-api:
+    type: docker
+    git:
+      repo: https://github.com/company/backend-api.git
+      branch: main
+      credential: github_token
+    hooks:
+      pre: "echo 'Backend: Pulling latest code...'"
+      post: "echo 'Backend: Docker containers started!'"
+    
+    environments:
+      staging:
+        build:
+          variables:
+            DB_HOST: staging-db.internal
+            DB_USER: staging_user
+            DB_PASS: staging_pass
+            REDIS_HOST: staging-redis
+
+        remote:
+          method: ssh
+          host: 192.168.1.101
+          credential: staging_server
+        
+        deploy:
+          target_path: /opt/backend-staging
+          docker:
+            compose_file: docker-compose.yml
+            build: true
+            command: up -d --build
+      
+      production:
+        build:
+          variables:
+            DB_HOST: prod-db.internal
+            DB_USER: prod_user
+            DB_PASS: prod_secure_pass
+            REDIS_HOST: prod-redis
+
+        remote:
+          method: ssh
+          host: 192.168.1.101
+          credential: prod_server
+        
+        deploy:
+          target_path: /opt/backend-prod
+          docker:
+            compose_file: docker-compose.prod.yml
+            build: true
+            command: up -d --build
+    
+    pipeline:
+      on_success: "echo 'Backend deployed and running!'"
+      on_failure: "echo 'Backend deployment failed! Rolling back...'"
+      health_check: http://localhost:8080/api/health
+
+  go-service:
+    type: binary
+    hooks:
+      pre: "echo 'Go Service: Running tests...'"
+      post: "echo 'Go Service: Binary deployed!'"
+    
+    environments:
+      development:
+        build:
+          command: go build -o myservice ./cmd/server
+          path: ./
+        
+        remote:
+          method: ssh
+          host: 192.168.1.102
+          credential: staging_server
+        
+        deploy:
+          source:
+            dir: ./
+            include: ["myservice"]
+          target_path: /usr/local/bin
+          strategy: backup
+          service:
+            type: systemd
+            name: myservice-dev
+            restart: true
+        
+        register_path:
+          scope: user
+      
+      production:
+        build:
+          command: go build -o myservice ./cmd/server
+          path: ./
+        
+        remote:
+          method: ssh
+          host: 192.168.1.102
+          credential: prod_server
+        
+        deploy:
+          source:
+            dir: ./
+            include: ["myservice"]
+          target_path: /usr/local/bin
+          strategy: backup
+          service:
+            type: systemd
+            name: myservice
+            restart: true
+        
+        register_path:
+          scope: system
+    
+    pipeline:
+      health_check: http://localhost:9090/health
+
+  php-webapp:
+    type: git-sync
+    git:
+      repo: git@github.com:company/php-webapp.git
+      branch: master
+    hooks:
+      pre: "echo 'PHP: Backing up current version...'"
+      post: "echo 'PHP: Application updated!'"
+    
+    environments:
+      staging:
+        build:
+           variables:
+            APP_ENV: staging
+            APP_DEBUG: "true"
+            DB_HOST: staging-mysql
+
+        remote:
+          method: ssh
+          host: 192.168.1.103
+          credential: staging_server
+        
+        deploy:
+          target_path: /var/www/php-staging
+          post_commands:
+            - composer install --no-dev
+            - php artisan migrate --force
+            - php artisan cache:clear
+      
+      production:
+        build:
+          variables:
+            APP_ENV: production
+            APP_DEBUG: "false"
+            DB_HOST: prod-mysql
+
+        remote:
+          method: ssh
+          host: 192.168.1.103
+          credential: prod_server
+        
+        deploy:
+          target_path: /var/www/php-prod
+          post_commands:
+            - composer install --no-dev --optimize-autoloader
+            - php artisan migrate --force
+            - php artisan config:cache
+            - php artisan route:cache
+    
+    pipeline:
+      on_success: "echo 'PHP app deployed successfully!'"
+      health_check: http://localhost/api/status
