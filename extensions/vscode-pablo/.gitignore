@@ -1,0 +1,22 @@
+# Library
+node_modules
+dist
+out
+
+# Build artifacts
+*.vsix
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+
+# Tests
+.vscode-test
+vsc-extension-quickstart.md
+
+# Config
+.env

@@ -1,0 +1,19 @@
+name: pablo-cli
+version: 1.1.0
+
+profiles:
+  release-cli:
+    type: binary
+    
+    environments:
+      local:
+        build:
+          command: "cd ../../src && go build -o ../tests/self-deploy/pablo-released ./cmd/pablo"
+          path: ./
+        
+        deploy:
+          source:
+            dir: ./
+            include: ["pablo-released"]
+          target_path: ./release
+          strategy: overwrite

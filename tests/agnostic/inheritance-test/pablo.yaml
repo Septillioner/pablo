@@ -1,0 +1,28 @@
+name: inheritance-app
+version: 1.0.0
+
+profiles:
+  default:
+    type: binary
+    # Inheritable Build Config
+    build:
+      command: "echo 'Building shared...'"
+      path: ./src
+    
+    # Inheritable Artifacts Config
+    output_dir:
+      dir: ./build
+      include: ["*"]
+
+    environments:
+      local:
+        deploy:
+          target_path: /tmp/local-dep
+          strategy: overwrite
+          # Should inherit Source from output_dir
+          
+      remote:
+        deploy:
+          target_path: /tmp/remote-dep
+          # Should also inherit Source
+          # Build check: should inherit path but can override command?

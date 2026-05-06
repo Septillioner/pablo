@@ -1,0 +1,51 @@
+# Binaries / build outputs
+bin/
+build/
+release/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Project specific binaries
+pablo.exe
+
+# LSP build outputs (cross-compiled binaries)
+extensions/pablo-lsp/build/
+
+# VS Code extension build / package outputs
+extensions/vscode-pablo/dist/
+extensions/vscode-pablo/out/
+extensions/vscode-pablo/.vscode-test/
+*.vsix
+
+# Tests
+tests/**/target/
+tests/**/*_backup_*
+
+# Go
+vendor/
+go.work
+go.work.sum
+coverage.out
+*.test
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node
+node_modules/
+
+# Agent / private workspace files
+.agent/
+**/.agent/
+PABLO-CS.md
+.cursor/
