@@ -229,7 +229,7 @@ The release process (version bump, build matrix, checksums, tagging, GitHub Rele
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+Distributed under the Apache License. See [LICENSE](LICENSE) for details.
 
 ## Author
 
