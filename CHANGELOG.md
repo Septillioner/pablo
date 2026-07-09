@@ -6,6 +6,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-07-09
+
+### Added
+
+- One-liner CLI installers — `install.sh` (macOS/Linux), `install.ps1` (Windows PowerShell), and `install.cmd` (Windows bootstrap).
+- Installers download release binaries from GitHub, verify SHA-256 checksums, and install to system or user PATH (`PABLO_VERSION` pins a release tag).
+- Visual Studio 2026 extension (`extensions/vs2026/`) — LSP via `pablo lsp`, CodeLens **Run**, profile/environment gutter stripes, manifest commands, YAML snippets, and executable picker.
+- `extensions/vs2026/build-vs2026.bat` — MSBuild script that produces `Pablo.VisualStudio.vsix`.
+- `docs/guides/visual-studio.md` — install, build, debug, and feature overview for the VS extension.
+- `release-new-version.bat` — builds and publishes `pablo-vs2026-<version>.vsix` alongside CLI binaries and the VS Code VSIX.
+
+### Changed
+
+- README and `docs/getting-started/installation.md` — one-liner install as the recommended path; PowerShell uses temp-file execution instead of `irm | iex`.
+- PowerShell installer — PATH shadowing warnings and post-install `pablo` command resolution checks.
+- `.gitignore` — Visual Studio extension build outputs (`extensions/vs2026/`).
+
+### Removed
+
+- Bundled `pablo-lsp` binary from `extensions/vscode-pablo/` (extension relies on `pablo lsp` from the CLI on PATH).
+
 ## [1.4.0] - 2026-07-09
 
 ### Added
@@ -76,7 +97,8 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/septillioner/pablo/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/septillioner/pablo/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/septillioner/pablo/compare/v1.0.46...v1.3.0
 [1.0.46]: https://github.com/septillioner/pablo/releases/tag/v1.0.46

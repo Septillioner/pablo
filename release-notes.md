@@ -1,20 +1,20 @@
-## Pablo v1.4.0
+## Pablo v1.5.0
 
 ### Added
 
-- `pablo inspect` — list profiles and environments from a manifest (`--json` for machine-readable output).
-- `pkg/target` — parse positional `profile/env` run targets shared by CLI and LSP.
-- LSP CodeLens — `Run` on environment lines (`pablo.runWithArgs`).
-- LSP custom request `pablo/listProfiles` for editor profile/environment pickers.
-- VS Code extension: binary picker, inspect fallback, shell quoting helpers, and profile/environment gutter decorations.
-- Public docs tree under `docs/` — getting started, guides, reference, development, FAQ, and troubleshooting.
-- `docs/roadmap.md` (moved from `docs/goals.md`).
+- One-liner CLI installers — `install.sh` (macOS/Linux), `install.ps1` (Windows PowerShell), and `install.cmd` (Windows bootstrap).
+- Installers download release binaries from GitHub, verify SHA-256 checksums, and install to system or user PATH (`PABLO_VERSION` pins a release tag).
+- Visual Studio 2026 extension — LSP via `pablo lsp`, CodeLens **Run**, profile/environment gutter stripes, manifest commands, YAML snippets, and executable picker.
+- `docs/guides/visual-studio.md` — install, build, debug, and feature overview for the VS extension.
 
 ### Changed
 
-- README slimmed down; install and usage detail live under `docs/`.
-- `build.sh` accepts `BUILD_DIR` override for release artifact output.
-- Local deploy prep errors for missing artifact / target directories are clearer.
+- README and installation docs — one-liner install as the recommended path; PowerShell uses temp-file execution instead of `irm | iex`.
+- PowerShell installer — PATH shadowing warnings and post-install `pablo` command resolution checks.
+
+### Removed
+
+- Bundled `pablo-lsp` binary from the VS Code extension (uses `pablo lsp` from the CLI on PATH).
 
 ### Downloads
 
@@ -25,6 +25,7 @@
 | Linux (amd64) | `pablo-linux-amd64` |
 | Windows (amd64) | `pablo-windows-amd64.exe` |
 | Windows (arm64) | `pablo-windows-arm64.exe` |
-| VS Code extension | `pablo-1.4.0.vsix` |
+| VS Code extension | `pablo-1.5.0.vsix` |
+| Visual Studio 2026 extension | `pablo-vs2026-1.5.0.vsix` |
 
 Verify downloads with `checksums.txt` (SHA-256).
