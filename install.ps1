@@ -1,8 +1,11 @@
 # Pablo one-liner installer (Windows)
-# Usage: irm https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1 | iex
-# Pin version: $env:PABLO_VERSION = "v1.4.0"; irm ... | iex
+# Usage (PowerShell): iex ((Invoke-WebRequest -Uri "https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1" -UseBasicParsing).Content)
+# Usage (cmd): install.cmd
+# Pin version: $env:PABLO_VERSION = "v1.4.0"; iex ((Invoke-WebRequest ...).Content)
 
 $ErrorActionPreference = "Stop"
+
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $GITHUB_REPO = "septillioner/pablo"
 $GITHUB_API_BASE = "https://api.github.com/repos/$GITHUB_REPO/releases"
@@ -88,7 +91,7 @@ function Test-AssetChecksum {
     foreach ($line in Get-Content $checksumFile) {
         $parts = $line -split '\s+', 2
         if ($parts.Count -eq 2 -and $parts[1] -eq $AssetName) {
-            $expectedHash = $parts[0].ToLowerInvariant()
+            $expectedHash = $parts[0].ToLower()
             break
         }
     }
@@ -97,7 +100,7 @@ function Test-AssetChecksum {
         Fail "checksum for $AssetName not found in checksums.txt"
     }
 
-    $actualHash = (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $actualHash = (Get-FileHash -Path $FilePath -Algorithm SHA256).Hash.ToLower()
     if ($actualHash -ne $expectedHash) {
         Fail "checksum mismatch for $AssetName"
     }

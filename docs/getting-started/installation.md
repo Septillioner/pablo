@@ -24,8 +24,16 @@ Downloads the latest release binary for your OS and architecture, verifies the S
 **Windows (PowerShell):**
 
 ```powershell
-irm https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1 | iex
+iex ((Invoke-WebRequest -Uri "https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1" -UseBasicParsing).Content)
 ```
+
+**Windows (cmd):**
+
+```bat
+curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.cmd -o install.cmd && install.cmd
+```
+
+`irm ... | iex` fails on Windows PowerShell 5.x because the downloaded script arrives as a string array. Use the `Invoke-WebRequest` form above, or run from PowerShell (not cmd).
 
 **macOS / Linux:**
 
@@ -38,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.s
 ```powershell
 # Windows
 $env:PABLO_VERSION = "v1.4.0"
-irm https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1 | iex
+iex ((Invoke-WebRequest -Uri "https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1" -UseBasicParsing).Content)
 ```
 
 ```bash
