@@ -27,4 +27,4 @@
 | Windows (arm64) | `pablo-windows-arm64.exe` |
 | VS Code extension | `pablo-1.4.0.vsix` |
 
-Verify downloads with `checksums.txt` (SHA-256). Also on the Marketplace as `septillioner.pablo`.
+Verify downloads with `checksums.txt` (SHA-256).

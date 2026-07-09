@@ -1,8 +1,7 @@
 # Pablo one-liner installer (Windows)
-# Usage: iex (irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1')
-# Do NOT use: irm '...' | iex  (Windows PowerShell can pass null through the pipe to iex)
+# Usage: $s="$env:TEMP\pablo-install.ps1"; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' -OutFile $s; powershell -NoProfile -ExecutionPolicy Bypass -File $s
 # Usage (cmd): install.cmd
-# Pin version: $env:PABLO_VERSION = "v1.4.0"; iex (irm '...')
+# Pin version: $env:PABLO_VERSION = "v1.4.0"; then run the command above
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"

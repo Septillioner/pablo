@@ -24,10 +24,10 @@ Downloads the latest release binary for your OS and architecture, verifies the S
 **Windows (PowerShell):**
 
 ```powershell
-iex (irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1')
+$s="$env:TEMP\pablo-install.ps1"; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' -OutFile $s; powershell -NoProfile -ExecutionPolicy Bypass -File $s
 ```
 
-Use `iex (irm ...)` — not `irm ... | iex`. `irm` alone only downloads/shows the script; `iex` runs it. The pipe form can pass null to `iex` on Windows PowerShell even when `irm` prints the script correctly.
+Downloads the installer to a temp file and runs it in a clean PowerShell session. Avoid `irm ... | iex` — the pipe can pass null to `iex` on Windows PowerShell.
 
 **Windows (cmd):**
 
@@ -35,7 +35,7 @@ Use `iex (irm ...)` — not `irm ... | iex`. `irm` alone only downloads/shows th
 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.cmd -o install.cmd && install.cmd
 ```
 
-Run from **PowerShell**, not cmd. If install fails, run `irm '...'` first to confirm the script downloads, then `iex (irm '...')`.
+Run from **PowerShell**, not cmd.
 
 **macOS / Linux:**
 
@@ -48,7 +48,7 @@ curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.s
 ```powershell
 # Windows
 $env:PABLO_VERSION = "v1.4.0"
-iex (irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1')
+$s="$env:TEMP\pablo-install.ps1"; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' -OutFile $s; powershell -NoProfile -ExecutionPolicy Bypass -File $s
 ```
 
 ```bash

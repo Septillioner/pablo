@@ -35,10 +35,10 @@ Supported host platforms: Windows, macOS, Linux.
 **Windows (PowerShell):**
 
 ```powershell
-iex (irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1')
+$s="$env:TEMP\pablo-install.ps1"; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' -OutFile $s; powershell -NoProfile -ExecutionPolicy Bypass -File $s
 ```
 
-Use `iex (irm ...)` — not `irm ... | iex`.
+Downloads the installer to a temp file and runs it in a clean PowerShell session (avoids `iex` / profile issues).
 
 **Windows (cmd):**
 
