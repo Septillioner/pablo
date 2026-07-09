@@ -1,7 +1,12 @@
 @echo off
 setlocal EnableExtensions
 
-cd /d "%~dp0"
+set "SCRIPT_DIR=%~dp0"
+cd /d "%SCRIPT_DIR%"
+if errorlevel 1 (
+    echo ERROR: Cannot cd to "%SCRIPT_DIR%"
+    exit /b 1
+)
 
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 set "MSBUILD="
@@ -21,13 +26,19 @@ if not defined MSBUILD (
     exit /b 1
 )
 
+if not exist "Pablo.sln" (
+    echo ERROR: Pablo.sln not found in %CD%
+    exit /b 1
+)
+
 echo Using MSBuild: %MSBUILD%
-"%MSBUILD%" "%~dp0Pablo.sln" /p:Configuration=Release /restore /t:Rebuild /v:m
+echo Building: %CD%\Pablo.sln
+"%MSBUILD%" "Pablo.sln" /p:Configuration=Release /restore /t:Rebuild /v:m
 if errorlevel 1 exit /b %ERRORLEVEL%
 
-set "VSIX_PRIMARY=%~dp0Pablo\bin\Release\net472\Pablo.VisualStudio.vsix"
-set "VSIX_FALLBACK=%~dp0Pablo\bin\Release\Pablo.VisualStudio.vsix"
-set "VSIX_LEGACY=%~dp0Pablo\.vsix"
+set "VSIX_PRIMARY=%CD%\Pablo\bin\Release\net472\Pablo.VisualStudio.vsix"
+set "VSIX_FALLBACK=%CD%\Pablo\bin\Release\Pablo.VisualStudio.vsix"
+set "VSIX_LEGACY=%CD%\Pablo\.vsix"
 if exist "%VSIX_PRIMARY%" (
     echo VSIX: %VSIX_PRIMARY%
     exit /b 0
