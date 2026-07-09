@@ -1,5 +1,5 @@
 # Pablo one-liner installer (Windows)
-# Usage: irm https://raw.githubusercontent.com/septillioner/pablo/main/install.ps1 | iex
+# Usage: irm https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1 | iex
 # Pin version: $env:PABLO_VERSION = "v1.4.0"; irm ... | iex
 
 $ErrorActionPreference = "Stop"

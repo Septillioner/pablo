@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Pablo one-liner installer (macOS / Linux)
-# Usage: curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.sh | bash
 # Pin version: PABLO_VERSION=v1.4.0 curl -fsSL ... | bash
 
 GITHUB_REPO="septillioner/pablo"

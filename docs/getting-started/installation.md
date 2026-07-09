@@ -24,13 +24,13 @@ Downloads the latest release binary for your OS and architecture, verifies the S
 **Windows (PowerShell):**
 
 ```powershell
-irm https://raw.githubusercontent.com/septillioner/pablo/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1 | iex
 ```
 
 **macOS / Linux:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.sh | bash
 ```
 
 **Pin a version:**
@@ -38,12 +38,12 @@ curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/main/install.sh 
 ```powershell
 # Windows
 $env:PABLO_VERSION = "v1.4.0"
-irm https://raw.githubusercontent.com/septillioner/pablo/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1 | iex
 ```
 
 ```bash
 # macOS / Linux
-PABLO_VERSION=v1.4.0 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/main/install.sh | bash
+PABLO_VERSION=v1.4.0 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.sh | bash
 ```
 
 **Install locations:**

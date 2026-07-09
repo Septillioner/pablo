@@ -35,13 +35,13 @@ Supported host platforms: Windows, macOS, Linux.
 **Windows (PowerShell):**
 
 ```powershell
-irm https://raw.githubusercontent.com/septillioner/pablo/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1 | iex
 ```
 
 **macOS / Linux:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.sh | bash
 ```
 
 Pin a version: set `PABLO_VERSION=v1.4.0` before running the one-liner.
