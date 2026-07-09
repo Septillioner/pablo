@@ -137,7 +137,7 @@ function Install-ToDirectory {
             Move-Item -Path $TargetPath -Destination $oldPath -Force
         }
         catch {
-            Fail "cannot replace $TargetPath: file may be locked by a running pablo process, Visual Studio, or another terminal. Close them and retry."
+            Fail "cannot replace ${TargetPath}: file may be locked by a running pablo process, Visual Studio, or another terminal. Close them and retry."
         }
     }
 
@@ -148,7 +148,7 @@ function Install-ToDirectory {
         if (Test-Path $oldPath) {
             Move-Item -Path $oldPath -Destination $TargetPath -Force -ErrorAction SilentlyContinue
         }
-        Fail "cannot install to $TargetPath: $($_.Exception.Message)"
+        Fail "cannot install to ${TargetPath}: $($_.Exception.Message)"
     }
 
     Remove-Item -Path $oldPath -Force -ErrorAction SilentlyContinue
