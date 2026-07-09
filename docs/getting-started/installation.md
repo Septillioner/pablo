@@ -24,8 +24,10 @@ Downloads the latest release binary for your OS and architecture, verifies the S
 **Windows (PowerShell):**
 
 ```powershell
-irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' | iex
+iex (irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1')
 ```
+
+Use `iex (irm ...)` — not `irm ... | iex`. `irm` alone only downloads/shows the script; `iex` runs it. The pipe form can pass null to `iex` on Windows PowerShell even when `irm` prints the script correctly.
 
 **Windows (cmd):**
 
@@ -33,7 +35,7 @@ irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' | 
 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.cmd -o install.cmd && install.cmd
 ```
 
-Run from **PowerShell**, not cmd. If you see `You cannot call a method on a null-valued expression`, the script failed to download (wrong branch, offline, or GitHub blocked) — check that `master/install.ps1` exists on GitHub.
+Run from **PowerShell**, not cmd. If install fails, run `irm '...'` first to confirm the script downloads, then `iex (irm '...')`.
 
 **macOS / Linux:**
 
@@ -46,7 +48,7 @@ curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.s
 ```powershell
 # Windows
 $env:PABLO_VERSION = "v1.4.0"
-irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' | iex
+iex (irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1')
 ```
 
 ```bash

@@ -35,8 +35,10 @@ Supported host platforms: Windows, macOS, Linux.
 **Windows (PowerShell):**
 
 ```powershell
-irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' | iex
+iex (irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1')
 ```
+
+Use `iex (irm ...)` — not `irm ... | iex`.
 
 **Windows (cmd):**
 
@@ -44,7 +46,7 @@ irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' | 
 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.cmd -o install.cmd && install.cmd
 ```
 
-Run from **PowerShell**, not cmd (`irm` is a PowerShell alias).
+Run from **PowerShell**, not cmd.
 
 **macOS / Linux:**
 

@@ -1,15 +1,18 @@
 # Pablo one-liner installer (Windows)
-# Usage (PowerShell): irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' | iex
+# Usage: iex (irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1')
+# Do NOT use: irm '...' | iex  (Windows PowerShell can pass null through the pipe to iex)
 # Usage (cmd): install.cmd
-# Pin version: $env:PABLO_VERSION = "v1.4.0"; irm '...' | iex
+# Pin version: $env:PABLO_VERSION = "v1.4.0"; iex (irm '...')
 
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $GITHUB_REPO = "septillioner/pablo"
 $GITHUB_API_BASE = "https://api.github.com/repos/$GITHUB_REPO/releases"
 $RELEASES_PAGE = "https://github.com/$GITHUB_REPO/releases"
+$GITHUB_HEADERS = @{ "User-Agent" = "pablo-installer" }
 
 $SYSTEM_INSTALL_DIR = Join-Path $env:ProgramFiles "Pablo"
 $SYSTEM_INSTALL_PATH = Join-Path $SYSTEM_INSTALL_DIR "pablo.exe"
@@ -27,10 +30,10 @@ function Fail {
 }
 
 function Get-PlatformAssetName {
-    $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
+    $arch = $env:PROCESSOR_ARCHITECTURE
     switch ($arch) {
-        "x64" { $assetArch = "amd64" }
-        "arm64" { $assetArch = "arm64" }
+        "AMD64" { $assetArch = "amd64" }
+        "ARM64" { $assetArch = "arm64" }
         default { Fail "unsupported architecture: $arch. See $RELEASES_PAGE" }
     }
 
@@ -41,7 +44,7 @@ function Get-PlatformAssetName {
 }
 
 function Get-ReleaseTag {
-    if ($env:PABLO_VERSION) {
+    if ($env:PABLO_VERSION -and $env:PABLO_VERSION.Trim().Length -gt 0) {
         $tag = $env:PABLO_VERSION.Trim()
         if (-not $tag.StartsWith("v")) {
             $tag = "v$tag"
@@ -49,7 +52,11 @@ function Get-ReleaseTag {
         return $tag
     }
 
-    $latest = Invoke-RestMethod -Uri "$GITHUB_API_BASE/latest" -Headers @{ "User-Agent" = "pablo-installer" }
+    $latest = Invoke-RestMethod -Uri "$GITHUB_API_BASE/latest" -Headers $GITHUB_HEADERS
+    if (-not $latest -or -not $latest.tag_name) {
+        Fail "could not read latest release from GitHub API. Set PABLO_VERSION or see $RELEASES_PAGE"
+    }
+
     return $latest.tag_name
 }
 
@@ -59,9 +66,13 @@ function Get-ReleaseAssets {
         [string]$AssetName
     )
 
-    $release = Invoke-RestMethod -Uri "$GITHUB_API_BASE/tags/$ReleaseTag" -Headers @{ "User-Agent" = "pablo-installer" }
+    $release = Invoke-RestMethod -Uri "$GITHUB_API_BASE/tags/$ReleaseTag" -Headers $GITHUB_HEADERS
+    if (-not $release -or -not $release.assets) {
+        Fail "could not read release $ReleaseTag from GitHub API. See $RELEASES_PAGE"
+    }
+
     $asset = $release.assets | Where-Object { $_.name -eq $AssetName } | Select-Object -First 1
-    if (-not $asset) {
+    if (-not $asset -or -not $asset.browser_download_url) {
         Fail "release $ReleaseTag has no asset $AssetName. See $RELEASES_PAGE"
     }
 
@@ -90,7 +101,7 @@ function Test-AssetChecksum {
     $expectedHash = $null
     foreach ($line in Get-Content $checksumFile) {
         $parts = $line -split '\s+', 2
-        if ($parts.Count -eq 2 -and $parts[1] -eq $AssetName) {
+        if ($parts.Count -eq 2 -and $parts[1] -eq $AssetName -and $parts[0]) {
             $expectedHash = $parts[0].ToLower()
             break
         }
@@ -181,7 +192,9 @@ function Verify-Installation {
         [string]$Scope
     )
 
-    $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+    $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $env:Path = (@($machinePath, $userPath) | Where-Object { $_ }) -join ";"
 
     if (Get-Command pablo -ErrorAction SilentlyContinue) {
         pablo version
@@ -218,4 +231,10 @@ function Main {
     Write-Step "done"
 }
 
-Main
+try {
+    Main
+}
+catch {
+    Write-Host "error: $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
