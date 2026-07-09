@@ -185,30 +185,61 @@ function Install-PabloBinary {
     }
 }
 
+function Get-PabloCommandPath {
+    $command = Get-Command pablo -ErrorAction SilentlyContinue
+    if (-not $command) {
+        return $null
+    }
+
+    return $command.Source
+}
+
+function Warn-ShadowedInstall {
+    param(
+        [string]$InstalledPath,
+        [string]$Scope
+    )
+
+    if ($Scope -ne "user") {
+        return
+    }
+
+    $resolvedPath = Get-PabloCommandPath
+    if (-not $resolvedPath) {
+        return
+    }
+
+    $installedFullPath = (Resolve-Path $InstalledPath).Path
+    if ($resolvedPath -ieq $installedFullPath) {
+        return
+    }
+
+    Write-Step "warning: another pablo is earlier on PATH: $resolvedPath"
+    Write-Step "the new install is at $installedFullPath but 'pablo' still runs the older binary"
+    Write-Step "remove the old install, run this installer as Administrator, or call the full path above"
+}
+
 function Verify-Installation {
     param(
         [string]$InstalledPath,
         [string]$Scope
     )
 
+    if (-not (Test-Path $InstalledPath)) {
+        Fail "installation finished but pablo could not be executed"
+    }
+
+    & $InstalledPath version
+
     $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
     $env:Path = (@($machinePath, $userPath) | Where-Object { $_ }) -join ";"
 
-    if (Get-Command pablo -ErrorAction SilentlyContinue) {
-        pablo version
-        return
-    }
+    Warn-ShadowedInstall -InstalledPath $InstalledPath -Scope $Scope
 
-    if (Test-Path $InstalledPath) {
-        & $InstalledPath version
-        if ($Scope -eq "user") {
-            Write-Step "pablo is installed at $InstalledPath; open a new terminal to use it globally"
-        }
-        return
+    if ($Scope -eq "user" -and -not (Get-PabloCommandPath)) {
+        Write-Step "pablo is installed at $InstalledPath; open a new terminal to use it globally"
     }
-
-    Fail "installation finished but pablo could not be executed"
 }
 
 function Main {

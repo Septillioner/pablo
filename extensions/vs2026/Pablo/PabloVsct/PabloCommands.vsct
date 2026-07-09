@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+
+  <Commands package="guidPabloPkg">
+    <Groups>
+      <Group guid="guidPabloCmdSet" id="grpPabloTools" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+      <Group guid="guidPabloCmdSet" id="grpPabloEditor" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_CODEWIN"/>
+      </Group>
+      <Group guid="guidPabloCmdSet" id="grpHidden" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidPabloCmdSet" id="cmdidCheck" priority="0x0100" type="Button">
+        <Parent guid="guidPabloCmdSet" id="grpPabloTools"/>
+        <Strings>
+          <ButtonText>Pablo: Check YAML</ButtonText>
+          <CommandName>Pablo.Check</CommandName>
+        </Strings>
+      </Button>
+      <Button guid="guidPabloCmdSet" id="cmdidInit" priority="0x0101" type="Button">
+        <Parent guid="guidPabloCmdSet" id="grpPabloTools"/>
+        <Strings>
+          <ButtonText>Pablo: Init Config</ButtonText>
+          <CommandName>Pablo.Init</CommandName>
+        </Strings>
+      </Button>
+      <Button guid="guidPabloCmdSet" id="cmdidRun" priority="0x0102" type="Button">
+        <Parent guid="guidPabloCmdSet" id="grpPabloTools"/>
+        <Strings>
+          <ButtonText>Pablo: Run Deployment</ButtonText>
+          <CommandName>Pablo.Run</CommandName>
+        </Strings>
+      </Button>
+      <Button guid="guidPabloCmdSet" id="cmdidSelectExecutable" priority="0x0103" type="Button">
+        <Parent guid="guidPabloCmdSet" id="grpPabloTools"/>
+        <Strings>
+          <ButtonText>Pablo: Select Executable</ButtonText>
+          <CommandName>Pablo.SelectExecutable</CommandName>
+        </Strings>
+      </Button>
+      <Button guid="guidPabloCmdSet" id="cmdidRunWithArgs" priority="0x0104" type="Button">
+        <Parent guid="guidPabloCmdSet" id="grpHidden"/>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <Strings>
+          <ButtonText>Run With Profile/Env</ButtonText>
+          <CommandName>pablo.runWithArgs</CommandName>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="guidPabloPkg" value="{8f4e2a1b-3c5d-4e6f-9a0b-1c2d3e4f5a6b}" />
+    <GuidSymbol name="guidPabloCmdSet" value="{9a0b1c2d-3e4f-5a6b-7c8d-9e0f1a2b3c4d}">
+      <IDSymbol name="grpPabloTools" value="0x1000" />
+      <IDSymbol name="grpPabloEditor" value="0x1001" />
+      <IDSymbol name="grpHidden" value="0x1002" />
+      <IDSymbol name="cmdidCheck" value="0x0100" />
+      <IDSymbol name="cmdidInit" value="0x0101" />
+      <IDSymbol name="cmdidRun" value="0x0102" />
+      <IDSymbol name="cmdidSelectExecutable" value="0x0103" />
+      <IDSymbol name="cmdidRunWithArgs" value="0x0104" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>

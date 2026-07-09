@@ -1,0 +1,30 @@
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
+  <Metadata>
+    <Identity Id="Pablo.VisualStudio.8f4e2a1b-3c5d-4e6f-9a0b-1c2d3e4f5a6b" Version="1.4.0" Language="en-US" Publisher="septillioner" />
+    <DisplayName>Pablo</DisplayName>
+    <Description xml:space="preserve">Pablo YAML manifest editor support: LSP validation, completion, CodeLens Run, profile decorations, and CLI integration.</Description>
+    <Icon>Resources\logo.png</Icon>
+    <Tags>pablo;yaml;deploy;lsp</Tags>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0,19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[17.0,19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+  </Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" Version="[4.7.2,)" />
+  </Dependencies>
+  <Prerequisites>
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,19.0)" DisplayName="Visual Studio core editor" />
+  </Prerequisites>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" Path="Pablo.VisualStudio.pkgdef" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="Pablo.VisualStudio.dll" />
+  </Assets>
+</PackageManifest>

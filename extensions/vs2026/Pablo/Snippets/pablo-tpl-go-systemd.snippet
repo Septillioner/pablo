@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>Pablo: Go + Systemd Template</Title>
+      <Shortcut>pablo-tpl-go-systemd</Shortcut>
+      <Description>Ready-to-use template for Go binary deployments with Systemd</Description>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Code Language="yaml"><![CDATA[name: "$1"
+version: "1.4.0"
+
+profiles:
+  backend:
+    type: binary
+    build:
+      command: "go build -o $1 main.go"
+    output_dir:
+      dir: "."
+      include: ["$1", "config.yaml"]
+    environments:
+      linux-server:
+        target_path: "$2"
+        strategy: backup
+        remote:
+          method: ssh
+          host: "$3"
+          credential: "$4"
+        deploy:
+          service:
+            type: systemd
+            name: "$1"
+            restart: true]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

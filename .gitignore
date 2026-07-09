@@ -16,8 +16,10 @@ pablo.exe
 extensions/vscode-pablo/dist/
 extensions/vscode-pablo/out/
 extensions/vscode-pablo/.vscode-test/
-extensions/vs2022-pablo/**/bin/
-extensions/vs2022-pablo/**/obj/
+extensions/**/bin/
+extensions/**/obj/
+extensions/**/.vs/
+extensions/**/*.csproj.user
 *.vsix
 
 # Tests
