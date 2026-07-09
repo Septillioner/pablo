@@ -1,7 +1,7 @@
 # Pablo one-liner installer (Windows)
-# Usage (PowerShell): iex ((Invoke-WebRequest -Uri "https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1" -UseBasicParsing).Content)
+# Usage (PowerShell): irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' | iex
 # Usage (cmd): install.cmd
-# Pin version: $env:PABLO_VERSION = "v1.4.0"; iex ((Invoke-WebRequest ...).Content)
+# Pin version: $env:PABLO_VERSION = "v1.4.0"; irm '...' | iex
 
 $ErrorActionPreference = "Stop"
 

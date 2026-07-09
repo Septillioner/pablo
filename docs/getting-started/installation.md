@@ -24,7 +24,7 @@ Downloads the latest release binary for your OS and architecture, verifies the S
 **Windows (PowerShell):**
 
 ```powershell
-iex ((Invoke-WebRequest -Uri "https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1" -UseBasicParsing).Content)
+irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' | iex
 ```
 
 **Windows (cmd):**
@@ -33,7 +33,7 @@ iex ((Invoke-WebRequest -Uri "https://raw.githubusercontent.com/septillioner/pab
 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.cmd -o install.cmd && install.cmd
 ```
 
-`irm ... | iex` fails on Windows PowerShell 5.x because the downloaded script arrives as a string array. Use the `Invoke-WebRequest` form above, or run from PowerShell (not cmd).
+Run from **PowerShell**, not cmd. If you see `You cannot call a method on a null-valued expression`, the script failed to download (wrong branch, offline, or GitHub blocked) — check that `master/install.ps1` exists on GitHub.
 
 **macOS / Linux:**
 
@@ -46,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.s
 ```powershell
 # Windows
 $env:PABLO_VERSION = "v1.4.0"
-iex ((Invoke-WebRequest -Uri "https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1" -UseBasicParsing).Content)
+irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' | iex
 ```
 
 ```bash

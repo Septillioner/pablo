@@ -35,7 +35,7 @@ Supported host platforms: Windows, macOS, Linux.
 **Windows (PowerShell):**
 
 ```powershell
-iex ((Invoke-WebRequest -Uri "https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1" -UseBasicParsing).Content)
+irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' | iex
 ```
 
 **Windows (cmd):**
@@ -44,7 +44,7 @@ iex ((Invoke-WebRequest -Uri "https://raw.githubusercontent.com/septillioner/pab
 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.cmd -o install.cmd && install.cmd
 ```
 
-Or open **PowerShell** (not cmd) and run the command above.
+Run from **PowerShell**, not cmd (`irm` is a PowerShell alias).
 
 **macOS / Linux:**
 
