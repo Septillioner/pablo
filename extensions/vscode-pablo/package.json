@@ -69,6 +69,14 @@
       {
         "command": "pablo.run",
         "title": "Pablo: Run Deployment"
+      },
+      {
+        "command": "pablo.runWithArgs",
+        "title": "Pablo: Run With Profile/Env"
+      },
+      {
+        "command": "pablo.selectExecutable",
+        "title": "Pablo: Select Executable"
       }
     ],
     "menus": {
@@ -87,6 +95,12 @@
           "type": "string",
           "default": "",
           "description": "Absolute path to the Pablo CLI binary. When empty, the extension uses a bundled binary or pablo from PATH."
+        },
+        "pablo.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Traces LSP communication between VS Code and pablo lsp."
         }
       }
     }

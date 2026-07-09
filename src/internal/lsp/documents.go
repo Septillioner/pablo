@@ -1,6 +1,7 @@
 package lsp
 
 import (
+	"fmt"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -65,4 +66,21 @@ func baseDirFromURI(uri string) string {
 	}
 
 	return "."
+}
+
+func filePathFromURI(uri string) (string, error) {
+	parsed, err := url.Parse(uri)
+	if err != nil {
+		return "", err
+	}
+
+	path := parsed.Path
+	if strings.HasPrefix(parsed.Scheme, "file") && len(path) > 0 {
+		if len(path) > 3 && path[0] == '/' && path[2] == ':' {
+			path = path[1:]
+		}
+		return path, nil
+	}
+
+	return "", fmt.Errorf("unsupported uri scheme: %s", parsed.Scheme)
 }

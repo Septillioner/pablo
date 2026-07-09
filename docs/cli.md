@@ -12,6 +12,7 @@ Command-line interface for running deployments, validating manifests, and managi
 |---------|-------------|
 | `run` | Execute the full deployment pipeline |
 | `check` | Validate a manifest file |
+| `inspect` | List profiles and environments from a manifest |
 | `init` | Generate a sample manifest |
 | `uninstall` | Remove deployed files and clean up PATH entries |
 | `version` | Print Pablo version information |
@@ -59,6 +60,42 @@ Loads and validates the manifest (semantic schema rules via `pkg/validate`, with
 ```bash
 pablo check
 pablo check -f pablo.yaml -p frontend -e production
+```
+
+---
+
+## `inspect`
+
+Lists profiles and their environments from a manifest. Used by the VS Code extension to populate profile/environment pickers.
+
+**Flags:**
+
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--file` | `-f` | `pablo.yaml` | Path to manifest |
+| `--json` | | `false` | Output machine-readable JSON (no CLI header) |
+
+**Examples:**
+
+```bash
+pablo inspect
+pablo inspect -f pablo.yaml --json
+```
+
+**JSON shape:**
+
+```json
+{
+  "name": "my-app",
+  "version": "1.3.0",
+  "profiles": [
+    {
+      "name": "default",
+      "type": "static",
+      "environments": ["production", "staging"]
+    }
+  ]
+}
 ```
 
 ---

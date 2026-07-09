@@ -7,7 +7,6 @@ import (
 	"github.com/tliron/glsp"
 	protocol "github.com/tliron/glsp/protocol_3_16"
 	"github.com/tliron/glsp/server"
-	_ "github.com/tliron/go-kutil/terminal"
 )
 
 const serverName = "pablo"
@@ -27,9 +26,12 @@ func RunStdio(version string) error {
 		TextDocumentDidSave:    textDocumentDidSave,
 		TextDocumentCompletion: textDocumentCompletion,
 		TextDocumentHover:      textDocumentHover,
+		TextDocumentCodeLens:   textDocumentCodeLens,
 	}
 
-	s := server.NewServer(&handler, serverName, false)
+	s := server.NewServer(&serverHandler{
+		Handler: handler,
+	}, serverName, false)
 	return s.RunStdio()
 }
 
@@ -39,7 +41,8 @@ func initialize(context *glsp.Context, params *protocol.InitializeParams) (any, 
 		CompletionProvider: &protocol.CompletionOptions{
 			TriggerCharacters: []string{":", " "},
 		},
-		HoverProvider: true,
+		HoverProvider:    true,
+		CodeLensProvider: &protocol.CodeLensOptions{},
 	}
 
 	return protocol.InitializeResult{

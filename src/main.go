@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"pablo/internal/services/pipeline"
 	"pablo/internal/services/scm"
 	"pablo/pkg/config"
+	"pablo/pkg/inspect"
 	"pablo/pkg/ui"
 	"pablo/pkg/validate"
 
@@ -52,7 +54,7 @@ func main() {
 It supports multiple profiles, environment-based configurations, and automatic 
 artifact filtering, path registration, and health checks.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			if cmd.Name() == "lsp" {
+			if cmd.Name() == "lsp" || cmd.Name() == "inspect" {
 				return
 			}
 			ui.Header(Version)
@@ -184,15 +186,28 @@ profiles:
 		},
 	}
 
+	var inspectJson bool
+	var inspectCmd = &cobra.Command{
+		Use:   "inspect",
+		Short: "Lists profiles and environments from a manifest",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runInspect(manifest, inspectJson)
+		},
+	}
+	inspectCmd.Flags().StringVarP(&manifest, "file", "f", "pablo.yaml", "Path to manifest")
+	inspectCmd.Flags().BoolVar(&inspectJson, "json", false, "Output JSON")
+
 	var lspCmd = &cobra.Command{
 		Use:   "lsp",
 		Short: "Start Pablo language server (stdio)",
+		SilenceUsage:  true,
+		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return lsp.RunStdio(Version)
 		},
 	}
 
-	rootCmd.AddCommand(runCmd, initCmd, checkCmd, uninstallCmd, versionCmd, lspCmd)
+	rootCmd.AddCommand(runCmd, initCmd, checkCmd, uninstallCmd, versionCmd, inspectCmd, lspCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -227,5 +242,45 @@ func printManifestValidation(manifestPath string) error {
 		return fmt.Errorf("manifest validation failed")
 	}
 
+	return nil
+}
+
+func runInspect(manifestPath string, asJSON bool) error {
+	absPath, err := filepath.Abs(manifestPath)
+	if err != nil {
+		return err
+	}
+
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		return err
+	}
+
+	result, err := inspect.FromYAML(data, filepath.Dir(absPath))
+	if err != nil {
+		return err
+	}
+
+	if asJSON {
+		encoded, err := json.Marshal(result)
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(encoded))
+		return nil
+	}
+
+	ui.Log("*", fmt.Sprintf("Project: %s (%s)", result.Name, result.Version))
+	if len(result.Profiles) == 0 {
+		ui.Log("-", "No profiles found")
+		return nil
+	}
+
+	for _, profile := range result.Profiles {
+		ui.Log(">", fmt.Sprintf("%s (%s)", profile.Name, profile.Type))
+		for _, env := range profile.Environments {
+			ui.Log(" ", fmt.Sprintf("- %s", env))
+		}
+	}
 	return nil
 }

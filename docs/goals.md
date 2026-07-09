@@ -24,13 +24,16 @@ Pablo
 ├── Manifest & CLI
 │   ├── [x] Multi-profile pablo.yaml manifests
 │   ├── [x] Profile-to-environment inheritance
-│   ├── [x] check, run, init, uninstall, version
+│   ├── [x] check, run, init, uninstall, version, inspect
 │   ├── [x] lsp (language server, stdio)
 │   └── [ ] Streamlined build pipeline (unused builder cleanup)
 ├── Editor experience
 │   ├── [x] VS Code extension (syntax, snippets, commands)
 │   ├── [x] Language server via pablo lsp
 │   ├── [x] Completion, hover, live diagnostics
+│   ├── [x] inspect protocol (CLI + LSP listProfiles)
+│   ├── [x] Run command profile/environment picker
+│   ├── [x] CodeLens Run on environment lines
 │   └── [ ] Snippet versions synced with releases
 ├── Validation
 │   ├── [x] Schema checks in CLI (path:line:col errors)
@@ -72,7 +75,7 @@ Pablo
 - [x] Multi-profile `pablo.yaml` with environment-specific deploy settings
 - [x] `pablo check` — validate manifests before deploy
 - [x] `pablo run` — full deployment pipeline
-- [x] `pablo init`, `uninstall`, `version`
+- [x] `pablo init`, `uninstall`, `version`, `inspect`
 - [x] `pablo lsp` — embedded language server (single binary)
 
 ### Editor experience
@@ -80,6 +83,8 @@ Pablo
 - [x] VS Code extension with Pablo language ID and snippets
 - [x] Real-time diagnostics, completion, and hover via `pablo lsp`
 - [x] Editor commands: Check YAML, Init Config, Run Deployment
+- [x] Run Deployment picks profile and environment via `pablo inspect` / `pablo/listProfiles`
+- [x] CodeLens **Run profile/env** on each environment line in `pablo.yaml`
 - [x] Configurable CLI path (`pablo.path`) or PATH lookup
 
 ### Validation
