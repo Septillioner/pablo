@@ -23,6 +23,8 @@ extensions/vscode-pablo/.vscode-test/
 # Tests
 tests/**/target/
 tests/**/*_backup_*
+tests/e2e/keys/
+tests/e2e/.env
 
 # Go
 vendor/
@@ -49,3 +51,4 @@ node_modules/
 **/.agent/
 PABLO-CS.md
 .cursor/
+PMAP.md

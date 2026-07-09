@@ -36,13 +36,27 @@ cd src
 go run main.go run -e <env> -p <profile> -f ../pablo.yaml
 ```
 
-### Validate manually
+### Validate changes
 
-There are no Go unit tests. Validate changes by running pipelines against the YAML fixtures under `tests/`:
+Run Go unit tests from `src/`:
+
+```bash
+cd src
+go test ./...
+```
+
+Also validate end-to-end behavior against the YAML fixtures under `tests/`:
 
 ```bash
 cd tests/agnostic/local-deploy
 go run ../../../src/main.go run -e production
+```
+
+For remote SSH / docker scenarios, run the Docker-based E2E suite (requires Docker):
+
+```bash
+cd tests/e2e
+go test -tags=integration -v -timeout 10m ./...
 ```
 
 ## Code conventions

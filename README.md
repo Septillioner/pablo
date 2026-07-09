@@ -1,12 +1,10 @@
-<p align="center">
-  <img src="assets/logo.svg" width="120" height="120" alt="Pablo Logo">
-</p>
+
 
 # Pablo
 
 **Pablo** is a CLI deployment helper that automates building, filtering, and deploying artifacts across multiple environments. It supports local and remote (SSH) targets driven by a single YAML manifest.
 
-> Full schema reference: [`schema/schema.md`](schema/schema.md)
+> Full schema reference: `[schema/schema.md](schema/schema.md)`
 > Wiki (extended docs): [github.com/septillioner/pablo/wiki](https://github.com/septillioner/pablo/wiki)
 
 ---
@@ -22,6 +20,8 @@
 
 ---
 
+
+
 ## Requirements
 
 - **Go** 1.25.5 or newer (only required to build from source)
@@ -32,21 +32,27 @@
 
 ---
 
+
+
 ## Install
+
+
 
 ### Option A — Download a pre-built binary (recommended)
 
 1. Open the latest release: [Releases page](https://github.com/septillioner/pablo/releases)
 2. Download the archive matching your OS / arch
-   (`pablo-<os>-<arch>` for macOS/Linux, `pablo-<os>-<arch>.exe` for Windows).
+  (`pablo-<os>-<arch>` for macOS/Linux, `pablo-<os>-<arch>.exe` for Windows).
 3. Verify the SHA-256 checksum against `checksums.txt`.
 4. Move the binary to a directory on your `PATH`
-   (e.g. `/usr/local/bin/pablo` or `C:\Program Files\Pablo\pablo.exe`).
+  (e.g. `/usr/local/bin/pablo` or `C:\Program Files\Pablo\pablo.exe`).
 5. Verify the install:
 
 ```bash
 pablo version
 ```
+
+
 
 ### Option B — Build from source
 
@@ -79,6 +85,8 @@ After self-deploy, the `pablo` command is available globally.
 
 ---
 
+
+
 ## Quick Start
 
 Create a minimal `pablo.yaml` (or run `pablo init` to generate a sample):
@@ -110,6 +118,8 @@ pablo run -e production             # Execute the deployment
 
 ---
 
+
+
 ## CLI Commands
 
 ```
@@ -124,23 +134,33 @@ Defaults: manifest = `pablo.yaml`, profile = `default`, env = `production`.
 
 ---
 
+
+
 ## Deployment Types
 
-| Type | Description | Local | Remote SSH | Status |
-|------|-------------|-------|------------|--------|
-| `static` | Frontend / SPA — build, filter artifacts, deploy files | Yes | Yes | Working |
-| `binary` | Compiled executables — build, deploy, PATH register | Yes | Yes | Working |
-| `docker` | Docker Compose — git clone/pull, compose up | Yes | No | Working (local) |
-| `git-sync` | Interpreted languages — git pull, post commands | Yes | Yes | Working |
+
+| Type       | Description                                            | Local | Remote SSH | Status  |
+| ---------- | ------------------------------------------------------ | ----- | ---------- | ------- |
+| `static`   | Frontend / SPA — build, filter artifacts, deploy files | Yes   | Yes        | Working |
+| `binary`   | Compiled executables — build, deploy, PATH register    | Yes   | Yes        | Working |
+| `docker`   | Docker Compose — git clone/pull, compose up            | Yes   | Yes        | Working |
+| `git-sync` | Interpreted languages — git pull, post commands        | Yes   | Yes        | Working |
+
+
+
 
 ## Deploy Strategies
 
-| Strategy | Description | Status |
-|----------|-------------|--------|
-| `overwrite` | Copy files over existing (default) | Working |
-| `backup` | Rename existing dir with timestamp, then deploy | Working |
-| `recreate` | Delete target dir, create fresh, deploy | Working |
-| `blue-green` | Zero-downtime swap | Not implemented |
+
+| Strategy     | Description                                     | Status          |
+| ------------ | ----------------------------------------------- | --------------- |
+| `overwrite`  | Copy files over existing (default)              | Working         |
+| `backup`     | Rename existing dir with timestamp, then deploy | Working         |
+| `recreate`   | Delete target dir, create fresh, deploy         | Working         |
+| `blue-green` | Zero-downtime swap                              | Not implemented |
+
+
+
 
 ## Pipeline Phases
 
@@ -154,6 +174,8 @@ Defaults: manifest = `pablo.yaml`, profile = `default`, env = `production`.
 
 ---
 
+
+
 ## What Works
 
 - Full local deploy pipeline for `static` and `binary` types.
@@ -163,24 +185,27 @@ Defaults: manifest = `pablo.yaml`, profile = `default`, env = `production`.
 - Config inheritance — profile settings cascade into environments.
 - Automatic PATH registration (Windows, macOS, Linux user scope).
 - Backup and recreate strategies with protected path detection.
-- `docker` type with local Docker Compose orchestration.
+- `docker` type with local and remote (SSH) Docker Compose orchestration.
 - `git-sync` with local and remote (SSH) git clone/pull.
 - Environment variable injection via `.env` file generation.
 - LSP-powered VS Code extension with completion, hover, and YAML validation.
+- Partial Go unit test coverage for `filter`, `pathutil`, `config`, `template`, `deployer`, `health`, `hooks`, and `system` (`cd src && go test ./...`).
+- Docker-based E2E tests for remote SSH static and docker deploy (`cd tests/e2e && go test -tags=integration ./...`).
+
+
 
 ## Known Limitations
 
-- **No unit tests** — only YAML test fixtures exist under `tests/`.
-- **`blue-green` strategy** — declared but not implemented (returns error).
+- **Partial unit test coverage** — eight packages have `*_test.go`; pipeline, SCM, SSH, and other paths still rely on YAML fixtures under `tests/` (see [goals.md](goals.md) for remaining work).
+- `blue-green` **strategy** — declared but not implemented (returns error).
 - **SSH host key verification** — currently disabled (`InsecureIgnoreHostKey`); see [SECURITY.md](SECURITY.md).
-- **Windows PATH uninstall** — `RemovePath` returns "not yet implemented" on Windows.
-- **Remote docker deploy** — `docker` type only works locally; no remote SSH compose support.
 - **LSP schema validation** — only YAML syntax errors are reported; semantic checks are TODO.
-- **`filepath.Join` on remote paths** — may produce backslashes when a Windows host deploys to Linux.
-- **`builder.Service`** — exists as a standalone service but is currently unused; builds run inline.
+- `builder.Service` — exists as a standalone service but is currently unused; builds run inline.
 - **Snippet versions** — hardcoded; not synced with the `VERSION` file.
 
 ---
+
+
 
 ## Project Structure
 
@@ -214,6 +239,8 @@ schema/                  Schema documentation
 ```
 
 ---
+
+
 
 ## Contributing
 

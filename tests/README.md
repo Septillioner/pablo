@@ -68,6 +68,7 @@ This directory contains test scenarios organized by their target operating syste
 
 ## Structure
 
+- **`e2e/`**: Docker-based integration tests (Ubuntu SSH target). Run with `cd tests/e2e && go test -tags=integration -v ./...`. See [e2e/README.md](e2e/README.md).
 - **`agnostic/`**: Platform-independent tests that should work on any OS using relative paths and generic features.
 - **`windows/`**: Tests specifically for Windows, involving `C:\` paths, `.exe` builds, or Windows-specific system integration.
 - **`linux/`**: Tests for Linux systems, involving absolute Unix paths, systemd services, etc.

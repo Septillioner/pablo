@@ -1,0 +1,16 @@
+services:
+  pablo-e2e-target:
+    build: .
+    container_name: pablo-e2e-target
+    ports:
+      - "2222:22"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../fixtures:/opt/fixtures:ro
+      - ../keys:/run/keys:ro
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "22"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 5s

@@ -7,11 +7,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
+- Docker-based E2E integration tests under `tests/e2e/` (Ubuntu SSH target, `go test -tags=integration`).
+- Go unit tests for priority packages: `filter`, `pathutil`, `config/loader`, `template`, `deployer`, `health`, `hooks`, and `system` (`cd src && go test ./...`).
+- `pkg/pathutil` — `JoinRemote` / `DirRemote` for POSIX remote paths (Windows host → Linux target).
+- Remote SSH `docker` deploy — git sync, env file, and `docker compose up -d` over SSH.
+- Linux system-scope PATH registration via `/etc/profile.d/pablo.sh`.
+- `goals.md` — eksik özellikler ve hedef backlog (P0–P5 öncelik matrisi).
+- `goals.md` — P2 altında genişletilmiş Go unit test hedefleri (paket önceliği, kapsam, CI bağlantısı).
 - Public-facing project metadata: `LICENSE` (MIT), `CONTRIBUTING.md`, `SECURITY.md`, `RELEASING.md`, and this changelog.
 - README sections for prerequisites, install from release, install from source, and self-deploy.
 - `.gitignore` coverage for LSP build outputs, VS Code extension `dist/` / `out/` / `*.vsix`, and Go coverage files.
 
 ### Changed
+- Windows `RemovePath` during `pablo uninstall` — removes Pablo PATH entries via PowerShell (User/Machine scope).
+- Pipeline remote path building uses `pathutil` instead of `filepath.Join` / `filepath.Dir`.
 - `README.md` restructured for first-time external users; release-binary install path documented.
 
 ## [1.0.46] - 2025

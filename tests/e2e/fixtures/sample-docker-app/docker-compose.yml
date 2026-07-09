@@ -1,0 +1,6 @@
+services:
+  web:
+    image: nginx:alpine
+    container_name: pablo-e2e-sample
+    ports:
+      - "18080:80"

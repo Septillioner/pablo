@@ -14,8 +14,16 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+type sshPort interface {
+	Connect(host string, cred *domain.CredentialConfig) (*ssh.Client, error)
+	ExecuteCommand(client *ssh.Client, command string) (string, error)
+	CreateBackup(client *ssh.Client, targetPath string) error
+	TransferPipeline(client *ssh.Client, files []string, sourceBase, remotePath string) error
+	TransferFile(client *ssh.Client, localPath, remotePath string) error
+}
+
 type Service struct {
-	ssh *sshAdapter.Adapter
+	ssh sshPort
 }
 
 func New() *Service {

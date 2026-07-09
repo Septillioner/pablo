@@ -61,12 +61,39 @@ func addPathUnix(newPath string, scope string, projectName string) error {
 		if runtime.GOOS == "darwin" {
 			return addPathMacOSSystem(newPath)
 		}
-		// Linux system scope implementation (e.g., /etc/profile.d) could go here
-		return fmt.Errorf("system scope not yet supported on linux")
+		return addPathLinuxSystem(newPath)
 	}
 
 	// User scope: Update shell configs
 	return addPathUnixUser(newPath, projectName)
+}
+
+// addPathLinuxSystem registers a system-wide PATH entry via /etc/profile.d,
+// the standard drop-in location sourced by login shells on Linux.
+func addPathLinuxSystem(newPath string) error {
+	dir := "/etc/profile.d"
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return fmt.Errorf("path registration failed: %s does not exist", dir)
+	}
+
+	filePath := systemDropInPath()
+
+	content, err := os.ReadFile(filePath)
+	if err == nil && strings.Contains(string(content), newPath) {
+		return nil
+	}
+
+	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("permission denied: failed to write to %s (try running with sudo or use 'user' scope)", filePath)
+	}
+	defer f.Close()
+
+	exportLine := fmt.Sprintf("export PATH=\"$PATH:%s\"\n", newPath)
+	if _, err := f.WriteString(exportLine); err != nil {
+		return fmt.Errorf("failed to write to %s: %w", filePath, err)
+	}
+	return nil
 }
 
 func addPathMacOSSystem(newPath string) error {
@@ -149,19 +176,108 @@ func addPathUnixUser(newPath string, projectName string) error {
 	return nil
 }
 
-// RemovePath removes PATH entries added by pablo for the specified project
-func RemovePath(projectName string) error {
+// RemovePath removes PATH entries added by pablo. On Unix user scope, entries
+// are located by the project comment tag; Windows and Unix system scope require
+// the concrete targetPath (and scope) that was registered, since those stores
+// hold raw paths without a project marker.
+func RemovePath(projectName, targetPath, scope string) error {
 	switch runtime.GOOS {
 	case "windows":
-		return fmt.Errorf("uninstall not yet implemented for Windows")
+		return removePathWindows(targetPath, scope)
 	case "darwin", "linux":
-		return removePathUnix(projectName)
+		if strings.ToLower(scope) == "system" {
+			return removePathUnixSystem(targetPath)
+		}
+		return removePathUnixUser(projectName)
 	default:
 		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
 }
 
-func removePathUnix(projectName string) error {
+// removePathWindows removes the given path from the Windows PATH environment
+// variable in the matching scope, mirroring addPathWindows.
+func removePathWindows(targetPath, scope string) error {
+	targetPath = strings.TrimSuffix(targetPath, "\\")
+	targetPath = strings.TrimSuffix(targetPath, "/")
+
+	targetScope := "User"
+	if strings.ToLower(scope) == "system" || strings.ToLower(scope) == "machine" {
+		targetScope = "Machine"
+	}
+
+	psScript := fmt.Sprintf(`
+		$target = "%s"
+		$scope = "%s"
+		$path = [Environment]::GetEnvironmentVariable("Path", $scope)
+		if ($null -eq $path) { Write-Output "EMPTY"; return }
+		$paths = $path -split ";" | Where-Object { $_ -ne "" -and $_ -ne $target }
+		[Environment]::SetEnvironmentVariable("Path", ($paths -join ";"), $scope)
+		Write-Output "REMOVED"
+	`, targetPath, targetScope)
+
+	cmd := exec.Command("powershell", "-Command", psScript)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("powershell execution failed: %w (output: %s)", err, string(output))
+	}
+
+	return nil
+}
+
+// removePathUnixSystem removes the pablo entry matching targetPath from the
+// system-wide drop-in file (/etc/paths.d on macOS, /etc/profile.d on Linux).
+func removePathUnixSystem(targetPath string) error {
+	targetPath = strings.TrimSuffix(targetPath, "/")
+	targetPath = strings.TrimSuffix(targetPath, "\\")
+
+	filePath := systemDropInPath()
+
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	var kept []string
+	for _, line := range strings.Split(string(content), "\n") {
+		if targetPath != "" && strings.Contains(line, targetPath) {
+			continue
+		}
+		kept = append(kept, line)
+	}
+
+	remaining := strings.TrimSpace(strings.Join(kept, "\n"))
+	if remaining == "" {
+		if err := os.Remove(filePath); err != nil {
+			return fmt.Errorf("permission denied: failed to remove %s (try running with sudo)", filePath)
+		}
+		fmt.Printf("Removed system PATH file %s\n", filePath)
+		return nil
+	}
+
+	if err := os.WriteFile(filePath, []byte(remaining+"\n"), 0644); err != nil {
+		return fmt.Errorf("permission denied: failed to update %s (try running with sudo)", filePath)
+	}
+	fmt.Printf("Removed system PATH entry from %s\n", filePath)
+	return nil
+}
+
+// systemDropInPathOverride redirects system-scope drop-in file paths in tests.
+var systemDropInPathOverride string
+
+func systemDropInPath() string {
+	if systemDropInPathOverride != "" {
+		return systemDropInPathOverride
+	}
+	if runtime.GOOS == "darwin" {
+		return filepath.Join("/etc/paths.d", "pablo")
+	}
+	return "/etc/profile.d/pablo.sh"
+}
+
+func removePathUnixUser(projectName string) error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("could not determine user home directory: %w", err)

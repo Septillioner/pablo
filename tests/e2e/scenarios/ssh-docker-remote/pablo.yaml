@@ -1,0 +1,26 @@
+name: pablo-e2e-ssh-docker
+version: 0.0.1
+
+credentials:
+  e2e-ssh:
+    type: ssh
+    username: deploy
+    key: ../../keys/id_ed25519
+
+profiles:
+  default:
+    type: docker
+    git:
+      repo: file:///home/deploy/repos/sample-docker-app.git
+      branch: main
+    environments:
+      e2e:
+        remote:
+          method: ssh
+          host: 127.0.0.1:2222
+          credential: e2e-ssh
+        deploy:
+          target_path: /tmp/pablo-e2e-docker
+          docker:
+            compose_file: docker-compose.yml
+            build: false

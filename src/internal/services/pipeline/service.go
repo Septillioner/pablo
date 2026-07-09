@@ -19,6 +19,7 @@ import (
 	"pablo/internal/services/hooks"
 	"pablo/internal/services/scm"
 	"pablo/internal/services/template"
+	"pablo/pkg/pathutil"
 	"pablo/pkg/ui"
 
 	"golang.org/x/crypto/ssh"
@@ -230,7 +231,7 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 			}
 		}
 	case "docker":
-		if err := s.deployDocker(profile, env, cfg.BaseDir, start, vars); err != nil {
+		if err := s.deployDocker(profile, env, cfg, cfg.BaseDir, start, vars); err != nil {
 			return err
 		}
 	case "git-sync":
@@ -488,16 +489,9 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 
 	if env.Deploy.EnvFile != "" && len(vars) > 0 {
 		ui.Log("*", fmt.Sprintf("Generating remote env file: %s", env.Deploy.EnvFile))
-		remoteEnvPath := filepath.Join(targetPath, env.Deploy.EnvFile)
-		var sb strings.Builder
-		for k, v := range vars {
-			sb.WriteString(fmt.Sprintf("%s=%s\n", k, v))
-		}
-		// Ensure remote directory exists before writing
-		cmd := fmt.Sprintf("mkdir -p %s && cat << 'EOF' > %s\n%sEOF", filepath.Dir(remoteEnvPath), remoteEnvPath, sb.String())
-		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, cmd); err != nil {
+		if err := s.writeRemoteEnvFile(sshClient, targetPath, env.Deploy.EnvFile, vars); err != nil {
 			ui.Log("!", fmt.Sprintf("Failed to write remote env file: %v", err))
-			return fmt.Errorf("failed to write remote env file: %w", err)
+			return err
 		}
 		ui.Log("+", "Remote env file generated")
 	}
@@ -505,7 +499,11 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 	return nil
 }
 
-func (s *Service) deployDocker(profile *domain.Profile, env domain.Environment, baseDir string, start time.Time, vars map[string]string) error {
+func (s *Service) deployDocker(profile *domain.Profile, env domain.Environment, cfg *domain.Config, baseDir string, start time.Time, vars map[string]string) error {
+	if env.Remote != nil && env.Remote.Method == "ssh" {
+		return s.deployDockerRemote(profile, env, cfg, start, vars)
+	}
+
 	ui.Log("*", "Docker deployment initiated.")
 	if profile.Git == nil {
 		return fmt.Errorf("git configuration required for docker deployment")
@@ -545,6 +543,114 @@ func (s *Service) deployDocker(profile *domain.Profile, env domain.Environment, 
 		ui.Log("+", "Docker compose started")
 	}
 
+	return nil
+}
+
+func (s *Service) deployDockerRemote(profile *domain.Profile, env domain.Environment, cfg *domain.Config, start time.Time, vars map[string]string) error {
+	ui.Log("*", "Remote Docker deployment initiated.")
+	if profile.Git == nil {
+		return fmt.Errorf("git configuration required for docker deployment")
+	}
+
+	sshClient, err := s.getSSHClient(env, cfg)
+	if err != nil {
+		ui.Log("-", fmt.Sprintf("SSH connection failed: %v", err))
+		ui.Result(false, time.Since(start))
+		return err
+	}
+	defer sshClient.Close()
+	ui.Log("+", "SSH connection established")
+
+	targetPath := env.Deploy.TargetPath
+	ui.Log(">", fmt.Sprintf("Target: %s:%s", env.Remote.Host, targetPath))
+
+	if err := s.syncRepoRemote(sshClient, profile.Git, targetPath); err != nil {
+		ui.Log("-", err.Error())
+		ui.Result(false, time.Since(start))
+		return err
+	}
+
+	if env.Deploy.EnvFile != "" && len(vars) > 0 {
+		if err := s.writeRemoteEnvFile(sshClient, targetPath, env.Deploy.EnvFile, vars); err != nil {
+			ui.Log("!", fmt.Sprintf("Failed to write remote env file: %v", err))
+			return err
+		}
+		ui.Log("+", "Remote env file generated")
+	}
+
+	if env.Deploy.Docker != nil {
+		ui.Log(">", "Running Docker Compose on remote...")
+		composeFile := env.Deploy.Docker.ComposeFile
+		if !strings.HasPrefix(composeFile, "/") {
+			composeFile = pathutil.JoinRemote(targetPath, composeFile)
+		}
+
+		buildFlag := ""
+		if env.Deploy.Docker.Build {
+			buildFlag = " --build"
+		}
+
+		composeCmd := fmt.Sprintf("cd %s && docker compose -f %s up -d%s", targetPath, composeFile, buildFlag)
+		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, composeCmd); err != nil {
+			ui.Log("-", "Remote docker compose failed")
+			ui.Result(false, time.Since(start))
+			return fmt.Errorf("remote docker compose failed: %w", err)
+		}
+		ui.Log("+", "Docker compose started on remote")
+	}
+
+	return nil
+}
+
+// syncRepoRemote clones or pulls the configured git repository into targetPath
+// on the remote host over an existing SSH connection.
+func (s *Service) syncRepoRemote(sshClient *ssh.Client, git *domain.GitConfig, targetPath string) error {
+	ui.Log("*", "Marking remote directory as safe in Git configuration")
+	safeCmd := fmt.Sprintf("git config --global --add safe.directory %s", targetPath)
+	s.deployer.ExecuteRemoteCommand(sshClient, safeCmd) // Ignore error, might not exist yet
+
+	checkCmd := fmt.Sprintf("test -d %s/.git && echo 'exists' || echo 'not found'", targetPath)
+	output, _ := s.deployer.ExecuteRemoteCommand(sshClient, checkCmd)
+
+	if strings.Contains(output, "exists") {
+		ui.Log(">", "Git Pulling...")
+		pullCmd := fmt.Sprintf("cd %s && git pull origin %s", targetPath, git.Branch)
+		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, pullCmd); err != nil {
+			return fmt.Errorf("remote git pull failed: %w", err)
+		}
+	} else {
+		ui.Log(">", "Git Cloning...")
+		parentDir := pathutil.DirRemote(targetPath)
+		ensureDirCmd := fmt.Sprintf("mkdir -p %s", parentDir)
+		s.deployer.ExecuteRemoteCommand(sshClient, ensureDirCmd) // Ensure parent dir exists
+
+		cloneCmd := fmt.Sprintf("git clone -b %s %s %s", git.Branch, git.Repo, targetPath)
+		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, cloneCmd); err != nil {
+			return fmt.Errorf("remote git clone failed: %w", err)
+		}
+	}
+	ui.Log("+", "Remote code synced")
+	return nil
+}
+
+// writeRemoteEnvFile writes key/value variables to an env file on the remote
+// host, creating the parent directory first.
+func (s *Service) writeRemoteEnvFile(sshClient *ssh.Client, targetPath, envFile string, vars map[string]string) error {
+	var content strings.Builder
+	for k, v := range vars {
+		content.WriteString(fmt.Sprintf("%s=%s\n", k, v))
+	}
+
+	remoteEnvPath := pathutil.JoinRemote(targetPath, envFile)
+	ensureDirCmd := fmt.Sprintf("mkdir -p %s", pathutil.DirRemote(remoteEnvPath))
+	if _, err := s.deployer.ExecuteRemoteCommand(sshClient, ensureDirCmd); err != nil {
+		return fmt.Errorf("failed to create remote directory for env file: %w", err)
+	}
+
+	cmd := fmt.Sprintf("cat << 'EOF' > %s\n%sEOF", remoteEnvPath, content.String())
+	if _, err := s.deployer.ExecuteRemoteCommand(sshClient, cmd); err != nil {
+		return fmt.Errorf("failed to write remote env file: %w", err)
+	}
 	return nil
 }
 
@@ -603,59 +709,17 @@ func (s *Service) deployGitSyncRemote(profile *domain.Profile, env domain.Enviro
 
 	targetPath := env.Deploy.TargetPath
 
-	// Mark remote directory as safe (Fixes dubious ownership on remote)
-	ui.Log("*", "Marking remote directory as safe in Git configuration")
-	safeCmd := fmt.Sprintf("git config --global --add safe.directory %s", targetPath)
-	s.deployer.ExecuteRemoteCommand(sshClient, safeCmd) // Ignore error, might not exist
-
-	// Perform Git Sync on Remote
-	// Check if directory exists and is a git repo
-	checkCmd := fmt.Sprintf("test -d %s/.git && echo 'exists' || echo 'not found'", targetPath)
-	output, _ := s.deployer.ExecuteRemoteCommand(sshClient, checkCmd)
-
-	if strings.Contains(output, "exists") {
-		ui.Log(">", "Git Pulling...")
-		pullCmd := fmt.Sprintf("cd %s && git pull origin %s", targetPath, profile.Git.Branch)
-		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, pullCmd); err != nil {
-			ui.Log("-", fmt.Sprintf("Remote git pull failed: %v", err))
-			ui.Result(false, time.Since(start))
-			return fmt.Errorf("remote git pull failed: %w", err)
-		}
-	} else {
-		ui.Log(">", "Git Cloning...")
-		parentDir := filepath.Dir(targetPath)
-		ensureDirCmd := fmt.Sprintf("mkdir -p %s", parentDir)
-		s.deployer.ExecuteRemoteCommand(sshClient, ensureDirCmd) // Ensure parent dir exists
-
-		cloneCmd := fmt.Sprintf("git clone -b %s %s %s", profile.Git.Branch, profile.Git.Repo, targetPath)
-		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, cloneCmd); err != nil {
-			ui.Log("-", fmt.Sprintf("Remote git clone failed: %v", err))
-			ui.Result(false, time.Since(start))
-			return fmt.Errorf("remote git clone failed: %w", err)
-		}
+	if err := s.syncRepoRemote(sshClient, profile.Git, targetPath); err != nil {
+		ui.Log("-", err.Error())
+		ui.Result(false, time.Since(start))
+		return err
 	}
-	ui.Log("+", "Remote code synced")
 
 	if env.Deploy.EnvFile != "" && len(vars) > 0 {
 		ui.Log("*", fmt.Sprintf("Generating remote env file: %s", env.Deploy.EnvFile))
-
-		var envContent strings.Builder
-		for k, v := range vars {
-			envContent.WriteString(fmt.Sprintf("%s=%s\n", k, v))
-		}
-
-		remoteEnvPath := filepath.Join(targetPath, env.Deploy.EnvFile)
-
-		ensureDirCmd := fmt.Sprintf("mkdir -p %s", filepath.Dir(remoteEnvPath))
-		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, ensureDirCmd); err != nil {
-			ui.Log("!", fmt.Sprintf("Failed to create remote directory for env file: %v", err))
-			return fmt.Errorf("failed to create remote directory for env file: %w", err)
-		}
-
-		cmd := fmt.Sprintf("cat << 'EOF' > %s\n%sEOF", remoteEnvPath, envContent.String())
-		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, cmd); err != nil {
+		if err := s.writeRemoteEnvFile(sshClient, targetPath, env.Deploy.EnvFile, vars); err != nil {
 			ui.Log("!", fmt.Sprintf("Failed to write remote env file: %v", err))
-			return fmt.Errorf("failed to write remote env file: %w", err)
+			return err
 		}
 		ui.Log("+", "Remote env file generated")
 	}
@@ -687,7 +751,11 @@ func (s *Service) Uninstall(manifestPath, profileName, envName string, removeBac
 	}
 
 	if profile.Type == "binary" && env.RegisterPath != nil {
-		system.RemovePath(cfg.Name)
+		scope := env.RegisterPath.Scope
+		if scope == "" {
+			scope = "user"
+		}
+		system.RemovePath(cfg.Name, env.Deploy.TargetPath, scope)
 	}
 
 	if removeBackups {
