@@ -1,6 +1,7 @@
 # Binaries / build outputs
 bin/
 build/
+dist/
 release/
 *.exe
 *.exe~
@@ -49,3 +50,4 @@ node_modules/
 PABLO-CS.md
 .cursor/
 PMAP.md
+pablo-sepy.yaml

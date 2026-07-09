@@ -352,6 +352,11 @@ func (s *Service) getSSHClient(env domain.Environment, cfg *domain.Config) (*ssh
 func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, baseDir string, allowProtected bool, vars map[string]string, start time.Time) error {
 	ui.Log("*", "Local deployment initiated.")
 	artifactBase, include, exclude := s.resolveArtifacts(profile, env, baseDir)
+	if err := os.MkdirAll(artifactBase, 0o755); err != nil {
+		ui.Log("-", "Failed to prepare artifact directory")
+		ui.Result(false, time.Since(start))
+		return fmt.Errorf("failed to prepare artifact directory: %w", err)
+	}
 	files, err := filter.GetFiles(artifactBase, include, exclude)
 	if err != nil {
 		ui.Log("-", "Filtering failed")
@@ -361,6 +366,11 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 	ui.Log("+", fmt.Sprintf("Found %d artifact(s) to deploy", len(files)))
 
 	targetPath := s.resolvePath(baseDir, env.Deploy.TargetPath)
+	if err := os.MkdirAll(targetPath, 0o755); err != nil {
+		ui.Log("-", "Failed to prepare deploy target directory")
+		ui.Result(false, time.Since(start))
+		return fmt.Errorf("failed to prepare deploy target directory: %w", err)
+	}
 	strategy := env.Deploy.Strategy
 	if strategy == "" {
 		strategy = "overwrite"

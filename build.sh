@@ -3,9 +3,9 @@
 # Pablo Build Script
 # This script handles multi-platform builds for the Pablo CLI.
 
-# Build directory
-BUILD_DIR="build"
-mkdir -p $BUILD_DIR
+# Build directory (override: BUILD_DIR=dist/releases bash build.sh all)
+BUILD_DIR="${BUILD_DIR:-build}"
+mkdir -p "$BUILD_DIR"
 
 # App name
 APP_NAME="pablo"
