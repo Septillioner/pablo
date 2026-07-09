@@ -3,7 +3,7 @@
   "displayName": "Pablo",
   "description": "Pablo is a production-ready CLI deployment helper designed to automate the process of building, filtering, and deploying artifacts across multiple environments.",
   "icon": "logo.png",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "publisher": "septillioner",
   "license": "Apache-2.0",
   "repository": {

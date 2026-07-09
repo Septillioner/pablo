@@ -25,5 +25,6 @@
 | Linux (amd64) | `pablo-linux-amd64` |
 | Windows (amd64) | `pablo-windows-amd64.exe` |
 | Windows (arm64) | `pablo-windows-arm64.exe` |
+| VS Code extension | `pablo-1.4.0.vsix` |
 
-Verify downloads with `checksums.txt` (SHA-256).
+Verify downloads with `checksums.txt` (SHA-256). Also on the Marketplace as `septillioner.pablo`.
