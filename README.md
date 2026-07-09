@@ -1,6 +1,6 @@
 # Pablo
 
-**Pablo** is a CLI deployment helper that automates building, filtering, and deploying artifacts across multiple environments. It supports local and remote (SSH) targets driven by a single YAML manifest.
+**Pablo** is a CLI deployment helper that automates building, filtering, and deploying artifacts across local and remote (SSH) environments from a single YAML manifest (`pablo.yaml`).
 
 > **Documentation:** [docs/](docs/README.md) — installation, guides, reference, and troubleshooting.
 
@@ -13,28 +13,40 @@
 - **Remote SSH deploy** — tar-based streaming for fast bulk transfers.
 - **Safety checks** — protected system directory detection and automatic backups.
 - **Self-deploy** — Pablo can build and install itself.
-- **VS Code extension** — syntax highlighting, autocomplete, hover docs, and snippets for `pablo.yaml`.
+- **VS Code extension** — LSP-powered completion, hover docs, validation, and Run commands for `pablo.yaml`.
 
 ---
 
 ## Requirements
 
-- **Go** 1.25.5 or newer (only required to build from source)
-- **Git** (only required for `git-sync` deployment type)
-- **Docker** (only required for `docker` deployment type)
-- **OpenSSH client / private key** (only required for remote SSH deploys)
-- Supported host platforms: Windows, macOS, Linux
+| Component | When needed |
+|-----------|-------------|
+| **Go 1.25.5+** | Building from source only |
+| **Git** | `git-sync` and `docker` deployment types |
+| **Docker** | `docker` deployment type |
+| **OpenSSH client** | Remote SSH deploys |
+
+Supported host platforms: Windows, macOS, Linux.
 
 ---
 
 ## Install
 
-```bash
-# Download from Releases, or build from source:
-git clone https://github.com/septillioner/pablo.git
-cd pablo && ./build.sh
-pablo version
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/septillioner/pablo/main/install.ps1 | iex
 ```
+
+**macOS / Linux:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/main/install.sh | bash
+```
+
+Pin a version: set `PABLO_VERSION=v1.4.0` before running the one-liner.
+
+Or download from [Releases](https://github.com/septillioner/pablo/releases), build from source, or use self-deploy.
 
 Full instructions: [docs/getting-started/installation.md](docs/getting-started/installation.md)
 
@@ -45,7 +57,8 @@ Full instructions: [docs/getting-started/installation.md](docs/getting-started/i
 ```bash
 pablo init
 pablo check
-pablo run -e production
+pablo run -p default -e production
+# or: pablo run default/production
 ```
 
 See [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md).
@@ -55,11 +68,11 @@ See [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md).
 ## CLI
 
 ```
-pablo run        -p <profile> -e <env> [-f pablo.yaml] [--force]
-pablo check      -f <file> [-p profile] [-e env]
-pablo inspect    -f <file> [--json]
+pablo run [profile/env]  -p <profile> -e <env> [-f pablo.yaml] [--force]
+pablo check              -f <file> [-p profile] [-e env]
+pablo inspect            -f <file> [--json]
 pablo init
-pablo uninstall  -p <profile> -e <env> [--remove-backups]
+pablo uninstall          -p <profile> -e <env> [--remove-backups]
 pablo version
 pablo lsp
 ```
@@ -85,15 +98,17 @@ Details: [docs/reference/capabilities.md](docs/reference/capabilities.md)
 
 ## Known Limitations
 
-- `blue-green` strategy and `deploy.service` (systemd/PM2) — schema only, not implemented at runtime.
+- `blue-green` strategy — declared in schema, not implemented at runtime.
+- `deploy.service` (systemd/PM2) — schema only; use `post_commands` instead.
 - SSH host key verification disabled — see [SECURITY.md](SECURITY.md).
-- Partial unit test coverage — see [docs/roadmap.md](docs/roadmap.md).
+
+More: [docs/reference/capabilities.md](docs/reference/capabilities.md) · [docs/roadmap.md](docs/roadmap.md)
 
 ---
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/contributing.md).
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/contributing.md](docs/development/contributing.md).
 
 ## Security
 

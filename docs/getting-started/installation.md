@@ -17,7 +17,51 @@ Supported host platforms: Windows, macOS, Linux.
 
 ---
 
-## Option A — Pre-built binary (recommended)
+## Option A — One-liner (recommended)
+
+Downloads the latest release binary for your OS and architecture, verifies the SHA-256 checksum, and installs to a system path when permitted (otherwise a user path).
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/septillioner/pablo/main/install.ps1 | iex
+```
+
+**macOS / Linux:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/main/install.sh | bash
+```
+
+**Pin a version:**
+
+```powershell
+# Windows
+$env:PABLO_VERSION = "v1.4.0"
+irm https://raw.githubusercontent.com/septillioner/pablo/main/install.ps1 | iex
+```
+
+```bash
+# macOS / Linux
+PABLO_VERSION=v1.4.0 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/main/install.sh | bash
+```
+
+**Install locations:**
+
+| Platform | System (preferred) | User (fallback) |
+|----------|-------------------|-----------------|
+| Windows | `C:\Program Files\Pablo\pablo.exe` | `%LOCALAPPDATA%\Pablo\pablo.exe` |
+| macOS / Linux | `/usr/local/bin/pablo` | `~/.local/bin/pablo` |
+
+Verify:
+
+```bash
+pablo version
+```
+
+---
+
+## Option B — Pre-built binary
 
 1. Open the [Releases page](https://github.com/septillioner/pablo/releases).
 2. Download the file for your OS and architecture:
@@ -42,7 +86,7 @@ pablo version
 
 ---
 
-## Option B — Build from source
+## Option C — Build from source
 
 ```bash
 git clone https://github.com/septillioner/pablo.git
@@ -64,9 +108,9 @@ go run main.go version
 
 ---
 
-## Option C — Self-deploy
+## Option D — Self-deploy
 
-Pablo can build and register itself in your `PATH` using its own manifest ([pablo.yaml](../pablo.yaml)):
+Pablo can build and register itself in your `PATH` using its own manifest ([pablo.yaml](../../pablo.yaml)):
 
 ```bash
 # macOS / Linux
