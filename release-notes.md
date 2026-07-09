@@ -1,20 +1,19 @@
-## Pablo v1.5.0
+## Pablo v1.5.1
 
 ### Added
 
-- One-liner CLI installers — `install.sh` (macOS/Linux), `install.ps1` (Windows PowerShell), and `install.cmd` (Windows bootstrap).
-- Installers download release binaries from GitHub, verify SHA-256 checksums, and install to system or user PATH (`PABLO_VERSION` pins a release tag).
-- Visual Studio 2026 extension — LSP via `pablo lsp`, CodeLens **Run**, profile/environment gutter stripes, manifest commands, YAML snippets, and executable picker.
-- `docs/guides/visual-studio.md` — install, build, debug, and feature overview for the VS extension.
+- `pablo update` — download the latest CLI binary for your OS from GitHub Releases, verify the checksum, and replace the running executable.
+- `pablo update --check` — report whether a newer release is available without downloading.
+- Optional pin via `--version` / `PABLO_VERSION`.
+
+### Fixed
+
+- Windows one-liner installer — safer overwrite when `pablo.exe` is locked; PowerShell parse error in error messages.
+- `install.cmd` — temp-file download instead of `iex (irm ...)`.
 
 ### Changed
 
-- README and installation docs — one-liner install as the recommended path; PowerShell uses temp-file execution instead of `irm | iex`.
-- PowerShell installer — PATH shadowing warnings and post-install `pablo` command resolution checks.
-
-### Removed
-
-- Bundled `pablo-lsp` binary from the VS Code extension (uses `pablo lsp` from the CLI on PATH).
+- macOS/Linux installer uses temp + `mv` when replacing an existing binary.
 
 ### Downloads
 
@@ -25,7 +24,7 @@
 | Linux (amd64) | `pablo-linux-amd64` |
 | Windows (amd64) | `pablo-windows-amd64.exe` |
 | Windows (arm64) | `pablo-windows-arm64.exe` |
-| VS Code extension | `pablo-1.5.0.vsix` |
-| Visual Studio 2026 extension | `pablo-vs2026-1.5.0.vsix` |
+| VS Code extension | `pablo-1.5.1.vsix` |
+| Visual Studio 2026 extension | `pablo-vs2026-1.5.1.vsix` |
 
 Verify downloads with `checksums.txt` (SHA-256).

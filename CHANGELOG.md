@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-07-09
+
+### Added
+
+- `pablo update` — download the latest CLI binary for the current OS/arch from GitHub Releases, verify SHA-256, and replace the running executable (`--check`, `--version` / `PABLO_VERSION`).
+
+### Fixed
+
+- Windows installer (`install.ps1`) — rename-replace when overwriting a locked `pablo.exe` instead of failing on `Copy-Item`.
+- PowerShell parse error in installer error strings (`$TargetPath:` → `${TargetPath}:`).
+- `install.cmd` — download `install.ps1` to a temp file and run with `-File` instead of `iex (irm ...)`.
+
+### Changed
+
+- `install.sh` — install via temp file + `mv` for safer overwrite of an existing binary.
+
 ## [1.5.0] - 2026-07-09
 
 ### Added
@@ -97,7 +113,8 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/septillioner/pablo/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/septillioner/pablo/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/septillioner/pablo/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/septillioner/pablo/compare/v1.0.46...v1.3.0
