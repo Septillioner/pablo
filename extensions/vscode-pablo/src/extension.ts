@@ -11,44 +11,48 @@ import * as fs from 'fs';
 
 let client: LanguageClient;
 
-export function activate(context: vscode.ExtensionContext) {
-	// Create output channel for logging
-	const outputChannel = vscode.window.createOutputChannel('Pablo Language Server');
-	outputChannel.show(true);
-	outputChannel.appendLine('Pablo extension is now active!');
+function resolvePabloBinary(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel): string | undefined {
+	const configured = vscode.workspace.getConfiguration('pablo').get<string>('path');
+	if (configured && configured.trim() !== '') {
+		const configuredPath = configured.trim();
+		if (fs.existsSync(configuredPath)) {
+			return configuredPath;
+		}
+		outputChannel.appendLine(`Configured pablo.path not found: ${configuredPath}`);
+	}
 
-	// LSP Server configuration - use absolute path resolution
-	// In production, we'll have binaries for each platform: pablo-lsp-darwin-arm64, pablo-lsp-win32-x64.exe, etc.
-	const platform = process.platform; // win32, darwin, linux
-	const arch = process.arch; // x64, arm64
-	const binaryName = `pablo-lsp-${platform}-${arch}${platform === 'win32' ? '.exe' : ''}`;
+	const platform = process.platform;
+	const arch = process.arch;
+	const bundledName = `pablo-${platform}-${arch}${platform === 'win32' ? '.exe' : ''}`;
+	const bundledCandidates = [
+		path.resolve(context.extensionPath, 'bin', bundledName),
+		path.resolve(context.extensionPath, 'bin', platform === 'win32' ? 'pablo.exe' : 'pablo'),
+	];
 
-	let serverModule = path.resolve(context.extensionPath, 'bin', binaryName);
-
-	// Fallback to the default name for development
-	if (!fs.existsSync(serverModule)) {
-		const devBinary = path.resolve(context.extensionPath, 'bin', `pablo-lsp${platform === 'win32' ? '.exe' : ''}`);
-		if (fs.existsSync(devBinary)) {
-			serverModule = devBinary;
+	for (const candidate of bundledCandidates) {
+		if (fs.existsSync(candidate)) {
+			return candidate;
 		}
 	}
 
-	if (fs.existsSync(serverModule)) {
-		try {
-			serverModule = fs.realpathSync(serverModule);
-			outputChannel.appendLine(`Resolved server module path: ${serverModule}`);
-		} catch (err) {
-			outputChannel.appendLine(`Error resolving realpath: ${err}`);
-		}
-	} else {
-		outputChannel.appendLine(`CRITICAL: Server binary not found at ${serverModule}`);
-		vscode.window.showErrorMessage(`Pablo LSP binary not found for your platform (${platform}-${arch}).`);
+	return 'pablo';
+}
+
+export function activate(context: vscode.ExtensionContext) {
+	const outputChannel = vscode.window.createOutputChannel('Pablo Language Server');
+	outputChannel.appendLine('Pablo extension is now active!');
+
+	const pabloBinary = resolvePabloBinary(context, outputChannel);
+	if (!pabloBinary) {
+		vscode.window.showErrorMessage('Pablo binary not found. Set pablo.path or install pablo on PATH.');
 		return;
 	}
 
+	outputChannel.appendLine(`Using Pablo binary: ${pabloBinary}`);
+
 	const serverOptions: ServerOptions = {
-		run: { command: serverModule, transport: TransportKind.stdio },
-		debug: { command: serverModule, transport: TransportKind.stdio }
+		run: { command: pabloBinary, args: ['lsp'], transport: TransportKind.stdio },
+		debug: { command: pabloBinary, args: ['lsp'], transport: TransportKind.stdio }
 	};
 
 	const clientOptions: LanguageClientOptions = {
@@ -70,7 +74,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	client.start();
 
-	// Commands
 	context.subscriptions.push(vscode.commands.registerCommand('pablo.check', () => {
 		runPabloCommand('check', true);
 	}));
@@ -98,7 +101,7 @@ function runPabloCommand(command: string, fileSpecific: boolean = false) {
 			return;
 		}
 	} else if (editor && editor.document.fileName.match(/pablo.*\.ya?ml/)) {
-		args = ` -c "${editor.document.fileName}"`;
+		args = ` -f "${editor.document.fileName}"`;
 	}
 
 	const terminal = vscode.window.terminals.find(t => t.name === 'Pablo CLI') || vscode.window.createTerminal('Pablo CLI');

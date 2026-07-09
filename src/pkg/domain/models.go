@@ -9,7 +9,6 @@ type Config struct {
 	Profiles    map[string]Profile          `yaml:"profiles"`
 
 	// BaseDir is the directory where the manifest file is located.
-	// This is used to resolve relative paths in the configuration.
 	BaseDir string `yaml:"-"`
 
 	// Legacy fields for backward compatibility
@@ -21,12 +20,12 @@ type Config struct {
 }
 
 type CredentialConfig struct {
-	Type       string `yaml:"type"` // ssh, token, basic
+	Type       string `yaml:"type"`
 	Username   string `yaml:"username,omitempty"`
 	Password   string `yaml:"password,omitempty"`
 	Key        string `yaml:"key,omitempty"`
 	Passphrase string `yaml:"passphrase,omitempty"`
-	Value      string `yaml:"value,omitempty"` // for tokens
+	Value      string `yaml:"value,omitempty"`
 }
 
 type EnvConfig struct {
@@ -35,7 +34,7 @@ type EnvConfig struct {
 }
 
 type Profile struct {
-	Type         string `yaml:"type"` // static, docker, binary, git-sync
+	Type         string `yaml:"type"`
 	EnvConfig    `yaml:",inline"`
 	Build        *BuildConfig           `yaml:"build,omitempty"`
 	Git          *GitConfig             `yaml:"git,omitempty"`
@@ -48,7 +47,7 @@ type Profile struct {
 type GitConfig struct {
 	Repo       string `yaml:"repo"`
 	Branch     string `yaml:"branch,omitempty"`
-	Credential string `yaml:"credential,omitempty"` // reference to credentials
+	Credential string `yaml:"credential,omitempty"`
 }
 
 type ArtifactsConfig struct {
@@ -58,16 +57,11 @@ type ArtifactsConfig struct {
 }
 
 func (a *ArtifactsConfig) UnmarshalYAML(value *yaml.Node) error {
-	// Support simple string format: output_dir: ./path
 	if value.Kind == yaml.ScalarNode {
 		a.Dir = value.Value
 		return nil
 	}
 
-	// Support object format:
-	// output_dir:
-	//   dir: ./path
-	//   include: [...]
 	type alias ArtifactsConfig
 	var aux alias
 	if err := value.Decode(&aux); err != nil {
@@ -90,30 +84,29 @@ type Environment struct {
 	EnvConfig    `yaml:",inline"`
 	RegisterPath *RegisterPathConfig `yaml:"register_path,omitempty"`
 
-	// Legacy fields for backward compatibility
 	TargetPath string `yaml:"target_path,omitempty"`
 	Strategy   string `yaml:"strategy,omitempty"`
 }
 
 type RemoteConfig struct {
-	Method     string `yaml:"method"` // ssh, ftp, etc.
+	Method     string `yaml:"method"`
 	Host       string `yaml:"host"`
 	Credential string `yaml:"credential"`
 }
 
 type DeployConfig struct {
-	Method       string           `yaml:"method,omitempty"` // ssh, ftp, s3
+	Method       string           `yaml:"method,omitempty"`
 	Source       *ArtifactsConfig `yaml:"source,omitempty"`
 	SSH          *SSHConfig       `yaml:"ssh,omitempty"`
-	Credential   string           `yaml:"credential,omitempty"` // Deprecated: use SSH.Credential
-	Host         string           `yaml:"host,omitempty"`       // Deprecated: use SSH.Host
+	Credential   string           `yaml:"credential,omitempty"`
+	Host         string           `yaml:"host,omitempty"`
 	TargetPath   string           `yaml:"target_path"`
-	Strategy     string           `yaml:"strategy,omitempty"` // backup, overwrite
+	Strategy     string           `yaml:"strategy,omitempty"`
 	Docker       *DockerConfig    `yaml:"docker,omitempty"`
 	Service      *ServiceConfig   `yaml:"service,omitempty"`
 	PreCommands  []string         `yaml:"pre_commands,omitempty"`
 	PostCommands []string         `yaml:"post_commands,omitempty"`
-	Remote       string           `yaml:"remote,omitempty"` // tar (default) or legacy
+	Remote       string           `yaml:"remote,omitempty"`
 	EnvConfig    `yaml:",inline"`
 }
 
@@ -129,13 +122,13 @@ type DockerConfig struct {
 }
 
 type ServiceConfig struct {
-	Type    string `yaml:"type"` // systemd, pm2
+	Type    string `yaml:"type"`
 	Name    string `yaml:"name"`
 	Restart bool   `yaml:"restart,omitempty"`
 }
 
 type RegisterPathConfig struct {
-	Scope string `yaml:"scope"` // "user" or "system"
+	Scope string `yaml:"scope"`
 }
 
 type PipelineConfig struct {
@@ -149,19 +142,16 @@ type LifecycleHooks struct {
 	Post string `yaml:"post,omitempty"`
 }
 
-// Legacy SourceConfig for backward compatibility
 type SourceConfig struct {
 	Path    string   `yaml:"path,omitempty"`
 	Exclude []string `yaml:"exclude,omitempty"`
 	Include []string `yaml:"include,omitempty"`
 }
 
-// Helper methods that operate on domain objects can stay here
 func (c *Config) GetProfile(name string) (*Profile, error) {
 	profile, ok := c.Profiles[name]
-	// Error handling could be moved to service layer, but basic lookup is fine here
 	if !ok {
-		return nil, nil // Return nil if simply not found, let caller decide if it's an error
+		return nil, nil
 	}
 	return &profile, nil
 }

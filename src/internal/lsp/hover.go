@@ -1,7 +1,9 @@
-package main
+package lsp
 
 import (
 	"strings"
+
+	"pablo/pkg/schema"
 
 	"github.com/tliron/glsp"
 	protocol "github.com/tliron/glsp/protocol_3_16"
@@ -9,31 +11,25 @@ import (
 
 func textDocumentHover(context *glsp.Context, params *protocol.HoverParams) (*protocol.Hover, error) {
 	docURI := params.TextDocument.URI
-	content, ok := documents[docURI]
+	doc, ok := documents[docURI]
 	if !ok {
 		return nil, nil
 	}
 
-	lines := strings.Split(content, "\n")
+	lines := strings.Split(doc.content, "\n")
 	if params.Position.Line >= uint32(len(lines)) {
 		return nil, nil
 	}
 
-	// Get word at position
 	line := lines[params.Position.Line]
 	word := getWordAt(line, int(params.Position.Character))
 	if word == "" {
 		return nil, nil
 	}
 
-	path := getYAMLPath(lines, int(params.Position.Line), int(params.Position.Character))
-
-	// If path currently ends with the word we found, it's a value or the key itself
-	// The path from getYAMLPath for a value already includes the key.
-	// We want to find the field definition for that key.
-
-	field := getFieldAtPath(PabloSchema, path)
-	if field == nil {
+	path := schema.GetYAMLPath(lines, int(params.Position.Line), int(params.Position.Character))
+	field := getFieldAtPath(path)
+	if field == nil || field.Description == "" {
 		return nil, nil
 	}
 
@@ -50,7 +46,6 @@ func getWordAt(line string, char int) string {
 		return ""
 	}
 
-	// Simple word boundary check
 	start := char
 	for start > 0 && isWordChar(line[start-1]) {
 		start--

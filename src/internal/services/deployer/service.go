@@ -9,7 +9,7 @@ import (
 	"time"
 
 	sshAdapter "pablo/internal/adapters/ssh"
-	"pablo/internal/domain"
+	"pablo/pkg/domain"
 
 	"golang.org/x/crypto/ssh"
 )

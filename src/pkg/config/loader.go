@@ -2,13 +2,12 @@ package config
 
 import (
 	"os"
-	"pablo/internal/domain"
+	"pablo/pkg/domain"
 	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
 
-// Loader handles configuration loading
 type Loader struct{}
 
 func NewLoader() *Loader {
@@ -26,22 +25,34 @@ func (l *Loader) Load(path string) (*domain.Config, error) {
 		return nil, err
 	}
 
+	return l.LoadFromBytes(data, filepath.Dir(absPath))
+}
+
+func (l *Loader) LoadFromBytes(data []byte, baseDir string) (*domain.Config, error) {
 	var cfg domain.Config
-	err = yaml.Unmarshal(data, &cfg)
-	if err != nil {
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err
 	}
 
-	// Set BaseDir to the directory where the manifest is located
-	cfg.BaseDir = filepath.Dir(absPath)
+	cfg.BaseDir = baseDir
+	applyInheritance(&cfg)
+	return &cfg, nil
+}
 
-	// Handle inheritance: Propagate Profile-level settings to Environments
+func (l *Loader) ParseDocument(data []byte) (*yaml.Node, error) {
+	var root yaml.Node
+	if err := yaml.Unmarshal(data, &root); err != nil {
+		return nil, err
+	}
+	if len(root.Content) == 0 {
+		return &root, nil
+	}
+	return root.Content[0], nil
+}
+
+func applyInheritance(cfg *domain.Config) {
 	for name, profile := range cfg.Profiles {
-
-		// 1. Inherit from Profile to Environments
 		for envName, env := range profile.Environments {
-
-			// A. Propagate Global Variables to Environment level
 			if profile.EnvConfig.Variables != nil {
 				if env.EnvConfig.Variables == nil {
 					env.EnvConfig.Variables = make(map[string]string)
@@ -56,13 +67,11 @@ func (l *Loader) Load(path string) (*domain.Config, error) {
 				env.EnvConfig.EnvFile = profile.EnvConfig.EnvFile
 			}
 
-			// B. Propagate Build Config (default if not set in env)
 			if profile.Build != nil {
 				if env.Build == nil {
 					b := *profile.Build
 					env.Build = &b
 				} else {
-					// Merge profile build into env build
 					if env.Build.Path == "" {
 						env.Build.Path = profile.Build.Path
 					}
@@ -82,7 +91,6 @@ func (l *Loader) Load(path string) (*domain.Config, error) {
 				}
 			}
 
-			// C. Propagate OutputDir (Artifacts) to Deploy.Source
 			if profile.OutputDir.Dir != "" || len(profile.OutputDir.Include) > 0 {
 				if env.Deploy.Source == nil {
 					src := profile.OutputDir
@@ -90,7 +98,6 @@ func (l *Loader) Load(path string) (*domain.Config, error) {
 				}
 			}
 
-			// D. Propagate Variables from Environment to Deploy level
 			if env.EnvConfig.Variables != nil {
 				if env.Deploy.EnvConfig.Variables == nil {
 					env.Deploy.EnvConfig.Variables = make(map[string]string)
@@ -111,7 +118,6 @@ func (l *Loader) Load(path string) (*domain.Config, error) {
 		cfg.Profiles[name] = profile
 	}
 
-	// Backward compatibility transformation
 	if len(cfg.Profiles) == 0 && cfg.Type != "" {
 		legacyEnvs := make(map[string]domain.Environment)
 		for envName, env := range cfg.Environments {
@@ -141,6 +147,4 @@ func (l *Loader) Load(path string) (*domain.Config, error) {
 			},
 		}
 	}
-
-	return &cfg, nil
 }

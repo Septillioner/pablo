@@ -4,15 +4,18 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"pablo/internal/adapters/docker"
-	"pablo/internal/config"
+	"pablo/internal/lsp"
 	"pablo/internal/services/builder"
 	"pablo/internal/services/deployer"
 	"pablo/internal/services/pipeline"
 	"pablo/internal/services/scm"
+	"pablo/pkg/config"
 	"pablo/pkg/ui"
+	"pablo/pkg/validate"
 
 	"github.com/spf13/cobra"
 )
@@ -34,7 +37,6 @@ func init() {
 }
 
 func main() {
-	// Dependency Injection Root
 	cfgLoader := config.NewLoader()
 	deployerSvc := deployer.New()
 	builderSvc := builder.New()
@@ -43,7 +45,6 @@ func main() {
 
 	pipelineSvc := pipeline.New(cfgLoader, deployerSvc, builderSvc, scmSvc, dockerAdapter)
 
-	// CLI Setup
 	var rootCmd = &cobra.Command{
 		Use:   "pablo",
 		Short: "Pablo is a visionary DevOps assistant",
@@ -51,11 +52,13 @@ func main() {
 It supports multiple profiles, environment-based configurations, and automatic 
 artifact filtering, path registration, and health checks.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			if cmd.Name() == "lsp" {
+				return
+			}
 			ui.Header(Version)
 		},
 	}
 
-	// Custom Usage template for the "Wow" effect
 	rootCmd.SetUsageTemplate(`USAGE:
   {{.UseLine}}
 
@@ -73,9 +76,9 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 
 	rootCmd.Example = `  pablo run --profile api --env production
   pablo check --file my-pipeline.yaml
-  pablo init`
+  pablo init
+  pablo lsp`
 
-	// 1. RUN Command
 	var runCmd = &cobra.Command{
 		Use:   "run",
 		Short: "Executes the deployment pipeline",
@@ -88,7 +91,6 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 	runCmd.Flags().StringVarP(&manifest, "file", "f", "pablo.yaml", "Path to manifest")
 	runCmd.Flags().BoolVar(&allowProtected, "force", false, "Allow deployment to protected system directories")
 
-	// 2. INIT Command
 	var initCmd = &cobra.Command{
 		Use:   "init",
 		Short: "Initializes a new pablo.yaml sample",
@@ -119,12 +121,15 @@ profiles:
 		},
 	}
 
-	// 3. CHECK Command
 	var checkCmd = &cobra.Command{
 		Use:   "check",
 		Short: "Validates the manifest file",
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Log("*", fmt.Sprintf("Checking manifest: %s", manifest))
+			if err := printManifestValidation(manifest); err != nil {
+				os.Exit(1)
+			}
+
 			cfg, err := cfgLoader.Load(manifest)
 			if err != nil {
 				ui.Log("-", fmt.Sprintf("Validation failed: %v", err))
@@ -153,7 +158,6 @@ profiles:
 	checkCmd.Flags().StringVarP(&profileName, "profile", "p", "", "Validate specific profile")
 	checkCmd.Flags().StringVarP(&envName, "env", "e", "", "Validate specific environment")
 
-	// 4. UNINSTALL Command
 	var removeBackups bool
 	var uninstallCmd = &cobra.Command{
 		Use:   "uninstall",
@@ -171,7 +175,6 @@ profiles:
 	uninstallCmd.Flags().StringVarP(&envName, "env", "e", "", "Environment to uninstall (required)")
 	uninstallCmd.Flags().BoolVar(&removeBackups, "remove-backups", false, "Also remove backup directories")
 
-	// 5. VERSION Command
 	var versionCmd = &cobra.Command{
 		Use:   "version",
 		Short: "Displays Pablo version information",
@@ -181,10 +184,48 @@ profiles:
 		},
 	}
 
-	rootCmd.AddCommand(runCmd, initCmd, checkCmd, uninstallCmd, versionCmd)
+	var lspCmd = &cobra.Command{
+		Use:   "lsp",
+		Short: "Start Pablo language server (stdio)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return lsp.RunStdio()
+		},
+	}
+
+	rootCmd.AddCommand(runCmd, initCmd, checkCmd, uninstallCmd, versionCmd, lspCmd)
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func printManifestValidation(manifestPath string) error {
+	absPath, err := filepath.Abs(manifestPath)
+	if err != nil {
+		ui.Log("-", fmt.Sprintf("Validation failed: %v", err))
+		return err
+	}
+
+	data, err := os.ReadFile(absPath)
+	if err != nil {
+		ui.Log("-", fmt.Sprintf("Validation failed: %v", err))
+		return err
+	}
+
+	diags, _, err := validate.ValidateYAML(data, filepath.Dir(absPath))
+	if err != nil {
+		ui.Log("-", fmt.Sprintf("Validation failed: %v", err))
+		return err
+	}
+
+	for _, d := range diags {
+		ui.Log("-", validate.FormatDiagnostic(absPath, d))
+	}
+
+	if validate.HasErrors(diags) {
+		return fmt.Errorf("manifest validation failed")
+	}
+
+	return nil
 }

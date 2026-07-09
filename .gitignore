@@ -11,9 +11,6 @@ release/
 # Project specific binaries
 pablo.exe
 
-# LSP build outputs (cross-compiled binaries)
-extensions/pablo-lsp/build/
-
 # VS Code extension build / package outputs
 extensions/vscode-pablo/dist/
 extensions/vscode-pablo/out/

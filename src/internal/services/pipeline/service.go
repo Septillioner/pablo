@@ -10,8 +10,9 @@ import (
 
 	"pablo/internal/adapters/docker"
 	"pablo/internal/adapters/system"
-	"pablo/internal/config"
-	"pablo/internal/domain"
+	"pablo/pkg/config"
+	"pablo/pkg/domain"
+	"pablo/pkg/validate"
 	"pablo/internal/services/builder"
 	"pablo/internal/services/deployer"
 	"pablo/internal/services/filter"
@@ -54,6 +55,36 @@ func (s *Service) Run(manifestPath, profileName, envName string, allowProtected 
 	start := time.Now()
 
 	ui.Log("*", fmt.Sprintf("Loading manifest: %s", manifestPath))
+	absManifest, err := filepath.Abs(manifestPath)
+	if err != nil {
+		ui.Log("-", "Failed to resolve manifest path")
+		ui.Result(false, time.Since(start))
+		return err
+	}
+
+	manifestData, err := os.ReadFile(absManifest)
+	if err != nil {
+		ui.Log("-", "Failed to load manifest")
+		ui.Result(false, time.Since(start))
+		return err
+	}
+
+	diags, _, err := validate.ValidateYAML(manifestData, filepath.Dir(absManifest))
+	if err != nil {
+		ui.Log("-", "Failed to validate manifest")
+		ui.Result(false, time.Since(start))
+		return err
+	}
+	for _, d := range diags {
+		if d.Severity == validate.SeverityError {
+			ui.Log("-", validate.FormatDiagnostic(absManifest, d))
+		}
+	}
+	if validate.HasErrors(diags) {
+		ui.Result(false, time.Since(start))
+		return fmt.Errorf("manifest validation failed")
+	}
+
 	cfg, err := s.loader.Load(manifestPath)
 	if err != nil {
 		ui.Log("-", "Failed to load manifest")

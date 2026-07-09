@@ -188,7 +188,7 @@ Defaults: manifest = `pablo.yaml`, profile = `default`, env = `production`.
 - `docker` type with local and remote (SSH) Docker Compose orchestration.
 - `git-sync` with local and remote (SSH) git clone/pull.
 - Environment variable injection via `.env` file generation.
-- LSP-powered VS Code extension with completion, hover, and YAML validation.
+- LSP-powered VS Code extension (`pablo lsp`) with completion, hover, and schema validation.
 - Partial Go unit test coverage for `filter`, `pathutil`, `config`, `template`, `deployer`, `health`, `hooks`, and `system` (`cd src && go test ./...`).
 - Docker-based E2E tests for remote SSH static and docker deploy (`cd tests/e2e && go test -tags=integration ./...`).
 
@@ -199,7 +199,7 @@ Defaults: manifest = `pablo.yaml`, profile = `default`, env = `production`.
 - **Partial unit test coverage** — eight packages have `*_test.go`; pipeline, SCM, SSH, and other paths still rely on YAML fixtures under `tests/` (see [goals.md](goals.md) for remaining work).
 - `blue-green` **strategy** — declared but not implemented (returns error).
 - **SSH host key verification** — currently disabled (`InsecureIgnoreHostKey`); see [SECURITY.md](SECURITY.md).
-- **LSP schema validation** — only YAML syntax errors are reported; semantic checks are TODO.
+- **Schema validation coverage** — core rules enforced via `pkg/validate`; advanced cross-field rules may still expand over time.
 - `builder.Service` — exists as a standalone service but is currently unused; builds run inline.
 - **Snippet versions** — hardcoded; not synced with the `VERSION` file.
 
@@ -211,10 +211,9 @@ Defaults: manifest = `pablo.yaml`, profile = `default`, env = `production`.
 
 ```
 src/                     Go CLI source (module: pablo)
-  main.go                Entry point - cobra commands
+  main.go                Entry point - cobra commands (+ pablo lsp)
   internal/
-    domain/              Config, Profile, Environment, Deploy types
-    config/              YAML loader + inheritance resolver
+    lsp/                 glsp stdio language server
     services/
       pipeline/          Orchestrator - full deploy lifecycle
       deployer/          Local + SSH deploy with safety checks
@@ -228,10 +227,15 @@ src/                     Go CLI source (module: pablo)
       ssh/               SSH connect, SCP, tar pipeline
       docker/            Docker Compose wrapper
       system/            PATH registration (cross-platform)
-  pkg/ui/                Colored terminal output
+  pkg/
+    domain/              Config, Profile, Environment, Deploy types
+    config/              YAML loader + inheritance resolver
+    validate/            Shared schema diagnostics (CLI + LSP)
+    schema/              Completion/hover metadata
+    ui/                  Colored terminal output
 
 extensions/
-  pablo-lsp/             Go LSP server (completion, hover, validation)
+  vscode-pablo/          VS Code extension (spawns `pablo lsp`)
   vscode-pablo/          VS Code extension (language client, snippets, syntax)
 
 tests/                   YAML test fixtures

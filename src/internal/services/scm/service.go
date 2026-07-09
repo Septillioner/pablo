@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"pablo/internal/domain"
+	"pablo/pkg/domain"
 	"pablo/pkg/ui"
 )
 

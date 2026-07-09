@@ -1,4 +1,4 @@
-package main
+package schema
 
 type Field struct {
 	Description string
@@ -6,7 +6,7 @@ type Field struct {
 	Children    map[string]*Field
 }
 
-var PabloSchema = &Field{
+var Root = &Field{
 	Children: map[string]*Field{
 		"name": {
 			Description: "The unique name of your project.",
@@ -130,4 +130,21 @@ var PabloSchema = &Field{
 			},
 		},
 	},
+}
+
+func GetFieldAtPath(path []string) *Field {
+	current := Root
+	for _, segment := range path {
+		if current.Children == nil {
+			return nil
+		}
+		if next, ok := current.Children[segment]; ok {
+			current = next
+		} else if wildcard, ok := current.Children["*"]; ok {
+			current = wildcard
+		} else {
+			return nil
+		}
+	}
+	return current
 }

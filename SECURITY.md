@@ -37,8 +37,7 @@ These are intentional or known limitations users should be aware of when operati
 
 In scope:
 
-- The Pablo CLI (`src/`)
-- The Pablo LSP server (`extensions/pablo-lsp/`)
+- The Pablo CLI and embedded language server (`pablo lsp`, `src/internal/lsp/`)
 - The VS Code extension (`extensions/vscode-pablo/`)
 
 Out of scope:

@@ -74,6 +74,16 @@
           "when": "resourceFilename =~ /pablo.*\\.ya?ml/"
         }
       ]
+    },
+    "configuration": {
+      "title": "Pablo",
+      "properties": {
+        "pablo.path": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the Pablo CLI binary. When empty, the extension uses a bundled binary or pablo from PATH."
+        }
+      }
     }
   },
   "scripts": {

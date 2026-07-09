@@ -11,13 +11,20 @@ func New() *Adapter {
 	return &Adapter{}
 }
 
-func (a *Adapter) ComposeUp(composeFile string, build bool, targetPath string) error {
+func composeUpArgs(composeFile string, build bool) []string {
 	args := []string{"compose", "-f", composeFile, "up", "-d"}
 	if build {
 		args = append(args, "--build")
 	}
+	return args
+}
 
-	cmd := exec.Command("docker", args...)
+func composeDownArgs(composeFile string) []string {
+	return []string{"compose", "-f", composeFile, "down"}
+}
+
+func (a *Adapter) ComposeUp(composeFile string, build bool, targetPath string) error {
+	cmd := exec.Command("docker", composeUpArgs(composeFile, build)...)
 	cmd.Dir = targetPath // Run in target directory where .env might be
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -26,7 +33,7 @@ func (a *Adapter) ComposeUp(composeFile string, build bool, targetPath string) e
 }
 
 func (a *Adapter) ComposeDown(composeFile string, targetPath string) error {
-	cmd := exec.Command("docker", "compose", "-f", composeFile, "down")
+	cmd := exec.Command("docker", composeDownArgs(composeFile)...)
 	cmd.Dir = targetPath
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

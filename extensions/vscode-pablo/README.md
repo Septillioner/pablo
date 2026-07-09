@@ -4,7 +4,7 @@ Pablo is a powerful deployment helper for managing multi-environment builds and 
 
 ## Features
 
-- **LSP Powered Intelligence**: Real-time validation, diagnostics, and autocompletion powered by a high-performance Go-based Language Server.
+- **LSP Powered Intelligence**: Real-time validation, diagnostics, and autocompletion via `pablo lsp` (same binary as the CLI).
 - **Smart Autocompletion**: Context-aware suggestions for all Pablo configuration fields and enum values.
 - **Hover Documentation**: Quick access to documentation and field descriptions directly within the editor.
 - **Scaffold Templates**: Ready-to-use templates for common scenarios:
@@ -24,8 +24,9 @@ Pablo is a powerful deployment helper for managing multi-environment builds and 
 
 ## Requirements
 
-- This extension bundles pre-compiled Go binaries for the LSP server. No additional dependencies are required for basic editor features.
-- To run deployments, the `pablo` CLI must be installed on your system.
+- Pablo CLI on PATH, or set `pablo.path` to the absolute binary path.
+- Optionally bundle `pablo` under `extensions/vscode-pablo/bin/` for offline use.
+- To run deployments from the command palette, the same `pablo` binary is used.
 
 ## Release Notes
 
