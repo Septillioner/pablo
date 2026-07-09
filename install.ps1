@@ -126,7 +126,32 @@ function Install-ToDirectory {
     )
 
     New-Item -ItemType Directory -Force -Path $TargetDir | Out-Null
-    Copy-Item -Path $SourceFile -Destination $TargetPath -Force
+
+    $oldPath = "$TargetPath.old"
+    if (Test-Path $oldPath) {
+        Remove-Item -Path $oldPath -Force -ErrorAction SilentlyContinue
+    }
+
+    if (Test-Path $TargetPath) {
+        try {
+            Move-Item -Path $TargetPath -Destination $oldPath -Force
+        }
+        catch {
+            Fail "cannot replace $TargetPath: file may be locked by a running pablo process, Visual Studio, or another terminal. Close them and retry."
+        }
+    }
+
+    try {
+        Copy-Item -Path $SourceFile -Destination $TargetPath -Force
+    }
+    catch {
+        if (Test-Path $oldPath) {
+            Move-Item -Path $oldPath -Destination $TargetPath -Force -ErrorAction SilentlyContinue
+        }
+        Fail "cannot install to $TargetPath: $($_.Exception.Message)"
+    }
+
+    Remove-Item -Path $oldPath -Force -ErrorAction SilentlyContinue
 }
 
 function Test-IsAdministrator {

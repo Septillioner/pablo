@@ -69,6 +69,14 @@ Verify:
 pablo version
 ```
 
+**Update an existing install:**
+
+```bash
+pablo update
+```
+
+Checks GitHub Releases for the latest CLI binary for your OS, verifies the checksum, and replaces the running `pablo` executable. Use `pablo update --check` to see if a newer version exists without downloading.
+
 ---
 
 ## Option B — Pre-built binary

@@ -14,6 +14,7 @@ import (
 	"pablo/internal/services/deployer"
 	"pablo/internal/services/pipeline"
 	"pablo/internal/services/scm"
+	"pablo/internal/services/selfupdate"
 	"pablo/pkg/config"
 	"pablo/pkg/inspect"
 	"pablo/pkg/target"
@@ -55,7 +56,7 @@ func main() {
 It supports multiple profiles, environment-based configurations, and automatic 
 artifact filtering, path registration, and health checks.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			if cmd.Name() == "lsp" || cmd.Name() == "inspect" {
+			if cmd.Name() == "lsp" || cmd.Name() == "inspect" || cmd.Name() == "update" {
 				return
 			}
 			ui.Header(Version)
@@ -81,7 +82,8 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
   pablo run --profile api --env production
   pablo check --file my-pipeline.yaml
   pablo init
-  pablo lsp`
+  pablo lsp
+  pablo update`
 
 	var runCmd = &cobra.Command{
 		Use:   "run [profile/env]",
@@ -217,7 +219,22 @@ profiles:
 		},
 	}
 
-	rootCmd.AddCommand(runCmd, initCmd, checkCmd, uninstallCmd, versionCmd, inspectCmd, lspCmd)
+	var updateCheck bool
+	var updateVersion string
+	var updateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "Update the Pablo CLI binary from GitHub Releases",
+		Example: `  pablo update
+  pablo update --check
+  pablo update --version v1.5.0`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runUpdate(updateCheck, updateVersion)
+		},
+	}
+	updateCmd.Flags().BoolVar(&updateCheck, "check", false, "Check for updates without downloading")
+	updateCmd.Flags().StringVar(&updateVersion, "version", "", "Pin a release tag (e.g. v1.5.0); also reads PABLO_VERSION")
+
+	rootCmd.AddCommand(runCmd, initCmd, checkCmd, uninstallCmd, versionCmd, inspectCmd, lspCmd, updateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -308,5 +325,51 @@ func runInspect(manifestPath string, asJSON bool) error {
 			ui.Log(" ", fmt.Sprintf("- %s", env))
 		}
 	}
+	return nil
+}
+
+func runUpdate(checkOnly bool, pinnedVersion string) error {
+	if pinnedVersion == "" {
+		pinnedVersion = selfupdate.PinnedVersionFromEnv()
+	}
+
+	svc := selfupdate.New()
+	opts := selfupdate.Options{
+		CurrentVersion: Version,
+		PinnedVersion:  pinnedVersion,
+	}
+
+	if checkOnly {
+		result, err := svc.Check(opts)
+		if err != nil {
+			ui.Log("-", fmt.Sprintf("Update check failed: %v", err))
+			return err
+		}
+		if result.UpToDate {
+			ui.Log("+", fmt.Sprintf("Pablo is up to date (%s)", result.CurrentVersion))
+			return nil
+		}
+		ui.Log("!", fmt.Sprintf("Update available: %s -> %s (%s)", result.CurrentVersion, result.LatestVersion, result.ReleaseTag))
+		os.Exit(1)
+	}
+
+	check, err := svc.Check(opts)
+	if err != nil {
+		ui.Log("-", fmt.Sprintf("Update failed: %v", err))
+		return err
+	}
+	if check.UpToDate {
+		ui.Log("+", fmt.Sprintf("Pablo is already up to date (%s)", check.CurrentVersion))
+		return nil
+	}
+
+	result, err := svc.Update(opts)
+	if err != nil {
+		ui.Log("-", fmt.Sprintf("Update failed: %v", err))
+		return err
+	}
+
+	ui.Log("+", fmt.Sprintf("Updated Pablo to %s (%s)", result.LatestVersion, result.ReleaseTag))
+	ui.Log("*", "Open a new terminal or run pablo version to use the updated binary")
 	return nil
 }

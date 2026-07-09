@@ -151,16 +151,67 @@ verify_checksum() {
   log "checksum verified"
 }
 
+install_binary_to_path() {
+  local target_path="$1"
+  local target_dir old_path temp_target
+
+  target_dir="$(dirname "${target_path}")"
+  old_path="${target_path}.old"
+  temp_target="${target_dir}/.$(basename "${target_path}").new"
+
+  mkdir -p "${target_dir}"
+  rm -f "${old_path}" "${temp_target}"
+
+  install -m 0755 "${DOWNLOADED_BINARY}" "${temp_target}"
+
+  if [[ -e "${target_path}" ]]; then
+    mv -f "${target_path}" "${old_path}"
+  fi
+
+  if ! mv -f "${temp_target}" "${target_path}"; then
+    if [[ -e "${old_path}" ]]; then
+      mv -f "${old_path}" "${target_path}"
+    fi
+    rm -f "${temp_target}"
+    fail "cannot install to ${target_path}"
+  fi
+
+  rm -f "${old_path}" "${temp_target}"
+}
+
 install_to_system() {
   if [[ -w "${SYSTEM_INSTALL_DIR}" ]]; then
-    install -m 0755 "${DOWNLOADED_BINARY}" "${SYSTEM_INSTALL_PATH}"
+    install_binary_to_path "${SYSTEM_INSTALL_PATH}"
     INSTALLED_PATH="${SYSTEM_INSTALL_PATH}"
     INSTALL_SCOPE="system"
     return 0
   fi
 
   if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
-    sudo install -m 0755 "${DOWNLOADED_BINARY}" "${SYSTEM_INSTALL_PATH}"
+    local tmp_dir old_path temp_target
+
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "${tmp_dir}"' RETURN
+    install -m 0755 "${DOWNLOADED_BINARY}" "${tmp_dir}/${ASSET_NAME}"
+
+    old_path="${SYSTEM_INSTALL_PATH}.old"
+    temp_target="${SYSTEM_INSTALL_DIR}/.pablo.new"
+    sudo rm -f "${old_path}" "${temp_target}"
+    sudo install -m 0755 "${tmp_dir}/${ASSET_NAME}" "${temp_target}"
+
+    if [[ -e "${SYSTEM_INSTALL_PATH}" ]]; then
+      sudo mv -f "${SYSTEM_INSTALL_PATH}" "${old_path}"
+    fi
+
+    if ! sudo mv -f "${temp_target}" "${SYSTEM_INSTALL_PATH}"; then
+      if [[ -e "${old_path}" ]]; then
+        sudo mv -f "${old_path}" "${SYSTEM_INSTALL_PATH}"
+      fi
+      sudo rm -f "${temp_target}"
+      fail "cannot install to ${SYSTEM_INSTALL_PATH}"
+    fi
+
+    sudo rm -f "${old_path}" "${temp_target}"
     INSTALLED_PATH="${SYSTEM_INSTALL_PATH}"
     INSTALL_SCOPE="system"
     return 0
@@ -170,8 +221,7 @@ install_to_system() {
 }
 
 install_to_user() {
-  mkdir -p "${USER_INSTALL_DIR}"
-  install -m 0755 "${DOWNLOADED_BINARY}" "${USER_INSTALL_PATH}"
+  install_binary_to_path "${USER_INSTALL_PATH}"
   INSTALLED_PATH="${USER_INSTALL_PATH}"
   INSTALL_SCOPE="user"
 }

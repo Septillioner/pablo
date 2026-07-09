@@ -18,3 +18,5 @@ All error paths in the CLI call `os.Exit(1)`. There is no separate validation ex
 - Deploy to a protected system path without `--force`
 
 **Scripting tip:** rely on exit code only; parse stderr/stdout for error details. For structured manifest data, use `pablo inspect --json` (exits `0` on success).
+
+`pablo update --check` exits `1` when a newer release is available (even though the check itself succeeded).

@@ -18,6 +18,7 @@ See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 | `init` | Generate a sample manifest |
 | `uninstall` | Remove deployed files and clean up PATH entries |
 | `version` | Print Pablo version information |
+| `update` | Update the Pablo CLI binary from GitHub Releases |
 | `lsp` | Start the language server (stdio; used by the VS Code extension) |
 
 ---
@@ -135,6 +136,29 @@ Prints the current Pablo version and architecture label.
 ```bash
 pablo version
 ```
+
+---
+
+## `update`
+
+Downloads the latest Pablo CLI binary for your OS/architecture from GitHub Releases, verifies `checksums.txt`, and replaces the running executable. Editor extensions (VSIX) are not updated.
+
+**Flags:**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--check` | `false` | Report whether a newer release exists; exit code `1` when an update is available |
+| `--version` | *(empty)* | Pin a release tag (e.g. `v1.5.0`); also reads `PABLO_VERSION` |
+
+**Examples:**
+
+```bash
+pablo update
+pablo update --check
+PABLO_VERSION=v1.5.0 pablo update
+```
+
+After a successful update, open a new terminal (or invoke `pablo version` again) so your shell picks up the new binary.
 
 ---
 
