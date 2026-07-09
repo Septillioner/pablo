@@ -194,7 +194,6 @@ profiles:
 		Short: "Displays Pablo version information",
 		Run: func(cmd *cobra.Command, args []string) {
 			ui.Log("*", fmt.Sprintf("Pablo Version: %s", Version))
-			ui.Log("*", "Architecture: Modular Monolith")
 		},
 	}
 

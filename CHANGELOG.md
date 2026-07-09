@@ -21,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Changed
 
 - `install.sh` — install via temp file + `mv` for safer overwrite of an existing binary.
+- `pablo version` — prints only the version string (removed the "Architecture: Modular Monolith" line).
 
 ## [1.5.0] - 2026-07-09
 
