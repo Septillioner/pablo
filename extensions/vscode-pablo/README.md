@@ -30,6 +30,12 @@ Pablo is a powerful deployment helper for managing multi-environment builds and 
 
 ## Release Notes
 
+### 1.3.0
+
+- LSP via `pablo lsp` with shared schema validation and diagnostics.
+- `pablo.path` setting for custom binary location.
+- Snippet templates updated to version `1.3.0`.
+
 ### 0.0.1
 - Initial release with full LSP support.
 - Cross-platform support for Windows, macOS (Intel/Silicon), and Linux.

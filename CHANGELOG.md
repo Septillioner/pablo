@@ -6,22 +6,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-09
+
 ### Added
+
 - Docker-based E2E integration tests under `tests/e2e/` (Ubuntu SSH target, `go test -tags=integration`).
 - Go unit tests for priority packages: `filter`, `pathutil`, `config/loader`, `template`, `deployer`, `health`, `hooks`, and `system` (`cd src && go test ./...`).
 - `pkg/pathutil` — `JoinRemote` / `DirRemote` for POSIX remote paths (Windows host → Linux target).
 - Remote SSH `docker` deploy — git sync, env file, and `docker compose up -d` over SSH.
 - Linux system-scope PATH registration via `/etc/profile.d/pablo.sh`.
-- `goals.md` — eksik özellikler ve hedef backlog (P0–P5 öncelik matrisi).
-- `goals.md` — P2 altında genişletilmiş Go unit test hedefleri (paket önceliği, kapsam, CI bağlantısı).
+- `goals.md` — public roadmap and feature backlog.
 - Public-facing project metadata: `LICENSE` (MIT), `CONTRIBUTING.md`, `SECURITY.md`, `RELEASING.md`, and this changelog.
 - README sections for prerequisites, install from release, install from source, and self-deploy.
 - `.gitignore` coverage for LSP build outputs, VS Code extension `dist/` / `out/` / `*.vsix`, and Go coverage files.
+- `pablo lsp` subcommand — single-binary Language Server Protocol for VS Code and other editors.
+- Shared manifest validation (`pkg/validate`) with line/column diagnostics in `pablo check`, `pablo run`, and LSP.
+- VS Code extension v1.3.0 published to Marketplace (`septillioner.pablo`).
 
 ### Changed
+
 - Windows `RemovePath` during `pablo uninstall` — removes Pablo PATH entries via PowerShell (User/Machine scope).
 - Pipeline remote path building uses `pathutil` instead of `filepath.Join` / `filepath.Dir`.
 - `README.md` restructured for first-time external users; release-binary install path documented.
+- LSP version reports the same value as `pablo version` (from `src/VERSION`).
+- VS Code extension spawns `pablo lsp` instead of a separate `pablo-lsp` binary.
 
 ## [1.0.46] - 2025
 
@@ -50,5 +58,6 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.0.46...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/septillioner/pablo/compare/v1.0.46...v1.3.0
 [1.0.46]: https://github.com/septillioner/pablo/releases/tag/v1.0.46

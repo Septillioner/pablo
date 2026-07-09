@@ -15,6 +15,7 @@ Command-line interface for running deployments, validating manifests, and managi
 | `init` | Generate a sample manifest |
 | `uninstall` | Remove deployed files and clean up PATH entries |
 | `version` | Print Pablo version information |
+| `lsp` | Start the language server (stdio; used by the VS Code extension) |
 
 ---
 
@@ -43,7 +44,7 @@ pablo run -e staging --force
 
 ## `check`
 
-Loads and validates the manifest. Optionally checks that a profile and environment exist.
+Loads and validates the manifest (semantic schema rules via `pkg/validate`, with `path:line:col` diagnostics). Optionally checks that a profile and environment exist.
 
 **Flags:**
 
@@ -109,3 +110,18 @@ Prints the current Pablo version.
 ```bash
 pablo version
 ```
+
+---
+
+## `lsp`
+
+Starts the Pablo language server on stdio. Used by the VS Code extension (`pablo lsp`). Does not print the CLI header to stdout.
+
+**Flags:** none
+
+**Example:**
+
+```bash
+pablo lsp
+```
+

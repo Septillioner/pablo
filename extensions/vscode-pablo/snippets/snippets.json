@@ -3,7 +3,7 @@
         "prefix": "pablo-tpl-static",
         "body": [
             "name: \"${1:my-static-site}\"",
-            "version: \"1.4.2\"",
+            "version: \"1.3.0\"",
             "",
             "profiles:",
             "  production:",
@@ -26,7 +26,7 @@
         "prefix": "pablo-tpl-node-pm2",
         "body": [
             "name: \"${1:node-api}\"",
-            "version: \"1.4.2\"",
+            "version: \"1.3.0\"",
             "credentials:",
             "  ${2:ssh-key}:",
             "    type: ssh",
@@ -59,7 +59,7 @@
         "prefix": "pablo-tpl-go-systemd",
         "body": [
             "name: \"${1:go-service}\"",
-            "version: \"1.4.2\"",
+            "version: \"1.3.0\"",
             "",
             "profiles:",
             "  backend:",
@@ -89,7 +89,7 @@
         "prefix": "pablo-tpl-docker",
         "body": [
             "name: \"${1:docker-app}\"",
-            "version: \"1.4.2\"",
+            "version: \"1.3.0\"",
             "",
             "profiles:",
             "  app-stack:",
@@ -112,7 +112,7 @@
         "prefix": "pablo-tpl-gitsync",
         "body": [
             "name: \"${1:docs-sync}\"",
-            "version: \"1.4.2\"",
+            "version: \"1.3.0\"",
             "",
             "profiles:",
             "  documentation:",
@@ -133,7 +133,7 @@
         "prefix": "pablo-config",
         "body": [
             "name: \"${1:project-name}\"",
-            "version: \"1.4.2\"",
+            "version: \"1.3.0\"",
             "profiles:",
             "  ${2:profile-name}:",
             "    type: ${3|static,binary,docker,git-sync|}",

@@ -59,9 +59,9 @@ Overview of supported deployment types, strategies, pipeline behavior, and curre
 
 ## Known Limitations
 
-- **Partial unit test coverage** — twelve packages have `*_test.go`; catalog in [tests/TEST_SPEC.md](../tests/TEST_SPEC.md). Optional SSH command mocks and `domain`/`ui` remain in [goals.md](../goals.md).
+- **Partial unit test coverage** — twelve packages have `*_test.go`; catalog in [tests/TEST_SPEC.md](../tests/TEST_SPEC.md). Optional SSH command mocks and `domain`/`ui` remain in [goals.md](goals.md).
 - `blue-green` **strategy** — declared but not implemented (returns error).
 - **SSH host key verification** — currently disabled (`InsecureIgnoreHostKey`); see [SECURITY.md](../SECURITY.md).
-- **LSP schema validation** — only YAML syntax errors are reported; semantic checks are TODO.
+- **Schema validation coverage** — core rules in `pkg/validate`; advanced cross-field rules still expanding (see [goals.md](goals.md)).
 - `builder.Service` — exists as a standalone service but is currently unused; builds run inline.
 - **Snippet versions** — hardcoded; not synced with the `VERSION` file.

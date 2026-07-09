@@ -12,10 +12,11 @@ import (
 
 const serverName = "pablo"
 
-var version = "0.0.1"
+var serverVersion string
 var handler protocol.Handler
 
-func RunStdio() error {
+func RunStdio(version string) error {
+	serverVersion = version
 	handler = protocol.Handler{
 		Initialize:             initialize,
 		Initialized:            initialized,
@@ -45,7 +46,7 @@ func initialize(context *glsp.Context, params *protocol.InitializeParams) (any, 
 		Capabilities: capabilities,
 		ServerInfo: &protocol.InitializeResultServerInfo{
 			Name:    serverName,
-			Version: &version,
+			Version: &serverVersion,
 		},
 	}, nil
 }

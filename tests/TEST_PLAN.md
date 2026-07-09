@@ -1,6 +1,6 @@
 # TEST_PLAN — Pablo Test Stratejisi
 
-Bu belge **nasıl** test edildiğini anlatır. Hangi testin neyi doğruladığı için bkz. [TEST_SPEC.md](TEST_SPEC.md). Backlog için bkz. [../goals.md](../goals.md).
+Bu belge **nasıl** test edildiğini anlatır. Hangi testin neyi doğruladığı için bkz. [TEST_SPEC.md](TEST_SPEC.md). Backlog için bkz. [../docs/goals.md](../docs/goals.md).
 
 ---
 
@@ -78,7 +78,7 @@ go run ../../../src/main.go run -e production
 1. Yeni unit test: `src/internal/.../foo_test.go` — test edilen paketle ayni dizin.
 2. Ag gerektiren unit test yazma; remote davranis E2E'de.
 3. Yeni test eklendiginde [TEST_SPEC.md](TEST_SPEC.md) guncellenir.
-4. `goals.md` backlog tamamlaninca SPEC'te `done` isaretlenir.
+4. `docs/goals.md` backlog tamamlaninca SPEC'te `done` isaretlenir.
 5. SCM unit testleri `git` CLI kullanir; yoksa test `Skip`.
 
 ---

@@ -4,7 +4,7 @@
 
 **Pablo** is a CLI deployment helper that automates building, filtering, and deploying artifacts across multiple environments. It supports local and remote (SSH) targets driven by a single YAML manifest.
 
-> Full schema reference: `[schema/schema.md](schema/schema.md)`
+> Documentation: [docs/schema/schema.md](docs/schema/schema.md) · [docs/cli.md](docs/cli.md) · [docs/capabilities.md](docs/capabilities.md)
 > Wiki (extended docs): [github.com/septillioner/pablo/wiki](https://github.com/septillioner/pablo/wiki)
 
 ---
@@ -196,7 +196,7 @@ Defaults: manifest = `pablo.yaml`, profile = `default`, env = `production`.
 
 ## Known Limitations
 
-- **Partial unit test coverage** — eight packages have `*_test.go`; pipeline, SCM, SSH, and other paths still rely on YAML fixtures under `tests/` (see [goals.md](goals.md) for remaining work).
+- **Partial unit test coverage** — twelve packages have `*_test.go`; remaining targets in [docs/goals.md](docs/goals.md).
 - `blue-green` **strategy** — declared but not implemented (returns error).
 - **SSH host key verification** — currently disabled (`InsecureIgnoreHostKey`); see [SECURITY.md](SECURITY.md).
 - **Schema validation coverage** — core rules enforced via `pkg/validate`; advanced cross-field rules may still expand over time.
@@ -239,7 +239,7 @@ extensions/
   vscode-pablo/          VS Code extension (language client, snippets, syntax)
 
 tests/                   YAML test fixtures
-schema/                  Schema documentation
+docs/                    User documentation (CLI, schema, capabilities)
 ```
 
 ---

@@ -188,7 +188,7 @@ profiles:
 		Use:   "lsp",
 		Short: "Start Pablo language server (stdio)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return lsp.RunStdio()
+			return lsp.RunStdio(Version)
 		},
 	}
 
