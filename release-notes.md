@@ -1,26 +1,20 @@
-## Pablo v1.3.0
+## Pablo v1.4.0
 
 ### Added
 
-- Docker-based E2E integration tests under `tests/e2e/` (Ubuntu SSH target, `go test -tags=integration`).
-- Go unit tests for priority packages: `filter`, `pathutil`, `config/loader`, `template`, `deployer`, `health`, `hooks`, and `system` (`cd src && go test ./...`).
-- `pkg/pathutil` — `JoinRemote` / `DirRemote` for POSIX remote paths (Windows host → Linux target).
-- Remote SSH `docker` deploy — git sync, env file, and `docker compose up -d` over SSH.
-- Linux system-scope PATH registration via `/etc/profile.d/pablo.sh`.
-- `goals.md` — public roadmap and feature backlog.
-- Public-facing project metadata: `LICENSE` (MIT), `CONTRIBUTING.md`, `SECURITY.md`, `RELEASING.md`, and changelog.
-- README sections for prerequisites, install from release, install from source, and self-deploy.
-- `.gitignore` coverage for LSP build outputs, VS Code extension `dist/` / `out/` / `*.vsix`, and Go coverage files.
-- `pablo lsp` subcommand — single-binary Language Server Protocol for VS Code and other editors.
-- Shared manifest validation (`pkg/validate`) with line/column diagnostics in `pablo check`, `pablo run`, and LSP.
+- `pablo inspect` — list profiles and environments from a manifest (`--json` for machine-readable output).
+- `pkg/target` — parse positional `profile/env` run targets shared by CLI and LSP.
+- LSP CodeLens — `Run` on environment lines (`pablo.runWithArgs`).
+- LSP custom request `pablo/listProfiles` for editor profile/environment pickers.
+- VS Code extension: binary picker, inspect fallback, shell quoting helpers, and profile/environment gutter decorations.
+- Public docs tree under `docs/` — getting started, guides, reference, development, FAQ, and troubleshooting.
+- `docs/roadmap.md` (moved from `docs/goals.md`).
 
 ### Changed
 
-- Windows `RemovePath` during `pablo uninstall` — removes Pablo PATH entries via PowerShell (User/Machine scope).
-- Pipeline remote path building uses `pathutil` instead of `filepath.Join` / `filepath.Dir`.
-- `README.md` restructured for first-time external users; release-binary install path documented.
-- LSP version reports the same value as `pablo version` (from `src/VERSION`).
-- VS Code extension spawns `pablo lsp` instead of a separate `pablo-lsp` binary.
+- README slimmed down; install and usage detail live under `docs/`.
+- `build.sh` accepts `BUILD_DIR` override for release artifact output.
+- Local deploy prep errors for missing artifact / target directories are clearer.
 
 ### Downloads
 

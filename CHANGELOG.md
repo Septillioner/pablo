@@ -6,6 +6,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-09
+
+### Added
+
+- `pablo inspect` — list profiles and environments from a manifest (`--json` for machine-readable output).
+- `pkg/target` — parse positional `profile/env` run targets shared by CLI and LSP.
+- LSP CodeLens — `Run` on environment lines (`pablo.runWithArgs`).
+- LSP custom request `pablo/listProfiles` for editor profile/environment pickers.
+- VS Code extension: binary picker (`executable.ts`), inspect fallback, shell quoting helpers, and profile/environment gutter decorations.
+- Public docs tree under `docs/` — getting started, guides, reference, development, FAQ, and troubleshooting.
+- `docs/roadmap.md` (moved from `docs/goals.md`).
+
+### Changed
+
+- README slimmed down; install and usage detail live under `docs/`.
+- `build.sh` accepts `BUILD_DIR` override for release artifact output.
+- Local deploy prep errors for missing artifact / target directories are clearer.
+
 ## [1.3.0] - 2026-07-09
 
 ### Added
@@ -58,6 +76,7 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/septillioner/pablo/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/septillioner/pablo/compare/v1.0.46...v1.3.0
 [1.0.46]: https://github.com/septillioner/pablo/releases/tag/v1.0.46
