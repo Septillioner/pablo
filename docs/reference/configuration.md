@@ -1,6 +1,27 @@
-# pablo.yaml Schema Documentation
+# Configuration Reference
 
-Complete reference for Pablo's deployment configuration file.
+Complete reference for Pablo's deployment configuration file (`pablo.yaml`).
+
+See also: [Capabilities](capabilities.md) · [Credentials guide](../guides/credentials.md)
+
+---
+
+## Inheritance
+
+Profile-level settings cascade into each environment unless overridden:
+
+| Profile field | Inherited as |
+|---------------|--------------|
+| `variables` | Merged into environment variables |
+| `env_file` | Default env file name for environments |
+| `build` | Copied to environment when env has no `build`; partial field merge when env `build` exists |
+| `output_dir` | Becomes `env.deploy.source` when environment has no `source` |
+
+Environment `variables` are merged into `deploy.variables`.
+
+**Legacy format:** If `profiles` is omitted and a top-level `type` field exists, Pablo auto-wraps the config into `profiles.default`.
+
+---
 
 ## Root Fields
 
@@ -10,8 +31,6 @@ Complete reference for Pablo's deployment configuration file.
 | `version` | String | Project version |
 | `credentials` | Map<String, [Credential](#credential)> | Global reusable credentials (optional) |
 | `profiles` | Map<String, [Profile](#profile)> | Application profiles |
-
-> **Backward compatibility:** If `profiles` is omitted and a top-level `type` field exists, Pablo auto-wraps the config into a `profiles.default` profile.
 
 ---
 
@@ -173,7 +192,7 @@ Deployment method and settings.
 | `remote` | String | Transfer method: `tar` (default, high performance) or `legacy` (SCP one-by-one) |
 | `source` | [Source](#source) | Override profile-level artifact settings for this environment |
 | `docker` | [Docker](#docker) | Docker config (for `docker` type) |
-| `service` | [Service](#service) | Service management (for `binary` type) |
+| `service` | [Service](#service) | Service management (schema only — not implemented at runtime) |
 | `pre_commands` | List<String> | Commands to run before artifacts are deployed |
 | `post_commands` | List<String> | Commands to run after artifacts are deployed |
 | `variables` | Map<String, String> | Deploy-level variables (merged from environment) |
@@ -225,21 +244,13 @@ docker:
 
 ## Service
 
-Service management configuration.
+Service management configuration. **Schema only** — not executed at runtime. Use `post_commands` (e.g. `systemctl restart myapp`) until service management ships.
 
 | Field | Type | Description |
 |---|---|---|
 | `type` | String | **Required.** Service type: `systemd`, `pm2` |
 | `name` | String | **Required.** Service name |
 | `restart` | Boolean | Restart after deployment |
-
-**Example:**
-```yaml
-service:
-  type: systemd
-  name: myapp
-  restart: true
-```
 
 ---
 
@@ -279,22 +290,22 @@ Pipeline-wide settings.
 ## Deployment Types
 
 ### `static` — Frontend / SPA
-Build -> Filter artifacts -> Deploy files
+Build → Filter artifacts → Deploy files
 
 **Required:** `output_dir` or `deploy.source`, `environments.deploy.target_path`
 
 ### `binary` — Compiled Executables
-Build -> Deploy binary -> Register PATH -> Restart service
+Build → Deploy binary → Register PATH
 
 **Required:** `build`, `environments.deploy.target_path`
 
 ### `docker` — Containerized Services
-Git clone/pull -> Generate env file -> Docker compose up
+Git clone/pull → Generate env file → Docker compose up
 
 **Required:** `git`, `environments.deploy.docker`
 
 ### `git-sync` — Interpreted Languages
-Git pull -> Generate env file -> Run post commands
+Git pull → Generate env file → Run post commands
 
 **Required:** `git`, `environments.deploy.target_path`
 
@@ -350,12 +361,9 @@ profiles:
             include: ["api-server"]
           target_path: /opt/api
           strategy: backup
-          service:
-            type: systemd
-            name: api-server
-            restart: true
           post_commands:
             - systemctl daemon-reload
+            - systemctl restart api-server
         variables:
           APP_ENV: production
           DB_HOST: db.internal

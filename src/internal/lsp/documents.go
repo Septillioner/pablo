@@ -73,14 +73,22 @@ func filePathFromURI(uri string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	path := parsed.Path
-	if strings.HasPrefix(parsed.Scheme, "file") && len(path) > 0 {
-		if len(path) > 3 && path[0] == '/' && path[2] == ':' {
-			path = path[1:]
-		}
-		return path, nil
+	if !strings.HasPrefix(parsed.Scheme, "file") {
+		return "", fmt.Errorf("unsupported uri scheme: %s", parsed.Scheme)
 	}
 
-	return "", fmt.Errorf("unsupported uri scheme: %s", parsed.Scheme)
+	path := parsed.Path
+	if path == "" && parsed.Opaque != "" {
+		path = parsed.Opaque
+	}
+	if unescaped, err := url.PathUnescape(path); err == nil {
+		path = unescaped
+	}
+	if len(path) > 3 && path[0] == '/' && path[2] == ':' {
+		path = path[1:]
+	}
+	if path == "" {
+		return "", fmt.Errorf("empty path in uri: %s", uri)
+	}
+	return filepath.FromSlash(path), nil
 }

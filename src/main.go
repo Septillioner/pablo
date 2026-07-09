@@ -16,6 +16,7 @@ import (
 	"pablo/internal/services/scm"
 	"pablo/pkg/config"
 	"pablo/pkg/inspect"
+	"pablo/pkg/target"
 	"pablo/pkg/ui"
 	"pablo/pkg/validate"
 
@@ -76,16 +77,25 @@ artifact filtering, path registration, and health checks.`,
 USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 `)
 
-	rootCmd.Example = `  pablo run --profile api --env production
+	rootCmd.Example = `  pablo run default/windows-local
+  pablo run --profile api --env production
   pablo check --file my-pipeline.yaml
   pablo init
   pablo lsp`
 
 	var runCmd = &cobra.Command{
-		Use:   "run",
+		Use:   "run [profile/env]",
 		Short: "Executes the deployment pipeline",
+		Args:  cobra.MaximumNArgs(1),
+		Example: `  pablo run default/windows-local
+  pablo run default.windows-local -f pablo.yaml
+  pablo run -p api -e staging`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return pipelineSvc.Run(manifest, profileName, envName, allowProtected)
+			profile, env, err := resolveRunTarget(cmd, args)
+			if err != nil {
+				return err
+			}
+			return pipelineSvc.Run(manifest, profile, env, allowProtected)
 		},
 	}
 	runCmd.Flags().StringVarP(&envName, "env", "e", "production", "Target environment")
@@ -243,6 +253,22 @@ func printManifestValidation(manifestPath string) error {
 	}
 
 	return nil
+}
+
+func resolveRunTarget(cmd *cobra.Command, args []string) (string, string, error) {
+	if len(args) == 0 {
+		return profileName, envName, nil
+	}
+
+	if cmd.Flags().Changed("profile") || cmd.Flags().Changed("env") {
+		return "", "", fmt.Errorf("cannot combine target argument with -p/--profile or -e/--env")
+	}
+
+	profile, env, err := target.Parse(args[0])
+	if err != nil {
+		return "", "", err
+	}
+	return profile, env, nil
 }
 
 func runInspect(manifestPath string, asJSON bool) error {

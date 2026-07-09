@@ -8,16 +8,17 @@ Thanks for your interest in contributing. This document describes the practical 
 - Keep changes focused. Prefer small, reviewable PRs over large mixed ones.
 - Match the existing code style and package layout (see `PROJECT STRUCTURE` in [README.md](README.md)).
 - Do not introduce dependencies casually. Justify any new direct dependency in the PR description.
-- Check [docs/goals.md](docs/goals.md) for the current backlog; update checklist items when your PR completes a tracked goal.
+- Check [docs/roadmap.md](docs/roadmap.md) for the current backlog; update checklist items when your PR completes a tracked goal.
 
 ## Project docs
 
 | Document | Purpose |
 |----------|---------|
-| [docs/goals.md](docs/goals.md) | Public roadmap — shipped features and planned work (feature tree) |
-| [docs/cli.md](docs/cli.md) | CLI command reference |
-| [docs/capabilities.md](docs/capabilities.md) | Supported types, strategies, limitations |
-| [docs/schema/schema.md](docs/schema/schema.md) | `pablo.yaml` field reference |
+| [docs/README.md](docs/README.md) | Documentation index |
+| [docs/roadmap.md](docs/roadmap.md) | Public roadmap — shipped features and planned work |
+| [docs/reference/cli.md](docs/reference/cli.md) | CLI command reference |
+| [docs/reference/capabilities.md](docs/reference/capabilities.md) | Supported types, strategies, limitations |
+| [docs/reference/configuration.md](docs/reference/configuration.md) | `pablo.yaml` field reference |
 | [PMAP.md](PMAP.md) | Internal architecture map (maintainers and agents; not user-facing) |
 | [tests/TEST_SPEC.md](tests/TEST_SPEC.md) | Test catalog and coverage status |
 

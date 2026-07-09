@@ -2,6 +2,8 @@
 
 Overview of supported deployment types, strategies, pipeline behavior, and current limitations.
 
+See also: [Configuration](configuration.md) · [Roadmap](../roadmap.md)
+
 ---
 
 ## Deployment Types
@@ -28,40 +30,54 @@ Overview of supported deployment types, strategies, pipeline behavior, and curre
 
 ## Pipeline Phases
 
-1. Pre-deploy hooks (`hooks.pre`)
-2. Build (`build.command`)
-3. Pre-deployment commands (`deploy.pre_commands`)
-4. Deployment (local copy or SSH tar stream)
-5. Post-deployment commands (`deploy.post_commands`)
-6. Post-deploy hooks (`hooks.post`)
-7. Health check (`pipeline.health_check`)
+1. Load and validate manifest
+2. Pre-deploy hooks (`hooks.pre`)
+3. Build (`build.command`)
+4. Pre-deployment commands (`deploy.pre_commands`)
+5. Deployment (local copy or SSH tar stream)
+6. Post-deployment commands (`deploy.post_commands`)
+7. PATH registration (`register_path`, binary type)
+8. Post-deploy hooks (`hooks.post`)
+9. Health check (`pipeline.health_check`)
+10. `on_success` / `on_failure` hooks
+
+---
+
+## Schema vs Runtime
+
+Some fields are validated in the manifest but not yet executed at runtime:
+
+| Field | Schema | Runtime |
+|-------|--------|---------|
+| `deploy.strategy: blue-green` | Allowed | Returns error |
+| `deploy.service` (systemd / PM2) | Allowed | Not implemented — use `post_commands` |
 
 ---
 
 ## What Works
 
 - Full local deploy pipeline for `static` and `binary` types.
-- Remote SSH deploy with tar-streaming and SCP fallback.
+- Remote SSH deploy with tar-streaming and SCP fallback (`deploy.remote: legacy`).
 - Glob-based artifact filtering (include/exclude patterns).
 - Template variable substitution (`{{VAR}}` in config files).
 - Config inheritance — profile settings cascade into environments.
-- Automatic PATH registration (Windows, macOS, Linux user scope).
+- Automatic PATH registration (Windows, macOS, Linux user and system scope).
 - Backup and recreate strategies with protected path detection.
 - `docker` type with local and remote (SSH) Docker Compose orchestration.
 - `git-sync` with local and remote (SSH) git clone/pull.
 - Environment variable injection via `.env` file generation.
 - LSP-powered VS Code extension with completion, hover, and YAML validation.
 - Go unit tests for twelve packages: `filter`, `pathutil`, `config`, `template`, `deployer`, `health`, `hooks`, `system`, `ssh`, `pipeline`, `scm`, `docker` (`cd src && go test ./...`).
-- Test documentation: [tests/TEST_PLAN.md](../tests/TEST_PLAN.md) and [tests/TEST_SPEC.md](../tests/TEST_SPEC.md).
 - Docker-based E2E tests for remote SSH static and docker deploy (`cd tests/e2e && go test -tags=integration ./...`).
 
 ---
 
 ## Known Limitations
 
-- **Partial unit test coverage** — twelve packages have `*_test.go`; catalog in [tests/TEST_SPEC.md](../tests/TEST_SPEC.md). Optional SSH command mocks and `domain`/`ui` remain in [goals.md](goals.md).
+- **Partial unit test coverage** — catalog in [tests/TEST_SPEC.md](../../tests/TEST_SPEC.md).
 - `blue-green` **strategy** — declared but not implemented (returns error).
-- **SSH host key verification** — currently disabled (`InsecureIgnoreHostKey`); see [SECURITY.md](../SECURITY.md).
-- **Schema validation coverage** — core rules in `pkg/validate`; advanced cross-field rules still expanding (see [goals.md](goals.md)).
+- **`deploy.service`** — schema exists; systemd/PM2 restart not implemented at runtime.
+- **SSH host key verification** — currently disabled (`InsecureIgnoreHostKey`); see [SECURITY.md](../../SECURITY.md).
+- **Schema validation coverage** — core rules in `pkg/validate`; advanced cross-field rules still expanding (see [roadmap](../roadmap.md)).
 - `builder.Service` — exists as a standalone service but is currently unused; builds run inline.
-- **Snippet versions** — hardcoded; not synced with the `VERSION` file.
+- **Snippet versions** — hardcoded in the VS Code extension; not synced with the `VERSION` file.

@@ -4,6 +4,8 @@ Command-line interface for running deployments, validating manifests, and managi
 
 **Defaults:** manifest = `pablo.yaml`, profile = `default`, environment = `production`
 
+See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
+
 ---
 
 ## Commands
@@ -82,21 +84,7 @@ pablo inspect
 pablo inspect -f pablo.yaml --json
 ```
 
-**JSON shape:**
-
-```json
-{
-  "name": "my-app",
-  "version": "1.3.0",
-  "profiles": [
-    {
-      "name": "default",
-      "type": "static",
-      "environments": ["production", "staging"]
-    }
-  ]
-}
-```
+**JSON shape:** see [API](api.md#inspect-json).
 
 ---
 
@@ -116,7 +104,7 @@ pablo init
 
 ## `uninstall`
 
-Removes deployed files from the target path and cleans up PATH registrations for binary deployments.
+Removes deployed files from the target path and cleans up PATH registrations for binary deployments. Local targets only.
 
 **Flags:**
 
@@ -138,7 +126,7 @@ pablo uninstall -p api -e production --remove-backups
 
 ## `version`
 
-Prints the current Pablo version.
+Prints the current Pablo version and architecture label.
 
 **Flags:** none
 
@@ -162,3 +150,4 @@ Starts the Pablo language server on stdio. Used by the VS Code extension (`pablo
 pablo lsp
 ```
 
+See [API](api.md) for LSP capabilities.

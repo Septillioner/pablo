@@ -1,10 +1,10 @@
 # Pablo Roadmap
 
-Public view of what Pablo **ships today** and what is **planned next**. For current capabilities see [capabilities.md](capabilities.md). To contribute, start with [CONTRIBUTING.md](../CONTRIBUTING.md).
+Public view of what Pablo **ships today** and what is **planned next**. For current capabilities see [reference/capabilities.md](reference/capabilities.md). To contribute, start with [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 **How to maintain:** Mark completed items `[x]` in this file. User-facing changes belong in [CHANGELOG.md](../CHANGELOG.md). Test coverage updates go to [tests/TEST_SPEC.md](../tests/TEST_SPEC.md).
 
-**Related docs:** [README.md](../README.md) · [cli.md](cli.md) · [capabilities.md](capabilities.md) · [schema/schema.md](schema/schema.md) · [SECURITY.md](../SECURITY.md) · [CONTRIBUTING.md](../CONTRIBUTING.md)
+**Related docs:** [README.md](../README.md) · [docs/](README.md) · [SECURITY.md](../SECURITY.md) · [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
 
@@ -59,7 +59,7 @@ Pablo
 │   ├── [ ] CI on every pull request
 │   └── [ ] Broader automated test coverage
 ├── Documentation
-│   ├── [x] Public docs (cli, capabilities, schema)
+│   ├── [x] Public docs (getting-started, guides, reference)
 │   ├── [x] Test strategy and catalog
 │   └── [ ] Docs kept in sync with each release
 └── Security
@@ -120,7 +120,7 @@ Pablo
 
 ### Documentation
 
-- [x] [cli.md](cli.md), [capabilities.md](capabilities.md), [schema/schema.md](schema/schema.md)
+- [x] [docs/](README.md) — getting-started, guides, reference, development
 - [x] [tests/TEST_PLAN.md](../tests/TEST_PLAN.md) and [tests/TEST_SPEC.md](../tests/TEST_SPEC.md)
 
 ---
@@ -162,7 +162,7 @@ Catalog: [tests/TEST_SPEC.md](../tests/TEST_SPEC.md)
 
 - [ ] **Snippet version sync** — align VS Code snippets with release version
 - [ ] **Build service cleanup** — integrate or remove unused builder abstraction
-- [ ] **Documentation sync** — keep [cli.md](cli.md) and [capabilities.md](capabilities.md) current
+- [ ] **Documentation sync** — keep reference docs current with each release
 
 ### Security (P0)
 

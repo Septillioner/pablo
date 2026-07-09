@@ -1,12 +1,15 @@
 package lsp
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/tliron/glsp"
 	protocol "github.com/tliron/glsp/protocol_3_16"
 	"gopkg.in/yaml.v3"
+
+	"pablo/pkg/target"
 )
 
 const runWithArgsCommand = "pablo.runWithArgs"
@@ -21,20 +24,31 @@ func textDocumentCodeLens(context *glsp.Context, params *protocol.CodeLensParams
 	uri := params.TextDocument.URI
 	data, err := readDocumentBytes(uri)
 	if err != nil {
-		return nil, err
+		// Never fail the LSP request — empty lenses keep the editor quiet.
+		return []protocol.CodeLens{}, nil
 	}
 
 	locations, err := findEnvironmentLocations(data)
 	if err != nil {
-		return nil, err
+		return []protocol.CodeLens{}, nil
 	}
 
 	lenses := make([]protocol.CodeLens, 0, len(locations))
 	for _, loc := range locations {
-		title := fmt.Sprintf("Run %s/%s", loc.profileName, loc.envName)
+		if loc.keyNode == nil || loc.keyNode.Line < 1 {
+			continue
+		}
+
+		runTarget := target.Format(loc.profileName, loc.envName)
 		line := uint32(loc.keyNode.Line - 1)
-		col := uint32(loc.keyNode.Column - 1)
+		col := uint32(0)
+		if loc.keyNode.Column > 0 {
+			col = uint32(loc.keyNode.Column - 1)
+		}
 		endCol := col + uint32(len(loc.envName))
+		if endCol < col {
+			endCol = col
+		}
 
 		lenses = append(lenses, protocol.CodeLens{
 			Range: protocol.Range{
@@ -42,9 +56,9 @@ func textDocumentCodeLens(context *glsp.Context, params *protocol.CodeLensParams
 				End:   protocol.Position{Line: line, Character: endCol},
 			},
 			Command: &protocol.Command{
-				Title:     title,
+				Title:     "$(play) Run",
 				Command:   runWithArgsCommand,
-				Arguments: []any{uri, loc.profileName, loc.envName},
+				Arguments: []any{uri, runTarget},
 			},
 		})
 	}
@@ -56,12 +70,25 @@ func readDocumentBytes(uri string) ([]byte, error) {
 	if doc, ok := documents[uri]; ok {
 		return []byte(doc.content), nil
 	}
+	for storedURI, doc := range documents {
+		if normalizeURI(storedURI) == normalizeURI(uri) {
+			return []byte(doc.content), nil
+		}
+	}
 
 	filePath, err := filePathFromURI(uri)
 	if err != nil {
 		return nil, err
 	}
 	return os.ReadFile(filePath)
+}
+
+func normalizeURI(uri string) string {
+	path, err := filePathFromURI(uri)
+	if err != nil {
+		return strings.ToLower(uri)
+	}
+	return strings.ToLower(filepath.Clean(path))
 }
 
 func findEnvironmentLocations(data []byte) ([]envLocation, error) {

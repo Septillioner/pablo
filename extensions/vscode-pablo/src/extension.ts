@@ -23,6 +23,7 @@ import {
 } from './executable';
 import { buildTerminalCommand } from './shell';
 import { inspectManifest } from './inspect';
+import { registerProfileDecorations } from './profileDecorations';
 
 let client: LanguageClient | undefined;
 let extensionContext: vscode.ExtensionContext;
@@ -70,7 +71,31 @@ function createLanguageClient(pabloBinary: string): LanguageClient {
 		},
 		connectionOptions: {
 			maxRestartCount: 0
-		}
+		},
+		middleware: {
+			provideCodeLenses: async (document, token, next) => {
+				try {
+					const lenses = await next(document, token);
+					return lenses?.map((lens) => {
+						if (lens.command?.command !== 'pablo.runWithArgs') {
+							return lens;
+						}
+
+						const runTarget = String(lens.command.arguments?.[1] ?? '');
+						return new vscode.CodeLens(lens.range, {
+							title: '$(play) Run',
+							command: lens.command.command,
+							arguments: lens.command.arguments,
+							tooltip: runTarget,
+						});
+					}) ?? [];
+				} catch (err: unknown) {
+					const message = err instanceof Error ? err.message : String(err);
+					outputChannel.appendLine(`CodeLens request failed: ${message}`);
+					return [];
+				}
+			},
+		},
 	};
 
 	return new LanguageClient(
@@ -222,6 +247,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	outputChannel = vscode.window.createOutputChannel('Pablo Language Server');
 	traceOutputChannel = vscode.window.createOutputChannel('Pablo LSP Trace');
 	outputChannel.appendLine('Pablo extension is now active!');
+	registerProfileDecorations(context);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('pablo.selectExecutable', async () => {
@@ -265,8 +291,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			'pablo.runWithArgs',
-			(uri: string, profile: string, env: string) => {
-				void executeRun(vscode.Uri.parse(uri).fsPath, profile, env);
+			(uri: string, runTarget: string) => {
+				void executeRun(vscode.Uri.parse(uri).fsPath, runTarget);
 			}
 		)
 	);
@@ -331,10 +357,10 @@ async function runPabloRun() {
 		return;
 	}
 
-	await executeRun(fileUri.fsPath, profilePick.profile.name, envPick);
+	await executeRun(fileUri.fsPath, `${profilePick.profile.name}/${envPick}`);
 }
 
-async function executeRun(filePath: string, profile: string, env: string): Promise<void> {
+async function executeRun(filePath: string, runTarget: string): Promise<void> {
 	const binary = await resolvePabloBinary(extensionContext, outputChannel);
 	if (!binary) {
 		await handlePabloMissing(extensionContext);
@@ -342,7 +368,7 @@ async function executeRun(filePath: string, profile: string, env: string): Promi
 	}
 
 	const resolved = normalizeExecutablePath(binary);
-	const args = ['run', '-f', filePath, '-p', profile, '-e', env];
+	const args = ['run', '-f', filePath, runTarget];
 	const line = buildTerminalCommand(resolved, args);
 	const terminal = vscode.window.terminals.find((t) => t.name === 'Pablo CLI')
 		|| vscode.window.createTerminal('Pablo CLI');

@@ -33,7 +33,7 @@ Artifacts are written to `build/`, which is gitignored.
 - [ ] `src/VERSION` updated to the new version (no `v` prefix, no trailing whitespace)
 - [ ] [`CHANGELOG.md`](CHANGELOG.md) updated with a new entry for this version
 - [ ] [`README.md`](README.md) install / usage instructions still accurate
-- [ ] [`docs/schema/schema.md`](docs/schema/schema.md) reflects any schema changes
+- [ ] [`docs/reference/configuration.md`](docs/reference/configuration.md) reflects any schema changes
 - [ ] Manually validated against fixtures under `tests/` for the affected deployment types
 - [ ] No new direct dependencies without justification in CHANGELOG
 

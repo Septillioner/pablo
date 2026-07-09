@@ -14,7 +14,8 @@ Pablo is a powerful deployment helper for managing multi-environment builds and 
     - `pablo-tpl-docker`: Docker Compose
 - **Custom File Icon**: Beautiful logo integration for your `pablo.yaml` files.
 - **CLI Integration**: Run Pablo commands (`check`, `init`, `run`) directly from the command palette. **Run** prompts for profile and environment.
-- **CodeLens Run**: Each environment line in `pablo.yaml` shows a **Run profile/env** link (e.g. `Run default/windows-local`) that runs deployment without QuickPick.
+- **CodeLens Run**: Each environment line shows **$(play) Run** (hover for `profile/env`); runs `pablo run -f ... profile/env` without QuickPick.
+- **Environment gutters**: Colored left borders at **profile indent** (one color per profile) and **environment indent** (separate hue-spread palette per env block, including nested lines).
 
 ## Usage
 
