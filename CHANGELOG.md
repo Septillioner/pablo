@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.5.4] - 2026-07-10
+
+### Added
+
+- `pablo init --template` / `-t` — interactive wizard to choose a sample template type (`static`, `binary`, `docker`, `git-sync`); requires an interactive terminal.
+- Visual Studio extension — **Pablo Run Deployment** tool window with profile/environment combos and a **Run Deployment** button; **Tools → Pablo: Run Deployment** opens this panel.
+- Visual Studio extension — **Pablo** toolbar (**View → Toolbars → Pablo**) with cascading **Manifest** / **Profile** / **Environment** combos plus **Run**; manifests are discovered from the solution and open documents.
+
 ### Fixed
 
 - Visual Studio extension — incorrect `AdornmentLayerDefinition` MEF export broke the text editor factory (`ITextEditorFactoryService2` missing) when the extension loaded.
@@ -27,12 +35,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Visual Studio extension — Pablo toolbar Manifest combo showed duplicate `pablo.yaml` labels; items now use solution-relative paths with automatic disambiguation.
 - Visual Studio extension — LSP `ActivateAsync` could throw on background thread during logging; activation wrapped in try/catch with PID/exit logging.
 - LSP completion — items now include `insertText` for reliable insertion in Visual Studio (and VS Code).
-
-### Added
-
-- `pablo init --template` / `-t` — interactive wizard to choose a sample template type (`static`, `binary`, `docker`, `git-sync`); requires an interactive terminal.
-- Visual Studio extension — **Pablo Run Deployment** tool window with profile/environment combos and a **Run Deployment** button; **Tools → Pablo: Run Deployment** opens this panel.
-- Visual Studio extension — **Pablo** toolbar (**View → Toolbars → Pablo**) with cascading **Manifest** / **Profile** / **Environment** combos plus **Run**; manifests are discovered from the solution and open documents.
 
 ## [1.5.1] - 2026-07-09
 
