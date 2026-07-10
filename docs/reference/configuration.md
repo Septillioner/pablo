@@ -60,6 +60,8 @@ pablo run sequence extension
 
 Cannot combine `pablo run sequence` with `-p` / `-e`. Global flags (`-f`, `--force`, `--verbose`) apply to every step.
 
+Guide: [Sequences](../guides/sequences.md).
+
 ---
 
 ## Credential

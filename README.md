@@ -99,6 +99,7 @@ pablo check                # validate
 pablo run                  # defaults: profile default, env production
 # or: pablo run default/production
 # or: pablo run -p default -e production
+# or: pablo run sequence release   # named multi-target sequence
 ```
 
 Simplest useful case: `type: static` with `output_dir` and no `build` — copy files as-is.
@@ -133,8 +134,9 @@ profiles:
 | Command | Description |
 |---------|-------------|
 | `pablo run [profile/env]` | Run the deploy pipeline (`-p` / `-e` / `-f` / `--force`) |
+| `pablo run sequence <name>` | Run a named ordered sequence of `profile/env` targets |
 | `pablo check` | Validate a manifest |
-| `pablo inspect` | List profiles and environments (`--json`) |
+| `pablo inspect` | List profiles, environments, and sequences (`--json`) |
 | `pablo init` | Generate a sample (`-t` / `--template` wizard) |
 | `pablo uninstall` | Remove deploy dir and PATH entries |
 | `pablo update` | Update CLI from GitHub Releases |
@@ -176,7 +178,7 @@ Both use `pablo lsp` for completion, hover, validation, and Run (CodeLens / tool
 | Section | Pages |
 |---------|-------|
 | Getting started | [Installation](docs/getting-started/installation.md) · [Quick start](docs/getting-started/quick-start.md) · [First deployment](docs/getting-started/first-deployment.md) |
-| Guides | [SSH](docs/guides/ssh.md) · [Docker](docs/guides/docker.md) · [Credentials](docs/guides/credentials.md) · [Strategies](docs/guides/deploy-strategies.md) · [Git sync](docs/guides/git-sync.md) · [Binary / PATH](docs/guides/binary-and-path.md) |
+| Guides | [Sequences](docs/guides/sequences.md) · [SSH](docs/guides/ssh.md) · [Docker](docs/guides/docker.md) · [Credentials](docs/guides/credentials.md) · [Strategies](docs/guides/deploy-strategies.md) · [Git sync](docs/guides/git-sync.md) · [Binary / PATH](docs/guides/binary-and-path.md) |
 | Reference | [CLI](docs/reference/cli.md) · [Configuration](docs/reference/configuration.md) · [Capabilities](docs/reference/capabilities.md) · [API](docs/reference/api.md) |
 | More | [FAQ](docs/faq.md) · [Troubleshooting](docs/troubleshooting.md) · [Roadmap](docs/roadmap.md) · [Full index](docs/README.md) |
 

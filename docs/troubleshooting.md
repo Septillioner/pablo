@@ -24,9 +24,18 @@ profile "api" not found
 
 Check spelling and that the profile exists under `profiles:` in your manifest. List with `pablo inspect`.
 
+### Sequence step errors
+
+```
+sequence "release" step 1: target must be profile/environment
+profile "missing" not found
+```
+
+Each sequence step must be `profile/env` and both keys must exist. Empty sequences are invalid. Validate with `pablo check`; list sequences with `pablo inspect`. Guide: [Sequences](guides/sequences.md).
+
 ### Run blocked despite passing `check`
 
-`pablo run` re-validates the manifest. Ensure `-p` and `-e` match existing keys.
+`pablo run` re-validates the manifest. Ensure `-p` and `-e` match existing keys. For sequences, use `pablo run sequence <name>` without `-p` / `-e`.
 
 ---
 

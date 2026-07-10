@@ -12,6 +12,7 @@ Short, copy-paste manifests ordered from simplest to more advanced. Each step ad
 | 4 | [SSH static](#4-ssh-static-remote) | `remote` + credentials |
 | 5 | [Docker Compose](#5-docker-compose) | `docker` type |
 | 6 | [Multi-profile](#6-multi-profile-one-manifest) | Several apps in one file |
+| 7 | [Sequences](#7-run-targets-in-order-sequences) | Ordered multi-target `pablo run sequence` |
 
 Hands-on walkthrough of #1: [First deployment](../getting-started/first-deployment.md).
 
@@ -211,6 +212,51 @@ pablo run -p api -e production
 ```
 
 Concepts: [Project structure](../getting-started/project-structure.md). Fixture: [tests/agnostic/multi-profile](../../tests/agnostic/multi-profile/).
+
+---
+
+## 7. Run targets in order (sequences)
+
+Define a root-level `sequences` list. Each step is `profile/env`. List order is execution order; the first failure stops the rest.
+
+```yaml
+name: release-bundle
+version: 1.0.0
+
+sequences:
+  ship:
+    - web/production
+    - api/production
+
+profiles:
+  web:
+    type: static
+    output_dir:
+      dir: ./web/dist
+      include: ["**/*"]
+    environments:
+      production:
+        deploy:
+          target_path: ./out/web
+          strategy: overwrite
+
+  api:
+    type: static
+    output_dir:
+      dir: ./api/dist
+      include: ["**/*"]
+    environments:
+      production:
+        deploy:
+          target_path: ./out/api
+          strategy: overwrite
+```
+
+```bash
+pablo run sequence ship
+```
+
+Reference: [Sequences guide](../guides/sequences.md) · [Configuration — Sequences](../reference/configuration.md#sequences) · [CLI — run](../reference/cli.md#run).
 
 ---
 

@@ -59,7 +59,7 @@ pablo run sequence extension
 pablo run sequence extension -f pablo-sepy.yaml --verbose
 ```
 
-Runs each step in manifest list order; stops on the first failure. `-p` / `-e` cannot be combined with `sequence`.
+Runs each step in manifest list order; stops on the first failure. `-p` / `-e` cannot be combined with `sequence`. Guide: [Sequences](../guides/sequences.md).
 
 ---
 
@@ -86,7 +86,7 @@ pablo check -f pablo.yaml -p frontend -e production
 
 ## `inspect`
 
-Lists profiles and their environments from a manifest. Used by the VS Code extension to populate profile/environment pickers.
+Lists profiles, environments, and named sequences from a manifest. Used by the VS Code extension to populate profile/environment pickers.
 
 **Flags:**
 

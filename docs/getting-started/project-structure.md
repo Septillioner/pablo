@@ -41,6 +41,8 @@ pablo run -p api -e staging
 
 ```
 pablo.yaml
+├── credentials   (optional)
+├── sequences     (optional — ordered profile/env lists)
 └── profiles
     └── <profileName>
         ├── type          (static | binary | docker | git-sync)
@@ -65,6 +67,26 @@ pablo.yaml
 **Environment** = where it goes (production, staging, local).
 
 Defaults when omitted: profile `default`, environment `production`.
+
+---
+
+## Sequences
+
+Optional root-level `sequences` run several `profile/env` targets in order:
+
+```yaml
+sequences:
+  release:
+    - api/staging
+    - api/production
+    - web/production
+```
+
+```bash
+pablo run sequence release
+```
+
+List order is execution order; Pablo stops on the first failure. Details: [Sequences guide](../guides/sequences.md) · [Configuration — Sequences](../reference/configuration.md#sequences).
 
 ---
 

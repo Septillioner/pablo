@@ -63,7 +63,7 @@ cd src
 go test ./...
 ```
 
-Twelve packages currently have tests: `filter`, `pathutil`, `config`, `template`, `deployer`, `health`, `hooks`, `system`, `ssh`, `pipeline`, `scm`, `docker`.
+Twelve packages currently have tests: `filter`, `pathutil`, `config`, `validate`, `inspect`, `template`, `deployer`, `health`, `hooks`, `system`, `ssh`, `pipeline`, `scm`, `docker`.
 
 ### E2E integration tests
 
@@ -106,6 +106,7 @@ go run ../../../src/main.go run -p local-test -e dev
 | SCM (git) | x | x | x |
 | Docker adapter | x | x | x |
 | Full pipeline `Run` | | x | x |
+| `RunSequence` (ordered multi-target) | x | | |
 
 ---
 

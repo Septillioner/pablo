@@ -93,6 +93,8 @@ flowchart TD
     health --> done[on_success / on_failure]
 ```
 
+`pablo run sequence <name>` loads the manifest, resolves `sequences.<name>`, and calls the single-target pipeline for each `profile/env` step **in list order**, aborting on the first error.
+
 ### Profile types
 
 | Type | Flow |
@@ -108,7 +110,7 @@ flowchart TD
 
 | Service | Path | Role |
 |---------|------|------|
-| pipeline | `services/pipeline/` | Full lifecycle orchestration |
+| pipeline | `services/pipeline/` | Full lifecycle orchestration (`Run`, `RunSequence`) |
 | deployer | `services/deployer/` | Local copy, SSH tar stream, protected paths |
 | filter | `services/filter/` | Gitignore-style include/exclude globs |
 | scm | `services/scm/` | Git clone/pull |
@@ -134,6 +136,7 @@ flowchart TD
 ```
 Config
 ├── credentials
+├── sequences          (optional — named ordered profile/env lists)
 └── profiles
     └── Profile (type, build, output_dir, git, hooks, pipeline)
         └── environments

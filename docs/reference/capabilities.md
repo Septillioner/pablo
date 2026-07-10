@@ -31,6 +31,8 @@ See also: [Configuration](configuration.md) · [Roadmap](../roadmap.md)
 
 ## Pipeline Phases
 
+Single-target `pablo run` (one profile + environment):
+
 1. Load and validate manifest
 2. Pre-deploy hooks (`hooks.pre`)
 3. Build (`build.command`) — skipped when `build` is omitted or empty
@@ -41,6 +43,10 @@ See also: [Configuration](configuration.md) · [Roadmap](../roadmap.md)
 8. Post-deploy hooks (`hooks.post`)
 9. Health check (`pipeline.health_check`)
 10. `on_success` / `on_failure` hooks
+
+### Sequences
+
+Root-level `sequences` name ordered lists of `profile/env` targets. `pablo run sequence <name>` runs each step with the full pipeline above, **in list order**, and stops on the first failure. See [Sequences](../guides/sequences.md) · [Configuration — Sequences](configuration.md#sequences).
 
 ---
 
@@ -62,13 +68,14 @@ Some fields are validated in the manifest but not yet executed at runtime:
 - Gitignore-style glob artifact filtering (`*.ext` at any depth, `/*.ext` root-only, `**` globstar).
 - Template variable substitution (`{{VAR}}` in config files).
 - Config inheritance — profile settings cascade into environments.
+- Named `sequences` — ordered multi-target runs via `pablo run sequence <name>` (stops on first failure).
 - Automatic PATH registration (Windows, macOS, Linux user and system scope).
 - Backup, recreate, and rename-replace strategies with protected path detection (backup/recreate only).
 - `docker` type with local and remote (SSH) Docker Compose orchestration.
 - `git-sync` with local and remote (SSH) git clone/pull.
 - Environment variable injection via `.env` file generation.
 - LSP-powered VS Code extension with completion, hover, and YAML validation.
-- Go unit tests for twelve packages: `filter`, `pathutil`, `config`, `template`, `deployer`, `health`, `hooks`, `system`, `ssh`, `pipeline`, `scm`, `docker` (`cd src && go test ./...`).
+- Go unit tests for core packages including `filter`, `pathutil`, `config`, `validate`, `inspect`, `template`, `deployer`, `health`, `hooks`, `system`, `ssh`, `pipeline`, `scm`, `docker` (`cd src && go test ./...`).
 - Docker-based E2E tests for remote SSH static and docker deploy (`cd tests/e2e && go test -tags=integration ./...`).
 
 ---

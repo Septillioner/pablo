@@ -13,8 +13,8 @@ Pablo is a CLI deployment helper that automates building, filtering, and deployi
 | [Installation](getting-started/installation.md) | Download binary, build from source, self-deploy, VS Code extension |
 | [Quick start](getting-started/quick-start.md) | Create a manifest, validate, and run your first deploy |
 | [First deployment](getting-started/first-deployment.md) | Step-by-step local static deploy walkthrough |
-| [Project structure](getting-started/project-structure.md) | Manifest concepts, profiles, environments, multiple files |
-| [Examples](examples/README.md) | Progressive samples — local copy → build → SSH → Docker → multi-profile |
+| [Project structure](getting-started/project-structure.md) | Manifest concepts, profiles, environments, sequences, multiple files |
+| [Examples](examples/README.md) | Progressive samples — local copy → build → SSH → Docker → multi-profile → sequences |
 
 ---
 
@@ -22,6 +22,7 @@ Pablo is a CLI deployment helper that automates building, filtering, and deployi
 
 | Page | Description |
 |------|-------------|
+| [Sequences](guides/sequences.md) | Ordered multi-target runs with `pablo run sequence` |
 | [SSH remote deploy](guides/ssh.md) | Credentials, tar vs legacy transfer, remote Docker |
 | [Docker](guides/docker.md) | Local and remote Docker Compose deployments |
 | [Credentials](guides/credentials.md) | SSH, token, and basic auth references |

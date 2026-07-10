@@ -48,6 +48,16 @@ The VS Code extension recognizes `pablo*.yaml` and `pablo*.yml`.
 
 Yes. For `type: static`, omit `build`. Pablo copies filtered files from `output_dir` / `deploy.source` to `target_path`. See [Examples #1](examples/README.md#1-copy-files-locally-no-build) and [First deployment](getting-started/first-deployment.md).
 
+### Can I run multiple environments in order?
+
+Yes. Define a root-level `sequences` list of `profile/env` targets, then:
+
+```bash
+pablo run sequence release
+```
+
+Steps run in list order; the first failure aborts the rest. See [Sequences](guides/sequences.md) · [Configuration — Sequences](reference/configuration.md#sequences).
+
 ---
 
 ## Deployment
