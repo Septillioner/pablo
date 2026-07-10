@@ -124,6 +124,33 @@ For a critical bug in the latest release:
 4. Follow the standard release steps above for the new patch version
 5. Merge the hotfix branch back into `main`
 
+### Windows release scripts (local tooling)
+
+Maintainer-only batch/PowerShell scripts live at the repo root (gitignored). They wrap build, checksums, tag, and `gh release create`.
+
+| Script | When to use |
+|--------|-------------|
+| `release-new-version.bat X.Y.Z` | Normal release — you write `CHANGELOG.md` and `release-notes.md` first |
+| `release-hotfix.bat "fix message"` | Code hotfix — auto patch bump (`1.5.6` → `1.5.7`), auto `CHANGELOG` + `release-notes`, then full release |
+| `release-hotfix.bat 1.5.7 "fix message"` | Same as above with an explicit target version |
+| `release-force.bat X.Y.Z` | **Artifact-only** rebuild — same tag overwritten (wrong `checksums.txt`, bad assets). Requires `src/VERSION` = `X.Y.Z`. Type `YES` to confirm. Does **not** bump semver. |
+
+**Do not use** non-semver tags like `1.5.6a` — VS Code marketplace, `pablo update`, and extension assembly versions expect `MAJOR.MINOR.PATCH`.
+
+`release-force.bat` deletes the local/remote git tag and GitHub Release for `vX.Y.Z`, rebuilds CLI + VSIXes, and republishes. Use only when release **files** were wrong, not when you need to ship new code (use `release-hotfix.bat` instead).
+
+`release-hotfix.bat` commits generated docs (`chore: prepare vX.Y.Z hotfix`) then calls `release-new-version.bat`.
+
+Environment flags used internally by the scripts:
+
+| Variable | Effect |
+|----------|--------|
+| `PABLO_RELEASE_SKIP_DOCS=1` | Skip `CHANGELOG` / `release-notes` validation |
+| `PABLO_RELEASE_ALLOW_RETAG=1` | Skip tag-exists checks |
+| `PABLO_RELEASE_SKIP_BUMP=1` | Skip `src/VERSION` + extension bump commit |
+| `PABLO_RELEASE_AUTO_CONFIRM=1` | Skip interactive `y/N` prompt |
+| `PABLO_RELEASE_ALLOW_DIRTY=1` | Skip clean working-tree check |
+
 ## Rollback
 
 GitHub Releases cannot be edited destructively without losing download counts. To rollback:

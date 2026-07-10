@@ -57,4 +57,7 @@ PMAP.md
 pablo-sepy.yaml
 release-new-version.bat
 release-bump-versions.ps1
+release-force.bat
+release-hotfix.bat
+release-hotfix-docs.ps1
 RELEASING.md

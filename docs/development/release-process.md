@@ -47,6 +47,18 @@ Output: `build/` (gitignored).
 5. Create GitHub Release with binaries + `checksums.txt` + `release-notes.md`
 6. Verify downloaded binary: `pablo version` + checksum
 
+### Windows automated release (maintainer)
+
+Local scripts at the repo root (gitignored):
+
+| Script | Purpose |
+|--------|---------|
+| `release-new-version.bat X.Y.Z` | Full release — manual `CHANGELOG` + `release-notes` required |
+| `release-hotfix.bat "message"` | Patch bump + auto docs + release |
+| `release-force.bat X.Y.Z` | Rebuild and overwrite an existing release (artifact errors only) |
+
+Details and env flags: [RELEASING.md](../../RELEASING.md#windows-release-scripts-local-tooling)
+
 ---
 
 ## Pablo self-release (`pablo-sepy.yaml`)
@@ -67,7 +79,8 @@ pablo run -f pablo-sepy.yaml -p cli-release -e production
 
 ## Hotfix and rollback
 
-- **Hotfix:** branch from release tag, patch, bump patch version, re-release.
+- **Hotfix (code):** `release-hotfix.bat "fix …"` on Windows, or branch from release tag, patch, bump patch version, re-release manually.
+- **Hotfix (artifacts):** `release-force.bat X.Y.Z` when binaries or `checksums.txt` were wrong but code is unchanged.
 - **Rollback:** mark bad release as pre-release on GitHub; ship a new patch.
 
 Details: [RELEASING.md](../../RELEASING.md)
