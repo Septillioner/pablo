@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Text.Formatting;
 using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Utilities;
 using Pablo.VisualStudio.ContentType;
+using Pablo.VisualStudio.Services;
 
 namespace Pablo.VisualStudio.Decorations
 {
@@ -29,11 +30,15 @@ namespace Pablo.VisualStudio.Decorations
         public StripeKind Kind { get; }
     }
 
-    [Export(typeof(AdornmentLayerDefinition))]
-    [Name("PabloProfileStripe")]
-    [Order(After = PredefinedAdornmentLayers.Selection, Before = PredefinedAdornmentLayers.Text)]
-    internal sealed class ProfileStripeAdornmentLayerDefinition
+    // AdornmentLayerDefinition is sealed — export a field of that type, not a custom class.
+    // Exporting a non-assignable type breaks WpfTextEditorFactoryService MEF composition
+    // (ITextEditorFactoryService2 missing → VS error dialog).
+    internal static class ProfileStripeAdornmentLayerDefinition
     {
+        [Export(typeof(AdornmentLayerDefinition))]
+        [Name("PabloProfileStripe")]
+        [Order(After = PredefinedAdornmentLayers.Selection, Before = PredefinedAdornmentLayers.Text)]
+        internal static AdornmentLayerDefinition EditorAdornmentLayer = null!;
     }
 
     [Export(typeof(IViewTaggerProvider))]
@@ -144,6 +149,9 @@ namespace Pablo.VisualStudio.Decorations
     {
         public void TextViewCreated(IWpfTextView textView)
         {
+            TrackManifestPath(textView);
+            textView.GotAggregateFocus += (_, __) => TrackManifestPath(textView);
+
             var layer = textView.GetAdornmentLayer("PabloProfileStripe");
             if (layer == null)
             {
@@ -208,5 +216,13 @@ namespace Pablo.VisualStudio.Decorations
 
         [Import]
         public IViewTagAggregatorFactoryService AggregatorFactory { get; set; } = null!;
+
+        private static void TrackManifestPath(ITextView textView)
+        {
+            if (textView.TextBuffer.Properties.TryGetProperty(typeof(ITextDocument), out ITextDocument? document) && document != null)
+            {
+                PabloManifestTracker.SetLastKnown(document.FilePath);
+            }
+        }
     }
 }

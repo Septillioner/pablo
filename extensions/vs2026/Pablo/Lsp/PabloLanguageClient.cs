@@ -15,9 +15,12 @@ namespace Pablo.VisualStudio.Lsp
 {
     [Export(typeof(ILanguageClient))]
     [ContentType(PabloContentTypeDefinitions.ContentType)]
+    [ContentType("yaml")]
+    [ContentType("YAML")]
     internal sealed class PabloLanguageClient : ILanguageClient, ILanguageClientCustomMessage2
     {
         private readonly PabloMiddleLayer _middleLayer = new();
+        private Process? _activeProcess;
 
         public string Name => "Pablo Language Server";
 
@@ -41,38 +44,82 @@ namespace Pablo.VisualStudio.Lsp
         public async Task<Connection?> ActivateAsync(CancellationToken token)
         {
             PabloLanguageClientHost.Register(this);
-            var binary = await PabloPackage.Instance.ExecutableService.ResolveBinaryAsync();
-            if (binary == null)
+
+            try
             {
-                PabloOutputWindow.WriteLine("Pablo binary not found for LSP activation.");
+                var package = PabloPackage.Instance;
+                var binary = await PabloBinaryResolver.ResolveBinaryAsync(package?.ExecutableService);
+                if (binary == null)
+                {
+                    PabloOutputWindow.WriteLine("Pablo binary not found for LSP activation. Use Tools → Pablo: Select Executable.");
+                    return null;
+                }
+
+                if (!await PabloBinaryResolver.AssertLspSupportedAsync(binary))
+                {
+                    PabloOutputWindow.WriteLine($"Pablo binary does not support LSP: {binary}");
+                    return null;
+                }
+
+                PabloOutputWindow.WriteLine($"Starting Pablo LSP: {binary}");
+
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = binary,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                PabloProcessHelper.SetArguments(startInfo, new[] { "lsp" });
+
+                var process = Process.Start(startInfo);
+                if (process == null)
+                {
+                    PabloOutputWindow.WriteLine("Failed to start pablo lsp process.");
+                    return null;
+                }
+
+                _activeProcess = process;
+                PabloOutputWindow.WriteLine($"Pablo LSP started (pid {process.Id}).");
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var stderr = await process.StandardError.ReadToEndAsync();
+                        if (!string.IsNullOrWhiteSpace(stderr))
+                        {
+                            PabloOutputWindow.WriteLine($"pablo lsp stderr: {stderr.Trim()}");
+                        }
+                    }
+                    catch
+                    {
+                        // Process may exit before stderr is fully read.
+                    }
+                }, token);
+
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        process.WaitForExit();
+                        PabloOutputWindow.WriteLine($"Pablo LSP exited (pid {process.Id}, code {process.ExitCode}).");
+                    }
+                    catch
+                    {
+                        // Process may already be gone during shutdown.
+                    }
+                }, token);
+
+                return new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream);
+            }
+            catch (Exception ex)
+            {
+                PabloOutputWindow.WriteLine($"Pablo LSP activation failed: {ex.Message}");
                 return null;
             }
-
-            if (!await PabloPackage.Instance.ExecutableService.AssertLspSupportedAsync(binary))
-            {
-                PabloOutputWindow.WriteLine($"Pablo binary does not support LSP: {binary}");
-                return null;
-            }
-
-            PabloOutputWindow.WriteLine($"Using Pablo binary: {binary}");
-
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = binary,
-                Arguments = "lsp",
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
-
-            var process = Process.Start(startInfo);
-            if (process == null)
-            {
-                return null;
-            }
-
-            return new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream);
         }
 
         public async Task OnLoadedAsync()
@@ -85,11 +132,13 @@ namespace Pablo.VisualStudio.Lsp
 
         public Task OnServerInitializedAsync()
         {
+            PabloOutputWindow.WriteLine("Pablo LSP initialized.");
             return Task.CompletedTask;
         }
 
         public Task<InitializationFailureContext?> OnServerInitializeFailedAsync(ILanguageClientInitializationInfo initializationState)
         {
+            PabloOutputWindow.WriteLine($"Pablo LSP initialize failed: {initializationState?.StatusMessage ?? "unknown error"}");
             return Task.FromResult<InitializationFailureContext?>(new InitializationFailureContext
             {
                 FailureMessage = initializationState?.StatusMessage ?? "Pablo language server failed to initialize.",
@@ -105,6 +154,7 @@ namespace Pablo.VisualStudio.Lsp
         public Task DetachAsync()
         {
             Rpc = null;
+            _activeProcess = null;
             return Task.CompletedTask;
         }
 

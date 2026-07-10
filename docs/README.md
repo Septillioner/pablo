@@ -28,7 +28,7 @@ Pablo is a CLI deployment helper that automates building, filtering, and deployi
 | [Git sync](guides/git-sync.md) | Pull-based deployments for interpreted apps |
 | [Binary and PATH](guides/binary-and-path.md) | Binary type, PATH registration, uninstall cleanup |
 | [VS Code extension](guides/vscode.md) | Editor setup, LSP, Run command, troubleshooting |
-| [Visual Studio extension](guides/visual-studio.md) | VS 2022 VSIX, LSP, commands, troubleshooting |
+| [Visual Studio extension](guides/visual-studio.md) | VS 2022/2026 VSIX, LSP, tool window, toolbar, troubleshooting |
 
 ---
 

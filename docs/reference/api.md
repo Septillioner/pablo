@@ -84,3 +84,19 @@ If the document is open in the editor, the server reads the in-memory buffer; ot
 CodeLens **Run profile/env** invokes `pablo run` with the manifest path, profile, and environment from the clicked line.
 
 See [VS Code guide](../guides/vscode.md) for setup and troubleshooting.
+
+---
+
+## Visual Studio extension commands
+
+| Command | CLI equivalent |
+|---------|----------------|
+| Tools → Pablo: Check YAML | `pablo check -f <file>` |
+| Tools → Pablo: Init Config | `pablo init` |
+| Tools → Pablo: Run Deployment | Opens tool window → `pablo run -f <file> profile/env` |
+| Pablo toolbar → Run | `pablo run -f <file> profile/env` |
+| Tools → Pablo: Select Executable | *(no CLI equivalent)* |
+
+Profile/environment lists use LSP `pablo/listProfiles` with CLI `inspect --json` fallback.
+
+See [Visual Studio guide](../guides/visual-studio.md).

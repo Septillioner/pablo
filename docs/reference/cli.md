@@ -15,7 +15,7 @@ See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 | `run` | Execute the full deployment pipeline |
 | `check` | Validate a manifest file |
 | `inspect` | List profiles and environments from a manifest |
-| `init` | Generate a sample manifest |
+| `init` | Generate a sample manifest (`--template` / `-t` for type wizard) |
 | `uninstall` | Remove deployed files and clean up PATH entries |
 | `version` | Print Pablo version information |
 | `update` | Update the Pablo CLI binary from GitHub Releases |
@@ -93,12 +93,20 @@ pablo inspect -f pablo.yaml --json
 
 Creates a sample manifest file named `pablo_sample.yaml` in the current directory.
 
-**Flags:** none
+**Flags:**
 
-**Example:**
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--template` | `-t` | `false` | Interactive template type wizard (`static`, `binary`, `docker`, `git-sync`) |
+
+Without `--template`, writes a local `static` sample. With `--template`, shows a numbered menu in the terminal (requires an interactive TTY).
+
+**Examples:**
 
 ```bash
 pablo init
+pablo init --template
+pablo init -t
 ```
 
 ---

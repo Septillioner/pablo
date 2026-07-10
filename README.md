@@ -81,7 +81,7 @@ See [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md).
 pablo run [profile/env]  -p <profile> -e <env> [-f pablo.yaml] [--force]
 pablo check              -f <file> [-p profile] [-e env]
 pablo inspect            -f <file> [--json]
-pablo init
+pablo init              [-t|--template]
 pablo uninstall          -p <profile> -e <env> [--remove-backups]
 pablo version
 pablo lsp

@@ -1,6 +1,7 @@
 using System;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 
 namespace Pablo.VisualStudio
 {
@@ -9,6 +10,21 @@ namespace Pablo.VisualStudio
         private static IVsOutputWindowPane? _pane;
 
         public static void WriteLine(string message)
+        {
+            if (ThreadHelper.CheckAccess())
+            {
+                WriteLineCore(message);
+                return;
+            }
+
+            _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                WriteLineCore(message);
+            });
+        }
+
+        private static void WriteLineCore(string message)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             EnsurePane();

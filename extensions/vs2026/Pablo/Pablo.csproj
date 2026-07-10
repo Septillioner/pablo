@@ -6,6 +6,7 @@
     <AssemblyName>Pablo.VisualStudio</AssemblyName>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <UseCodebase>true</UseCodebase>
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
@@ -15,7 +16,11 @@
     <CopyOutputSymbolsToOutputDirectory>true</CopyOutputSymbolsToOutputDirectory>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <CreateVsixContainer>true</CreateVsixContainer>
-    <DeployExtension>false</DeployExtension>
+    <!-- Debug F5 deploys into Experimental Instance; Release packaging skips Exp deploy. -->
+    <DeployExtension Condition="'$(Configuration)' == 'Debug'">true</DeployExtension>
+    <DeployExtension Condition="'$(Configuration)' != 'Debug'">false</DeployExtension>
+    <VSSDKTargetPlatformRegRootSuffix>Exp</VSSDKTargetPlatformRegRootSuffix>
+    <!-- SDK-style: VSSDK evaluates these before IntermediateOutputPath is ready; pin absolute obj paths. -->
     <_VsixIntermediateOutputPath>$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\</_VsixIntermediateOutputPath>
     <FileManifest>$(_VsixIntermediateOutputPath)files.json</FileManifest>
     <TemplateFileManifest>$(_VsixIntermediateOutputPath)templateFiles.json</TemplateFileManifest>
@@ -30,25 +35,28 @@
 
   <PropertyGroup>
     <StartAction>Program</StartAction>
-    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    <StartProgram Condition="'$(DevEnvDir)' != ''">$(DevEnvDir)devenv.exe</StartProgram>
+    <StartProgram Condition="'$(DevEnvDir)' == ''">C:\Program Files\Microsoft Visual Studio\18\Insiders\Common7\IDE\devenv.exe</StartProgram>
     <StartArguments>/rootsuffix Exp</StartArguments>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.12.40392" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.12.48" />
+    <!-- Host VS supplies these at runtime; shipping them breaks MEF type identity. -->
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.12.48" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.13.2126">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="StreamJsonRpc" Version="2.20.17" />
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" ExcludeAssets="runtime" />
+    <PackageReference Include="StreamJsonRpc" Version="2.20.17" ExcludeAssets="runtime" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Design" />
     <Reference Include="System.Xaml" />
     <Reference Include="WindowsBase" />
@@ -58,6 +66,7 @@
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
+    <None Remove="extension.vsixmanifest" />
     <Content Include="Snippets\**\*.snippet">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
@@ -69,7 +78,21 @@
     </VSCTCompile>
   </ItemGroup>
 
-  <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="Exists('$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets')" />
+  <!-- When CreateVsixContainer is up-to-date/skipped, _CreatedVsixContainer is empty and Unzip fails. -->
+  <Target Name="EnsureCreatedVsixContainer" BeforeTargets="DeployVsixExtensionFiles" DependsOnTargets="CreateVsixContainer">
+    <ItemGroup Condition="'@(_CreatedVsixContainer)' == '' and Exists('$(TargetVsixContainer)')">
+      <_CreatedVsixContainer Include="$(TargetVsixContainer)" />
+    </ItemGroup>
+    <Error Condition="'$(DeployExtension)' == 'true' and '@(_CreatedVsixContainer)' == ''"
+           Text="VSIX was not produced at $(TargetVsixContainer). F5 Exp deploy cannot continue." />
+  </Target>
 
-  <Target Name="IncludeVsixInBuild" AfterTargets="Build" DependsOnTargets="MergeCtoResource;GeneratePkgDef;CopyPkgDef;CreateVsixContainer" Condition="'$(CreateVsixContainer)'=='true'" />
+  <!-- SDK-style BuildDependsOn ignores VSSDK's CreateVsixContainer/Deploy hooks — force them after Build. -->
+  <Target Name="IncludeVsixInBuild"
+          AfterTargets="Build"
+          DependsOnTargets="MergeCtoResource;GeneratePkgDef;CopyPkgDef;CreateVsixContainer;DeployVsixExtensionFiles"
+          Condition="'$(CreateVsixContainer)'=='true'" />
+
+  <!-- NuGet BuildTools sets VSToolsPath; this import enables CreateVsixContainer + F5 Exp deploy. -->
+  <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != '' and Exists('$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets')" />
 </Project>

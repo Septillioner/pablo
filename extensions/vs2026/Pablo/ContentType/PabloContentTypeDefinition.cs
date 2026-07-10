@@ -7,12 +7,13 @@ namespace Pablo.VisualStudio.ContentType
     internal static class PabloContentTypeDefinitions
     {
         public const string ContentType = "pablo";
-    }
 
-    [Export]
-    [Name(PabloContentTypeDefinitions.ContentType)]
-    [BaseDefinition(CodeRemoteContentDefinition.CodeRemoteContentTypeName)]
-    internal sealed class PabloContentTypeDefinition
-    {
+        // ContentTypeDefinition is sealed — export a field of that type, not a custom class.
+        // Exporting a non-ContentTypeDefinition type means "pablo" never registers, so
+        // IFilePathToContentTypeProvider / ILanguageClient never activate for manifests.
+        [Export]
+        [Name(ContentType)]
+        [BaseDefinition(CodeRemoteContentDefinition.CodeRemoteContentTypeName)]
+        internal static ContentTypeDefinition PabloContentTypeDefinition = null!;
     }
 }

@@ -6,6 +6,34 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+
+- Visual Studio extension — incorrect `AdornmentLayerDefinition` MEF export broke the text editor factory (`ITextEditorFactoryService2` missing) when the extension loaded.
+- Visual Studio extension — LSP probe quoted `help` as a PowerShell string (`'help' lsp`), so valid 1.3+ binaries were reported as lacking LSP; Select Executable now probes the chosen binary and shows its version + LSP status.
+- Visual Studio extension — Debug F5 did not deploy into the Experimental Instance (SDK-style build skipped VSIX deploy); Debug builds now package and deploy to Exp.
+- Visual Studio extension — **Run Deployment** and related commands failed to detect an open `pablo.yaml` when focus left the editor; active manifest resolution now uses DTE, document frame, and last-known path tracking.
+- Visual Studio extension — Run Deployment tool window used default WPF colors (unreadable on dark theme); labels and combos now use VS `EnvironmentColors`.
+- Visual Studio extension — deploy tool window showed misleading "No profiles" when Pablo CLI was not configured; inspect errors and missing executable are shown inline.
+- Visual Studio extension — terminal commands used PowerShell syntax inside `cmd.exe`; shell detection now launches the matching host with correct quoting.
+- Visual Studio extension — `cmd /k` mangled multi-quoted paths (`ERROR_INVALID_NAME` / "filename, directory name, or volume label syntax is incorrect"); Run now uses `cmd /s /k` with a single wrapped command line.
+- Visual Studio extension — `pablo` content type was exported as a custom class instead of `ContentTypeDefinition`, so manifests never got the Pablo content type and LSP/CodeLens did not activate.
+- Visual Studio extension — manifest path resolution falls back to any open `pablo*.yaml` document when editor focus is lost.
+- Visual Studio extension — deploy tool window ComboBoxes inherited ToolWindow text color on white chrome (white-on-white in dark theme); combos and buttons now use VS `ThemedDialog*` styles.
+- Visual Studio extension — LSP `ActivateAsync` returned null when MEF loaded the language client before package init (no retry); binary resolution now uses settings/PATH without requiring `PabloPackage.Instance`, and LSP restarts after package initialization.
+- Visual Studio extension — LSP client bound only to `pablo` content type; built-in YAML editor keeps `yaml`/`YAML`, so the client never activated for many manifests. Client now also binds to inbox YAML content types.
+- Visual Studio extension — Pablo toolbar DropDownCombos used wrong `InValue`/`OutValue` protocol (index vs label); combos appeared empty. Handlers now return current value + `string[]` lists and select by label.
+- Visual Studio extension — toolbar Profile/Environment combos raced async inspect; lists stayed empty until reopen. Inspect now completes synchronously before get-list returns.
+- Visual Studio extension — manifest discovery missed repo-root YAML in Open Folder; solution directory filesystem scan added.
+- Visual Studio extension — Pablo toolbar Manifest combo showed duplicate `pablo.yaml` labels; items now use solution-relative paths with automatic disambiguation.
+- Visual Studio extension — LSP `ActivateAsync` could throw on background thread during logging; activation wrapped in try/catch with PID/exit logging.
+- LSP completion — items now include `insertText` for reliable insertion in Visual Studio (and VS Code).
+
+### Added
+
+- `pablo init --template` / `-t` — interactive wizard to choose a sample template type (`static`, `binary`, `docker`, `git-sync`); requires an interactive terminal.
+- Visual Studio extension — **Pablo Run Deployment** tool window with profile/environment combos and a **Run Deployment** button; **Tools → Pablo: Run Deployment** opens this panel.
+- Visual Studio extension — **Pablo** toolbar (**View → Toolbars → Pablo**) with cascading **Manifest** / **Profile** / **Environment** combos plus **Run**; manifests are discovered from the solution and open documents.
+
 ## [1.5.1] - 2026-07-09
 
 ### Added

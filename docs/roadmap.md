@@ -12,7 +12,7 @@ Public view of what Pablo **ships today** and what is **planned next**. For curr
 
 | Status | Count (approx.) |
 |--------|-----------------|
-| Shipped | 28 |
+| Shipped | 31 |
 | Planned | 14 |
 
 ---
@@ -24,11 +24,12 @@ Pablo
 ├── Manifest & CLI
 │   ├── [x] Multi-profile pablo.yaml manifests
 │   ├── [x] Profile-to-environment inheritance
-│   ├── [x] check, run, init, uninstall, version, inspect, update
+│   ├── [x] check, run, init (--template), uninstall, version, inspect, update
 │   ├── [x] lsp (language server, stdio)
 │   └── [ ] Streamlined build pipeline (unused builder cleanup)
 ├── Editor experience
 │   ├── [x] VS Code extension (syntax, snippets, commands)
+│   ├── [x] Visual Studio extension (LSP, tool window, toolbar)
 │   ├── [x] Language server via pablo lsp
 │   ├── [x] Completion, hover, live diagnostics
 │   ├── [x] inspect protocol (CLI + LSP listProfiles)
@@ -75,12 +76,13 @@ Pablo
 - [x] Multi-profile `pablo.yaml` with environment-specific deploy settings
 - [x] `pablo check` — validate manifests before deploy
 - [x] `pablo run` — full deployment pipeline
-- [x] `pablo init`, `uninstall`, `version`, `inspect`, `update`
+- [x] `pablo init` (optional `--template` / `-t` wizard), `uninstall`, `version`, `inspect`, `update`
 - [x] `pablo lsp` — embedded language server (single binary)
 
 ### Editor experience
 
 - [x] VS Code extension with Pablo language ID and snippets
+- [x] Visual Studio extension — LSP, **Run Deployment** tool window, **Pablo** toolbar (Manifest / Profile / Environment + Run)
 - [x] Real-time diagnostics, completion, and hover via `pablo lsp`
 - [x] Editor commands: Check YAML, Init Config, Run Deployment
 - [x] Run Deployment picks profile and environment via `pablo inspect` / `pablo/listProfiles`

@@ -14,6 +14,14 @@ pablo init
 
 This creates `pablo_sample.yaml` in the current directory. Rename it to `pablo.yaml` or use `-f` to point at another file.
 
+To pick a deployment type interactively:
+
+```bash
+pablo init --template
+```
+
+Choose from `static`, `binary`, `docker`, or `git-sync`. The wizard requires an interactive terminal.
+
 ---
 
 ## 2. Edit the manifest

@@ -9,6 +9,8 @@ import (
 	protocol "github.com/tliron/glsp/protocol_3_16"
 )
 
+var insertTextFormatPlain = protocol.InsertTextFormatPlainText
+
 func textDocumentCompletion(context *glsp.Context, params *protocol.CompletionParams) (any, error) {
 	docURI := params.TextDocument.URI
 	doc, ok := documents[docURI]
@@ -34,8 +36,10 @@ func textDocumentCompletion(context *glsp.Context, params *protocol.CompletionPa
 					var items []protocol.CompletionItem
 					for _, val := range f.Enum {
 						items = append(items, protocol.CompletionItem{
-							Label: val,
-							Kind:  &kindEnumMember,
+							Label:            val,
+							Kind:             &kindEnumMember,
+							InsertText:       strPtr(val),
+							InsertTextFormat: &insertTextFormatPlain,
 						})
 					}
 					return items, nil
@@ -51,9 +55,11 @@ func textDocumentCompletion(context *glsp.Context, params *protocol.CompletionPa
 			continue
 		}
 		items = append(items, protocol.CompletionItem{
-			Label:  key,
-			Kind:   &kindProperty,
-			Detail: strPtr(f.Description),
+			Label:            key,
+			Kind:             &kindProperty,
+			Detail:           strPtr(f.Description),
+			InsertText:       strPtr(key),
+			InsertTextFormat: &insertTextFormatPlain,
 		})
 	}
 

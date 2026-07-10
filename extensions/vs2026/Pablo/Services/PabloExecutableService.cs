@@ -135,7 +135,7 @@ namespace Pablo.VisualStudio.Services
             var match = Regex.Match(result.Output, @"Pablo Version:\s*(\S+)", RegexOptions.IgnoreCase);
             if (!match.Success)
             {
-                match = Regex.Match(result.Output, @"\bv(\d+\.\d+\.\d+)\b", RegexOptions.IgnoreCase);
+                match = Regex.Match(result.Output, @"\bv?(\d+\.\d+\.\d+)\b", RegexOptions.IgnoreCase);
             }
 
             return match.Success ? match.Groups[1].Value : null;

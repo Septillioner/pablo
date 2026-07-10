@@ -1,9 +1,7 @@
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Newtonsoft.Json;
 using Pablo.VisualStudio.Lsp;
 
@@ -42,36 +40,35 @@ namespace Pablo.VisualStudio.Services
             _executableService = executableService;
         }
 
-        public async Task<InspectResult?> InspectManifestAsync(string filePath)
+        public async Task<InspectManifestOutcome> InspectManifestAsync(string filePath)
         {
             var uri = new Uri(filePath).AbsoluteUri;
             var lspResult = await PabloLanguageClientHost.TryListProfilesAsync(uri);
-            if (lspResult?.Profiles != null)
+            if (lspResult?.Profiles != null && lspResult.Profiles.Length > 0)
             {
-                return lspResult;
+                return InspectManifestOutcome.Success(lspResult);
             }
 
             var binary = await _executableService.ResolveBinaryAsync();
             if (binary == null)
             {
-                return null;
+                return InspectManifestOutcome.NoBinary();
             }
 
             try
             {
-                return await InspectViaCliAsync(binary, filePath);
+                var cliResult = await InspectViaCliAsync(binary, filePath);
+                if (cliResult.Profiles.Length == 0)
+                {
+                    return InspectManifestOutcome.NoProfiles();
+                }
+
+                return InspectManifestOutcome.Success(cliResult);
             }
             catch (Exception ex)
             {
                 _executableService.Log($"CLI inspect failed: {ex.Message}");
-                VsShellUtilities.ShowMessageBox(
-                    ServiceProvider.GlobalProvider,
-                    $"Failed to inspect manifest: {ex.Message}",
-                    "Pablo",
-                    OLEMSGICON.OLEMSGICON_CRITICAL,
-                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
-                return null;
+                return InspectManifestOutcome.Failed(ex.Message);
             }
         }
 
@@ -91,10 +88,12 @@ namespace Pablo.VisualStudio.Services
 
                 using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start pablo inspect.");
                 var stdout = process.StandardOutput.ReadToEnd();
+                var stderr = process.StandardError.ReadToEnd();
                 process.WaitForExit();
                 if (process.ExitCode != 0)
                 {
-                    throw new InvalidOperationException($"pablo inspect exited with code {process.ExitCode}");
+                    var detail = string.IsNullOrWhiteSpace(stderr) ? $"exit code {process.ExitCode}" : stderr.Trim();
+                    throw new InvalidOperationException($"pablo inspect failed: {detail}");
                 }
 
                 return JsonConvert.DeserializeObject<InspectResult>(stdout)

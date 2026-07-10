@@ -6,11 +6,13 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Pablo.VisualStudio.Options;
 using Pablo.VisualStudio.Services;
+using Pablo.VisualStudio.ToolWindows;
 
 namespace Pablo.VisualStudio
 {
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
+    [ProvideToolWindow(typeof(PabloDeployToolWindow))]
     [ProvideOptionPage(typeof(PabloOptionsPage), "Pablo", "General", 0, 0, true)]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [Guid(PabloGuids.PackageGuidString)]
@@ -30,6 +32,8 @@ namespace Pablo.VisualStudio
 
             PabloOutputWindow.WriteLine("Pablo extension is now active.");
             await PabloCommandHandler.InitializeAsync(this);
+            PabloToolbarController.Instance.RefreshManifests();
+            await Lsp.PabloLanguageClientHost.RestartAsync();
         }
 
         internal void OnOptionsChanged()

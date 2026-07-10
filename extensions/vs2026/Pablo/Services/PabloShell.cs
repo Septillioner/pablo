@@ -35,8 +35,9 @@ namespace Pablo.VisualStudio.Services
             return ShellKind.PowerShell;
         }
 
-        public static string QuoteForShell(string value, ShellKind kind = ShellKind.PowerShell)
+        public static string QuoteForShell(string value, ShellKind? kind = null)
         {
+            kind ??= DetectShellKind();
             return kind switch
             {
                 ShellKind.PowerShell => $"'{value.Replace("'", "''")}'",
@@ -55,13 +56,15 @@ namespace Pablo.VisualStudio.Services
             return !PabloSubcommands.Contains(arg);
         }
 
-        public static string FormatArgForShell(string arg, ShellKind kind = ShellKind.PowerShell)
+        public static string FormatArgForShell(string arg, ShellKind? kind = null)
         {
+            kind ??= DetectShellKind();
             return ShouldQuoteArg(arg) ? QuoteForShell(arg, kind) : arg;
         }
 
-        public static string BuildTerminalCommand(string executable, IReadOnlyList<string> args, ShellKind kind = ShellKind.PowerShell)
+        public static string BuildTerminalCommand(string executable, IReadOnlyList<string> args, ShellKind? kind = null)
         {
+            kind ??= DetectShellKind();
             var quotedExecutable = QuoteForShell(executable, kind);
             var formattedArgs = string.Join(" ", args.Select(arg => FormatArgForShell(arg, kind)));
 

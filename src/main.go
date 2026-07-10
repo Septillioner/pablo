@@ -12,6 +12,7 @@ import (
 	"pablo/internal/lsp"
 	"pablo/internal/services/builder"
 	"pablo/internal/services/deployer"
+	"pablo/internal/services/initcmd"
 	"pablo/internal/services/pipeline"
 	"pablo/internal/services/scm"
 	"pablo/internal/services/selfupdate"
@@ -105,35 +106,20 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 	runCmd.Flags().StringVarP(&manifest, "file", "f", "pablo.yaml", "Path to manifest")
 	runCmd.Flags().BoolVar(&allowProtected, "force", false, "Allow deployment to protected system directories")
 
+	var useTemplate bool
 	var initCmd = &cobra.Command{
 		Use:   "init",
 		Short: "Initializes a new pablo.yaml sample",
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Log(">", "Initializing sample pablo.yaml...")
-			sample := fmt.Sprintf(`name: my-app
-version: %s
-profiles:
-  default:
-    type: static
-    build:
-      command: npm run build
-      output_dir: ./dist
-    artifacts:
-      include: ["**/*"]
-    environments:
-      production:
-        deploy:
-          target_path: /var/www/check
-          strategy: backup
-`, Version)
-			err := os.WriteFile("pablo_sample.yaml", []byte(sample), 0644)
-			if err != nil {
-				ui.Log("-", fmt.Sprintf("Failed to create sample: %v", err))
-				return
+			if err := initcmd.Run(initcmd.Options{
+				Version:        Version,
+				TemplateWizard: useTemplate,
+			}); err != nil {
+				os.Exit(1)
 			}
-			ui.Log("+", "Sample pablo_sample.yaml created successfully.")
 		},
 	}
+	initCmd.Flags().BoolVarP(&useTemplate, "template", "t", false, "Interactive template type wizard")
 
 	var checkCmd = &cobra.Command{
 		Use:   "check",

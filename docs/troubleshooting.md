@@ -119,6 +119,22 @@ Full guide: [VS Code](guides/vscode.md)
 
 ---
 
+## Visual Studio extension
+
+| Symptom | Fix |
+|---------|-----|
+| No LSP / CodeLens | Pablo CLI 1.3+ with `pablo lsp`; **Tools → Pablo: Select Executable**; open a `pablo*.yaml` |
+| Run cannot find manifest | Focus or reopen the manifest, or use the **Pablo** toolbar Manifest combo |
+| Tool window: missing executable / inspect error | Select a valid CLI binary, then **Refresh** |
+| Terminal path / quoting errors on Run | Update the extension; Run uses shell-aware quoting (`cmd /s /k` on cmd) |
+| F5: no Pablo commands in Tools | Rebuild **Debug**, close both VS windows, F5 again (extension loads only in Experimental Instance) |
+
+**Debug:** **View → Output → Pablo Language Server**
+
+Full guide: [Visual Studio](guides/visual-studio.md)
+
+---
+
 ## Exit codes
 
 Pablo exits `1` on any error, `0` on success. No separate validation code. See [exit codes](reference/exit-codes.md).
