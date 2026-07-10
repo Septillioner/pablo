@@ -59,10 +59,12 @@ resolve_release_tag() {
   fi
 
   require_command curl
-  RELEASE_TAG="$(
-    curl -fsSL "${GITHUB_API_BASE}/latest" \
-      | awk -F'"' '/"tag_name":/ { print $4; exit }'
-  )"
+  # Fetch fully before parsing. `curl | awk … exit` closes the pipe early →
+  # curl (23) under `set -o pipefail`, which aborts the installer.
+  local latest_json
+  latest_json="$(curl -fsSL "${GITHUB_API_BASE}/latest")" \
+    || fail "could not fetch latest release metadata"
+  RELEASE_TAG="$(awk -F'"' '/"tag_name":/ { print $4; exit }' <<< "${latest_json}")"
   [[ -n "${RELEASE_TAG}" ]] || fail "could not resolve latest release tag"
 }
 
@@ -70,7 +72,7 @@ parse_asset_url() {
   local release_json="$1"
   local asset_name="$2"
 
-  printf '%s' "${release_json}" | awk -v asset="${asset_name}" '
+  awk -v asset="${asset_name}" '
     /"name":/ {
       line = $0
       sub(/.*"name":[[:space:]]*"/, "", line)
@@ -84,7 +86,7 @@ parse_asset_url() {
       print line
       exit
     }
-  '
+  ' <<< "${release_json}"
 }
 
 fetch_asset_url() {
@@ -108,26 +110,26 @@ download_binary() {
   require_command mktemp
 
   tmp_dir="$(mktemp -d)"
-  trap 'rm -rf "${tmp_dir}"' EXIT
+  # Expand path in the trap string now — local tmp_dir is gone when EXIT runs.
+  trap 'rm -rf "'"${tmp_dir}"'"' EXIT
 
   log "downloading ${ASSET_NAME} from ${RELEASE_TAG}"
   curl -fsSL "${ASSET_URL}" -o "${tmp_dir}/${ASSET_NAME}"
   chmod +x "${tmp_dir}/${ASSET_NAME}"
 
+  DOWNLOADED_BINARY="${tmp_dir}/${ASSET_NAME}"
+
   if [[ -n "${CHECKSUMS_URL:-}" ]]; then
-    verify_checksum "${tmp_dir}"
+    verify_checksum
   else
     log "checksums.txt not found in release; skipping verification"
   fi
-
-  DOWNLOADED_BINARY="${tmp_dir}/${ASSET_NAME}"
 }
 
 verify_checksum() {
-  local tmp_dir checksum_file expected_hash actual_hash
+  local checksum_file expected_hash actual_hash
 
-  tmp_dir="$(dirname "${DOWNLOADED_BINARY}")"
-  checksum_file="${tmp_dir}/checksums.txt"
+  checksum_file="$(dirname "${DOWNLOADED_BINARY}")/checksums.txt"
 
   curl -fsSL "${CHECKSUMS_URL}" -o "${checksum_file}"
 
@@ -191,7 +193,7 @@ install_to_system() {
     local tmp_dir old_path temp_target
 
     tmp_dir="$(mktemp -d)"
-    trap 'rm -rf "${tmp_dir}"' RETURN
+    trap 'rm -rf "'"${tmp_dir}"'"' RETURN
     install -m 0755 "${DOWNLOADED_BINARY}" "${tmp_dir}/${ASSET_NAME}"
 
     old_path="${SYSTEM_INSTALL_PATH}.old"
