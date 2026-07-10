@@ -24,6 +24,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - hotfix
 
+## [1.5.61] - 2026-07-10
+
+### Fixed
+
+- hotfix
+
 ## [1.5.7] - 2026-07-10
 
 ### Fixed
