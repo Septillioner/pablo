@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - `install.sh` — resolving the latest release no longer fails with `curl: (23)` under `set -o pipefail` when `awk` exits early on a `curl | awk` pipe.
 - `install.sh` — set `DOWNLOADED_BINARY` before checksum verification; expand temp dir paths in `EXIT`/`RETURN` traps so `set -u` does not trip on locals.
+- `install.sh` — checksum verification failed on Linux/macOS when `checksums.txt` had Windows (CRLF) line endings; the release build now writes it with LF endings, and the installer strips a trailing `\r` defensively.
 
 ## [1.5.5] - 2026-07-10
 

@@ -133,8 +133,10 @@ verify_checksum() {
 
   curl -fsSL "${CHECKSUMS_URL}" -o "${checksum_file}"
 
+  # Strip \r in case checksums.txt was generated with CRLF line endings
+  # (e.g. produced on Windows); otherwise $2 never matches asset.
   expected_hash="$(
-    awk -v asset="${ASSET_NAME}" '$2 == asset { print $1; exit }' "${checksum_file}"
+    awk -v asset="${ASSET_NAME}" '{ sub(/\r$/, "") } $2 == asset { print $1; exit }' "${checksum_file}"
   )"
   [[ -n "${expected_hash}" ]] || fail "checksum for ${ASSET_NAME} not found in checksums.txt"
 
