@@ -162,6 +162,7 @@ See [tests/agnostic/separate-apps](../../tests/agnostic/separate-apps/).
 
 ## Related
 
+- [Examples (easy → hard)](../examples/README.md)
 - [Configuration reference](../reference/configuration.md)
 - [CLI defaults](../reference/cli.md)
 - [Capabilities](../reference/capabilities.md)

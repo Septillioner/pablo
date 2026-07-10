@@ -83,9 +83,11 @@ A complete application configuration.
 
 Build configuration. Can be defined at profile level (inherited) or overridden per environment.
 
+For `static` profiles, `build` is **optional**. Omit it to copy files from `output_dir` / `deploy.source` without a compile step.
+
 | Field | Type | Description |
 |---|---|---|
-| `command` | String | **Required.** Build command (e.g., `npm run build`, `go build -o app .`) |
+| `command` | String | **Required when `build` is set.** Build command (e.g., `npm run build`, `go build -o app .`) |
 | `path` | String | Working directory for the build command (relative to manifest) |
 | `variables` | Map<String, String> | Environment variables injected during build |
 | `env_file` | String | File to write variables to before building |
@@ -188,7 +190,7 @@ Deployment method and settings.
 | Field | Type | Description |
 |---|---|---|
 | `target_path` | String | **Required.** Absolute path on the target machine |
-| `strategy` | String | Strategy: `overwrite` (default), `backup`, `recreate` |
+| `strategy` | String | Strategy: `overwrite` (default), `backup`, `recreate`, `rename-replace` |
 | `remote` | String | Transfer method: `tar` (default, high performance) or `legacy` (SCP one-by-one) |
 | `source` | [Source](#source) | Override profile-level artifact settings for this environment |
 | `docker` | [Docker](#docker) | Docker config (for `docker` type) |
@@ -289,10 +291,13 @@ Pipeline-wide settings.
 
 ## Deployment Types
 
-### `static` — Frontend / SPA
-Build → Filter artifacts → Deploy files
+### `static` — Files / frontend / SPA
+
+Optional build → Filter artifacts → Deploy files
 
 **Required:** `output_dir` or `deploy.source`, `environments.deploy.target_path`
+
+`build` is optional. Omit it to copy existing files (HTML, assets, pre-built `dist`, etc.).
 
 ### `binary` — Compiled Executables
 Build → Deploy binary → Register PATH
@@ -311,7 +316,75 @@ Git pull → Generate env file → Run post commands
 
 ---
 
-## Full Example
+## Examples (easy → hard)
+
+Progressive copy-paste samples live in [Examples](../examples/README.md). Minimal patterns below.
+
+### Local copy (no build)
+
+```yaml
+name: site
+version: 0.1.0
+
+profiles:
+  default:
+    type: static
+    output_dir:
+      dir: ./src
+      include: ["**/*"]
+    environments:
+      production:
+        deploy:
+          target_path: ./deploy-output
+          strategy: overwrite
+```
+
+### Local build then copy
+
+```yaml
+profiles:
+  default:
+    type: static
+    build:
+      command: npm run build
+      path: .
+    output_dir:
+      dir: ./dist
+      include: ["**/*"]
+    environments:
+      production:
+        deploy:
+          target_path: ./deploy-output
+          strategy: overwrite
+```
+
+### SSH static
+
+```yaml
+credentials:
+  server-ssh:
+    type: ssh
+    username: deploy
+    key: ~/.ssh/id_rsa
+
+profiles:
+  frontend:
+    type: static
+    output_dir:
+      dir: ./dist
+      include: ["**/*"]
+    environments:
+      production:
+        remote:
+          method: ssh
+          host: web.example.com
+          credential: server-ssh
+        deploy:
+          target_path: /var/www/html
+          strategy: backup
+```
+
+### Full multi-profile (kitchen sink)
 
 ```yaml
 name: my-app

@@ -18,9 +18,21 @@ Detailed catalog: [tests/TEST_SPEC.md](../../tests/TEST_SPEC.md) · Strategy (Tu
 
 ## Commands
 
+### All layers (recommended)
+
+```bash
+./test.sh all          # macOS / Linux
+./test.ps1 all         # Windows PowerShell
+test.bat all           # Windows cmd
+```
+
+Modes: `unit`, `integration`, `e2e`, `all` (default).
+
 ### Unit tests (run after every change)
 
 ```bash
+./test.sh unit
+# or:
 cd src
 go test ./...
 ```
@@ -30,6 +42,8 @@ Twelve packages currently have tests: `filter`, `pathutil`, `config`, `template`
 ### E2E integration tests
 
 ```bash
+./test.sh e2e
+# or:
 cd tests/e2e
 go test -tags=integration -v -timeout 10m ./...
 ```

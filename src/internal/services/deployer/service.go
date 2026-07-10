@@ -46,6 +46,10 @@ func (s *Service) Deploy(files []string, sourceBase, targetPath string, strategy
 		return fmt.Errorf("critical: cannot create or access target directory %s: %w", targetPath, err)
 	}
 
+	if strategy == "rename-replace" {
+		return s.deployRenameReplaceLocal(files, sourceBase, targetPath)
+	}
+
 	switch strategy {
 	case "backup":
 		if err := s.backup(targetPath); err != nil {
@@ -91,6 +95,13 @@ func (s *Service) DeployRemote(files []string, sourceBase string, sshClient *ssh
 		if s.ssh != nil && s.isProtectedPath(targetPath) {
 			return fmt.Errorf("safety break: remote target path '%s' appears to be a protected system directory (use --force to override)", targetPath)
 		}
+	}
+
+	if strategy == "rename-replace" {
+		if _, err := s.ssh.ExecuteCommand(sshClient, fmt.Sprintf("mkdir -p %s", targetPath)); err != nil {
+			return fmt.Errorf("failed to create remote directory: %w", err)
+		}
+		return s.deployRenameReplaceRemote(files, sourceBase, sshClient, targetPath, remoteTransfer)
 	}
 
 	// Handle strategies that require preparation

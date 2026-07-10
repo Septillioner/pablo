@@ -40,10 +40,11 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 | ID | Sistem | Katman | Konum | Dogruladigi davranis | Durum |
 |----|--------|--------|-------|----------------------|-------|
 | U-DEP-01 | Korumali path | unit | `deployer/service_test.go` | isProtectedPath (Unix/Windows) | done |
-| U-DEP-02 | Stratejiler | unit | `deployer/service_test.go` | overwrite, backup, recreate | done |
+| U-DEP-02 | Stratejiler | unit | `deployer/service_test.go` | overwrite, backup, recreate, rename-replace | done |
 | U-DEP-03 | blue-green | unit | `deployer/service_test.go` | Henuz implemente degil → hata | done |
 | U-DEP-04 | Dosya kopyalama | unit | `deployer/service_test.go` | copyFile mode | done |
 | U-DEP-05 | Remote deploy | unit | `deployer/service_test.go` | DeployRemote mock SSH, tar/scp | done |
+| U-DEP-06 | rename-replace remote | unit | `deployer/service_test.go` | Staging, cleanup, transfer rollback | done |
 
 ---
 
@@ -63,6 +64,7 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 | U-SYS-01 | PATH ekleme | unit | `system/path_test.go` | Scope routing, Unix idempotency | done |
 | U-SYS-02 | PATH kaldirma | unit | `system/path_test.go` | Unix user/system, Windows | done |
 | M-SYS-01 | Windows servis | manuel | `windows/nssm-service/` | NSSM post_commands | done |
+| M-WIN-01 | rename-replace | manuel | `windows/rename-replace/` | Local static deploy, per-file replace | done |
 
 ---
 
@@ -76,6 +78,7 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 | U-SSH-04 | Remote komut | unit | — | ExecuteCommand / CreateBackup mock | planned |
 | E-SSH-01 | Static remote deploy | e2e | `TestSSH_StaticDeploy` | SSH tar deploy, dosya varligi | done |
 | E-SSH-02 | Docker remote deploy | e2e | `TestSSH_DockerRemoteDeploy` | git clone + compose, container ayakta | done |
+| E-SSH-03 | rename-replace remote | e2e | `TestSSH_RenameReplace` | Per-file rename, replace, cleanup | done |
 
 ---
 

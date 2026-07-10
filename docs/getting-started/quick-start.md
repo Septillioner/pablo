@@ -1,6 +1,6 @@
 # Quick Start
 
-Get from zero to a validated manifest in a few minutes.
+Get from zero to a validated deploy in a few minutes — starting with the simplest case.
 
 **Prerequisites:** [Pablo installed](installation.md)
 
@@ -24,9 +24,9 @@ Choose from `static`, `binary`, `docker`, or `git-sync`. The wizard requires an 
 
 ---
 
-## 2. Edit the manifest
+## 2. Start simple: copy files (no build)
 
-Minimal `static` profile for a local deploy:
+The smallest useful `static` profile copies existing files. Omit `build` — Pablo skips that phase.
 
 ```yaml
 name: my-app
@@ -35,11 +35,8 @@ version: 0.1.0
 profiles:
   default:
     type: static
-    build:
-      command: npm run build
-      path: .
     output_dir:
-      dir: ./dist
+      dir: ./src
       include: ["**/*"]
     environments:
       production:
@@ -50,11 +47,11 @@ profiles:
 
 Key fields:
 
-- `output_dir` — where build artifacts live (not under `build:`).
-- `deploy.target_path` — where files are copied on the target machine.
-- `strategy` — `overwrite`, `backup`, or `recreate`.
+- `output_dir` — which files to deploy (not under `build:`).
+- `deploy.target_path` — where files are copied.
+- `strategy` — `overwrite`, `backup`, `recreate`, or `rename-replace`.
 
-Full field reference: [Configuration](../reference/configuration.md).
+Put something in `./src` (for example `index.html`), then continue.
 
 ---
 
@@ -80,11 +77,34 @@ pablo run -p default -e production
 
 Defaults: profile `default`, environment `production`, manifest `pablo.yaml`.
 
-Pablo runs: hooks → build → filter → deploy → health check (if configured). Watch for log markers: `+` success, `-` error, `>` action.
+Watch for log markers: `+` success, `-` error, `>` action.
 
 ---
 
-## 5. Inspect profiles
+## 5. Next: add a build (optional)
+
+When you need compile/bundle before copy:
+
+```yaml
+profiles:
+  default:
+    type: static
+    build:
+      command: npm run build
+      path: .
+    output_dir:
+      dir: ./dist
+      include: ["**/*"]
+    environments:
+      production:
+        deploy:
+          target_path: ./deploy-output
+          strategy: overwrite
+```
+
+---
+
+## 6. Inspect profiles
 
 ```bash
 pablo inspect
@@ -99,7 +119,9 @@ Lists all profiles and environments — useful for scripting and the VS Code Run
 
 | Goal | Guide |
 |------|-------|
-| Walk through a real fixture | [First deployment](first-deployment.md) |
+| Step-by-step local walkthrough | [First deployment](first-deployment.md) |
+| More examples (easy → hard) | [Examples](../examples/README.md) |
 | Deploy over SSH | [SSH guide](../guides/ssh.md) |
 | Docker Compose | [Docker guide](../guides/docker.md) |
-| Understand manifest layout | [Project structure](project-structure.md) |
+| Manifest layout | [Project structure](project-structure.md) |
+| Full field reference | [Configuration](../reference/configuration.md) |

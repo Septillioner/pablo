@@ -98,7 +98,11 @@
         },
         "pablo.trace.server": {
           "type": "string",
-          "enum": ["off", "messages", "verbose"],
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
           "default": "off",
           "description": "Traces LSP communication between VS Code and pablo lsp."
         }
@@ -119,7 +123,9 @@
     "lint": "eslint src",
     "test": "vscode-test",
     "vsix": "vsce package --no-dependencies",
-    "publish:marketplace": "vsce publish --no-dependencies"
+    "publish:marketplace": "vsce publish --no-dependencies",
+    "create-namespace:ovsx": "ovsx create-namespace septillioner",
+    "publish:ovsx": "node scripts/publish-ovsx.js"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
@@ -131,6 +137,7 @@
     "esbuild": "^0.27.2",
     "eslint": "^9.39.2",
     "npm-run-all": "^4.1.5",
+    "ovsx": "^0.10.12",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.52.0"
   },

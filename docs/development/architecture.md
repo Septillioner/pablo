@@ -155,7 +155,7 @@ Rules in `src/pkg/config/loader.go`:
 |--------|--------|
 | `build.sh` | `build/pablo[.exe]` |
 | `build.sh all` | `build/pablo-{os}-{arch}[.exe]` |
-| `publish-self.sh` / `.ps1` | Self-install via `pablo.yaml` |
+| `test.sh` / `test.ps1` / `test.bat` | Unit, integration, and E2E test runner |
 
 Release orchestration manifest: `pablo-sepy.yaml`
 

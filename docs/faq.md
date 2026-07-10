@@ -8,7 +8,7 @@ Common questions about Pablo.
 
 ### What is Pablo?
 
-A CLI tool that automates build → filter → deploy pipelines from a YAML manifest (`pablo.yaml`). Supports local and remote (SSH) targets, multiple profiles, and four deployment types: `static`, `binary`, `docker`, `git-sync`.
+A CLI tool that automates optional build → filter → deploy pipelines from a YAML manifest (`pablo.yaml`). Supports local and remote (SSH) targets, multiple profiles, and four deployment types: `static`, `binary`, `docker`, `git-sync`. For `static`, you can omit `build` and only copy files.
 
 ### Does Pablo replace CI/CD?
 
@@ -43,6 +43,10 @@ The VS Code extension recognizes `pablo*.yaml` and `pablo*.yml`.
 ### What's the difference between `output_dir` and `deploy.source`?
 
 `output_dir` is defined at profile level and inherited as the deploy source. `deploy.source` overrides per environment. Use `output_dir` for shared artifact config; `deploy.source` when one environment needs different includes.
+
+### Can I deploy static files without a build step?
+
+Yes. For `type: static`, omit `build`. Pablo copies filtered files from `output_dir` / `deploy.source` to `target_path`. See [Examples #1](examples/README.md#1-copy-files-locally-no-build) and [First deployment](getting-started/first-deployment.md).
 
 ---
 

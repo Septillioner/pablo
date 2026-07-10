@@ -14,6 +14,7 @@ Pablo is a CLI deployment helper that automates building, filtering, and deployi
 | [Quick start](getting-started/quick-start.md) | Create a manifest, validate, and run your first deploy |
 | [First deployment](getting-started/first-deployment.md) | Step-by-step local static deploy walkthrough |
 | [Project structure](getting-started/project-structure.md) | Manifest concepts, profiles, environments, multiple files |
+| [Examples](examples/README.md) | Progressive samples — local copy → build → SSH → Docker → multi-profile |
 
 ---
 

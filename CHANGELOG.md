@@ -6,6 +6,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- `deploy.strategy: rename-replace` — per-file artifact replacement with timestamped rename, success cleanup, and full rollback on failure (local and remote SSH).
+- `test.sh` / `test.ps1` / `test.bat` — unified test runner for `unit`, `integration`, `e2e`, and `all` modes.
+- Progressive docs examples ([docs/examples](docs/examples/README.md)) — easy-to-hard manifests from local file copy (no build) through SSH, Docker, and multi-profile.
+
+### Changed
+
+- Quick start and configuration docs lead with no-build `static` copy; `build` documented as optional for `static`.
+
+### Removed
+
+- `publish-self.sh`, `publish-self.ps1`, and `publish-self.bat` — use `install.sh` / `install.ps1` instead.
+
 ## [1.5.4] - 2026-07-10
 
 ### Added

@@ -13,6 +13,7 @@ Control how Pablo handles an existing deployment directory.
 | `overwrite` | Copy new files into existing directory (default) | Idempotent updates, partial overwrites |
 | `backup` | Rename existing dir with timestamp, deploy fresh | Safe rollback to previous version on disk |
 | `recreate` | Delete target dir, recreate, deploy | Clean slate needed |
+| `rename-replace` | Per-file rename of existing artifacts, replace, cleanup on success | Binary or single-file updates without touching the whole directory |
 | `blue-green` | *(not implemented)* | — |
 
 Set on `deploy.strategy`:
@@ -59,6 +60,18 @@ Best for: environments that must not retain stale files.
 
 ---
 
+## Rename-replace
+
+For each deployed artifact file, if a file with the same name already exists at `target_path`, Pablo renames it to `{filename}.{YYYYMMDD_HHMMSS_mmm}` (for example `app.exe.20260710_121530_042`), copies the new file to the original name, then deletes the renamed copies when the deploy succeeds.
+
+On failure, Pablo performs a full rollback: newly written files are removed and renamed originals are restored.
+
+Best for: binary or selective file updates where you want atomic per-file replacement without renaming the entire target directory.
+
+Unlike `backup`, sibling files in `target_path` that are not part of the artifact set are left untouched.
+
+---
+
 ## Protected paths
 
 Pablo blocks `backup` and `recreate` against known system directories (e.g. `/`, `/usr`, `C:\Windows`) unless you pass `--force`:
@@ -73,7 +86,7 @@ Protected path detection is shallow — only top-level system paths are checked.
 
 ## Rollback
 
-Pablo does not auto-rollback on deploy failure for `overwrite`. For `backup`/`recreate`, the deployer attempts rollback when the copy step fails.
+Pablo does not auto-rollback on deploy failure for `overwrite`. For `backup`/`recreate`/`rename-replace`, the deployer rolls back when the copy or transfer step fails (`rename-replace` restores renamed files and removes partially written artifacts).
 
 Manual rollback after a successful `backup` deploy:
 
@@ -95,4 +108,5 @@ Declared in the schema but **not implemented**. Using `strategy: blue-green` ret
 | Local dev / CI artifact drop | `overwrite` |
 | Production static site | `backup` |
 | Container-less binary with stale libs | `recreate` |
+| Single binary or per-file swap | `rename-replace` |
 | Zero-downtime swap | Not available yet |

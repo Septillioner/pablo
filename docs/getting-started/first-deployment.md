@@ -134,6 +134,7 @@ pablo run -p local-test -e dev -f pablo.yaml
 
 | Topic | Guide |
 |-------|-------|
+| More examples (easy → hard) | [Examples](../examples/README.md) |
 | Remote server deploy | [SSH](../guides/ssh.md) |
 | Compiled binary + PATH | [Binary and PATH](../guides/binary-and-path.md) |
 | Docker Compose | [Docker](../guides/docker.md) |

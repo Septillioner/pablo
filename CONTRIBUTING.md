@@ -51,7 +51,21 @@ go run main.go run -e <env> -p <profile> -f ../pablo.yaml
 
 ### Validate changes
 
-Run Go unit tests from `src/`:
+Run the test runner from the repo root:
+
+```bash
+./test.sh all          # unit + integration + e2e (Docker required for e2e)
+./test.sh unit         # fast package tests only
+```
+
+Windows:
+
+```powershell
+.\test.ps1 unit
+.\test.ps1 e2e
+```
+
+Or run Go tests directly:
 
 ```bash
 cd src

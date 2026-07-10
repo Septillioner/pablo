@@ -1,6 +1,7 @@
 package deployer
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -66,6 +67,126 @@ func TestIsProtectedPath(t *testing.T) {
 		}
 		if got := svc.isProtectedPath("/opt/myapp"); got {
 			t.Fatal("expected /opt/myapp to be safe")
+		}
+	})
+}
+
+func TestDeployRenameReplace(t *testing.T) {
+	svc := New()
+
+	t.Run("missing target copies without rename", func(t *testing.T) {
+		source := t.TempDir()
+		target := filepath.Join(t.TempDir(), "deploy")
+		mustWrite(t, filepath.Join(source, "app.txt"), "v1")
+
+		if err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, target, "rename-replace", false); err != nil {
+			t.Fatalf("Deploy() error = %v", err)
+		}
+		assertFileContent(t, filepath.Join(target, "app.txt"), "v1")
+	})
+
+	t.Run("existing file replaced and backup removed", func(t *testing.T) {
+		source := t.TempDir()
+		target := t.TempDir()
+		mustWrite(t, filepath.Join(target, "app.txt"), "old")
+		mustWrite(t, filepath.Join(source, "app.txt"), "new")
+
+		if err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, target, "rename-replace", false); err != nil {
+			t.Fatalf("Deploy() error = %v", err)
+		}
+
+		assertFileContent(t, filepath.Join(target, "app.txt"), "new")
+
+		entries, err := os.ReadDir(target)
+		if err != nil {
+			t.Fatalf("ReadDir() error = %v", err)
+		}
+		for _, e := range entries {
+			if strings.Contains(e.Name(), ".") && strings.Count(e.Name(), "_") >= 2 {
+				t.Fatalf("expected no timestamp backup file, found %q", e.Name())
+			}
+		}
+	})
+
+	t.Run("failure rolls back renames and written files", func(t *testing.T) {
+		source := t.TempDir()
+		target := t.TempDir()
+		mustWrite(t, filepath.Join(target, "first.txt"), "old-first")
+		mustWrite(t, filepath.Join(source, "first.txt"), "new-first")
+
+		files := []string{
+			filepath.Join(source, "first.txt"),
+			filepath.Join(source, "missing.txt"),
+		}
+
+		err := svc.Deploy(files, source, target, "rename-replace", false)
+		if err == nil {
+			t.Fatal("expected Deploy() to fail on missing source file")
+		}
+
+		assertFileContent(t, filepath.Join(target, "first.txt"), "old-first")
+	})
+}
+
+func TestDeployRenameReplaceRemote(t *testing.T) {
+	source := t.TempDir()
+	mustWrite(t, filepath.Join(source, "app.txt"), "remote")
+	files := []string{filepath.Join(source, "app.txt")}
+	dummyClient := &ssh.Client{}
+
+	t.Run("stages rename before tar transfer", func(t *testing.T) {
+		mock := &mockSSH{remoteFileExists: true}
+		svc := &Service{ssh: mock}
+
+		if err := svc.DeployRemote(files, source, dummyClient, "/tmp/pablo-rename", "rename-replace", false, ""); err != nil {
+			t.Fatalf("DeployRemote() error = %v", err)
+		}
+		if !mock.usedTransferPipe {
+			t.Fatal("expected TransferPipeline for rename-replace tar mode")
+		}
+
+		foundRename := false
+		foundCleanup := false
+		for _, cmd := range mock.executeCalls {
+			if strings.Contains(cmd, "mv /tmp/pablo-rename/app.txt") {
+				foundRename = true
+			}
+			if strings.Contains(cmd, "rm -f /tmp/pablo-rename/app.txt.") {
+				foundCleanup = true
+			}
+		}
+		if !foundRename {
+			t.Fatalf("expected remote rename command, got: %v", mock.executeCalls)
+		}
+		if !foundCleanup {
+			t.Fatalf("expected backup cleanup command, got: %v", mock.executeCalls)
+		}
+	})
+
+	t.Run("transfer failure rolls back", func(t *testing.T) {
+		mock := &mockSSH{remoteFileExists: true, transferPipeErr: fmt.Errorf("transfer failed")}
+		svc := &Service{ssh: mock}
+
+		err := svc.DeployRemote(files, source, dummyClient, "/tmp/pablo-rename", "rename-replace", false, "")
+		if err == nil {
+			t.Fatal("expected transfer error")
+		}
+
+		foundRollbackRemove := false
+		foundRollbackRestore := false
+		for _, cmd := range mock.executeCalls {
+			if strings.Contains(cmd, "rm -f /tmp/pablo-rename/app.txt") && !strings.Contains(cmd, "app.txt.") {
+				foundRollbackRemove = true
+			}
+			if strings.Contains(cmd, "mv /tmp/pablo-rename/app.txt.") && strings.Contains(cmd, "/tmp/pablo-rename/app.txt") {
+				foundRollbackRestore = true
+			}
+		}
+		if !foundRollbackRemove {
+			t.Fatalf("expected rollback remove, got: %v", mock.executeCalls)
+		}
+		if !foundRollbackRestore {
+			t.Fatalf("expected rollback restore, got: %v", mock.executeCalls)
 		}
 	})
 }
@@ -226,6 +347,8 @@ type mockSSH struct {
 	executeCalls      []string
 	usedTransferPipe  bool
 	transferFileCount int
+	transferPipeErr   error
+	remoteFileExists  bool
 }
 
 func (m *mockSSH) Connect(host string, cred *domain.CredentialConfig) (*ssh.Client, error) {
@@ -234,6 +357,9 @@ func (m *mockSSH) Connect(host string, cred *domain.CredentialConfig) (*ssh.Clie
 
 func (m *mockSSH) ExecuteCommand(_ *ssh.Client, command string) (string, error) {
 	m.executeCalls = append(m.executeCalls, command)
+	if m.remoteFileExists && strings.Contains(command, "__renamed__") {
+		return "__renamed__", nil
+	}
 	return "", nil
 }
 
@@ -243,6 +369,9 @@ func (m *mockSSH) CreateBackup(_ *ssh.Client, targetPath string) error {
 
 func (m *mockSSH) TransferPipeline(_ *ssh.Client, files []string, sourceBase, remotePath string) error {
 	m.usedTransferPipe = true
+	if m.transferPipeErr != nil {
+		return m.transferPipeErr
+	}
 	return nil
 }
 

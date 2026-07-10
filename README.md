@@ -71,7 +71,7 @@ pablo run -p default -e production
 # or: pablo run default/production
 ```
 
-See [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md).
+Simplest path: `type: static` with `output_dir` and no `build` — copy files as-is. Progressive samples: [docs/examples](docs/examples/README.md). Full walkthrough: [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md).
 
 ---
 

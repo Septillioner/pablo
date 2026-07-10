@@ -23,7 +23,6 @@ profiles:
             - "nssm install PabloTestService C:\\PabloTest\\Service\\myservice.exe || echo Service setup might already exist"
             - "nssm set PabloTestService AppDirectory C:\\PabloTest\\Service"
             - "nssm start PabloTestService || nssm restart PabloTestService"
-
     pipeline:
       health_check: http://localhost:8075
       on_success: "echo Service deployed and verified successfully!"

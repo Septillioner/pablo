@@ -34,6 +34,31 @@ func TestSSH_StaticDeploy(t *testing.T) {
 	sshExec(t, "test -f /tmp/pablo-e2e-static/index.html")
 }
 
+func TestSSH_RenameReplace(t *testing.T) {
+	dir := scenarioDir(t, "ssh-rename-replace")
+	manifest := "pablo.yaml"
+	targetDir := "/tmp/pablo-e2e-rename-replace"
+
+	sshExec(t, fmt.Sprintf("rm -rf %s && mkdir -p %s", targetDir, targetDir))
+	sshExec(t, fmt.Sprintf("printf 'old-content' > %s/index.html", targetDir))
+
+	runPablo(t, dir, "check", "-f", manifest, "-p", "default", "-e", "e2e")
+	runPablo(t, dir, "run", "-f", manifest, "-p", "default", "-e", "e2e", "--force")
+
+	content := strings.TrimSpace(sshExec(t, fmt.Sprintf("cat %s/index.html", targetDir)))
+	if !strings.Contains(content, "Rename Replace") {
+		t.Fatalf("expected deployed HTML content, got: %q", content)
+	}
+	if strings.Contains(content, "old-content") {
+		t.Fatal("expected old seed content to be replaced")
+	}
+
+	listing := strings.TrimSpace(sshExec(t, fmt.Sprintf("ls -1 %s", targetDir)))
+	if listing != "index.html" {
+		t.Fatalf("expected only index.html in target, got:\n%s", listing)
+	}
+}
+
 func TestSSH_DockerRemoteDeploy(t *testing.T) {
 	dir := scenarioDir(t, "ssh-docker-remote")
 	manifest := "pablo.yaml"

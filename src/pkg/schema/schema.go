@@ -99,7 +99,7 @@ var Root = &Field{
 											Description: "Physical deployment parameters.",
 											Children: map[string]*Field{
 												"target_path": {Description: "Absolute path on the target machine."},
-												"strategy":    {Description: "Deployment strategy.", Enum: []string{"overwrite", "backup", "recreate"}},
+												"strategy":    {Description: "Deployment strategy.", Enum: []string{"overwrite", "backup", "recreate", "rename-replace"}},
 												"remote":      {Description: "Transfer method.", Enum: []string{"tar", "legacy"}},
 												"docker": {
 													Description: "Docker Compose specific settings.",

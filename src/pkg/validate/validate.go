@@ -29,7 +29,7 @@ type Diagnostic struct {
 var (
 	profileTypes      = []string{"static", "binary", "docker", "git-sync"}
 	credentialTypes   = []string{"ssh", "token", "basic"}
-	deployStrategies  = []string{"overwrite", "backup", "recreate"}
+	deployStrategies  = []string{"overwrite", "backup", "recreate", "rename-replace"}
 	deployRemoteModes = []string{"tar", "legacy"}
 	remoteMethods     = []string{"ssh"}
 	serviceTypes      = []string{"systemd", "pm2"}

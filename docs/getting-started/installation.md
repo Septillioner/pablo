@@ -124,21 +124,7 @@ cd src
 go run main.go version
 ```
 
----
-
-## Option D — Self-deploy
-
-Pablo can build and register itself in your `PATH` using its own manifest ([pablo.yaml](../../pablo.yaml)):
-
-```bash
-# macOS / Linux
-./publish-self.sh
-
-# Windows (PowerShell, elevated)
-./publish-self.ps1
-```
-
-After self-deploy, `pablo` is available globally.
+To install the built binary globally, use [Option A](installation.md#option-a--one-liner-recommended) or add `build/pablo` to your `PATH`.
 
 ---
 

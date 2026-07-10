@@ -128,11 +128,10 @@ deploy:
 
 ## Self-deploy example
 
-Pablo deploys itself via [pablo.yaml](../../pablo.yaml):
+Pablo can deploy itself using [pablo.yaml](../../pablo.yaml). Install the CLI first ([installation](../getting-started/installation.md)), then run:
 
 ```bash
-./publish-self.sh    # macOS/Linux
-./publish-self.ps1   # Windows (elevated)
+pablo run -f pablo.yaml -e linux-local   # or windows-local / darwin-local
 ```
 
 Fixture: [tests/agnostic/self-deploy](../../tests/agnostic/self-deploy/).

@@ -43,7 +43,7 @@ Pablo
 │   └── [ ] Richer validation (cross-field rules, unknown keys)
 ├── Deployment
 │   ├── [x] Types: static, binary, docker, git-sync
-│   ├── [x] Strategies: overwrite, backup, recreate
+│   ├── [x] Strategies: overwrite, backup, recreate, rename-replace
 │   ├── [x] Local deploy pipeline
 │   ├── [x] Remote SSH deploy (tar streaming)
 │   ├── [x] Remote Docker Compose over SSH
@@ -98,7 +98,7 @@ Pablo
 ### Deployment
 
 - [x] Deployment types: `static`, `binary`, `docker`, `git-sync`
-- [x] Strategies: `overwrite`, `backup`, `recreate`
+- [x] Strategies: `overwrite`, `backup`, `recreate`, `rename-replace`
 - [x] Artifact filtering (include / exclude globs)
 - [x] Template variable substitution (`{{VAR}}`)
 - [x] Hooks, health checks, pre/post deploy commands

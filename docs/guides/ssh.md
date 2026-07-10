@@ -10,6 +10,8 @@ Deploy to remote Linux servers over SSH from your local machine.
 
 When an environment has a `remote` block, Pablo connects via SSH and runs deploy commands on the target host. Supported profile types: `static`, `binary`, `docker`, `git-sync`.
 
+Simplest case — copy existing files (no build):
+
 ```yaml
 credentials:
   prod-ssh:
@@ -20,9 +22,9 @@ credentials:
 profiles:
   web:
     type: static
-    build:
-      command: npm run build
-    output_dir: ./dist
+    output_dir:
+      dir: ./src
+      include: ["**/*"]
     environments:
       production:
         remote:
@@ -33,6 +35,31 @@ profiles:
           target_path: /var/www/html
           strategy: backup
 ```
+
+With a build step (optional):
+
+```yaml
+profiles:
+  web:
+    type: static
+    build:
+      command: npm run build
+      path: .
+    output_dir:
+      dir: ./dist
+      include: ["**/*"]
+    environments:
+      production:
+        remote:
+          method: ssh
+          host: web.example.com
+          credential: prod-ssh
+        deploy:
+          target_path: /var/www/html
+          strategy: backup
+```
+
+More progressive samples: [Examples](../examples/README.md).
 
 ---
 

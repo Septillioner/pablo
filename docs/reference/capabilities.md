@@ -10,7 +10,7 @@ See also: [Configuration](configuration.md) · [Roadmap](../roadmap.md)
 
 | Type | Description | Local | Remote SSH | Status |
 |------|-------------|-------|------------|--------|
-| `static` | Frontend / SPA — build, filter artifacts, deploy files | Yes | Yes | Working |
+| `static` | Filter and deploy files; `build` optional (omit to copy as-is) | Yes | Yes | Working |
 | `binary` | Compiled executables — build, deploy, PATH register | Yes | Yes | Working |
 | `docker` | Docker Compose — git clone/pull, compose up | Yes | Yes | Working |
 | `git-sync` | Interpreted languages — git pull, post commands | Yes | Yes | Working |
@@ -24,6 +24,7 @@ See also: [Configuration](configuration.md) · [Roadmap](../roadmap.md)
 | `overwrite` | Copy files over existing (default) | Working |
 | `backup` | Rename existing dir with timestamp, then deploy | Working |
 | `recreate` | Delete target dir, create fresh, deploy | Working |
+| `rename-replace` | Rename existing artifact files, replace, cleanup on success | Working |
 | `blue-green` | Zero-downtime swap | Not implemented |
 
 ---
@@ -32,7 +33,7 @@ See also: [Configuration](configuration.md) · [Roadmap](../roadmap.md)
 
 1. Load and validate manifest
 2. Pre-deploy hooks (`hooks.pre`)
-3. Build (`build.command`)
+3. Build (`build.command`) — skipped when `build` is omitted or empty
 4. Pre-deployment commands (`deploy.pre_commands`)
 5. Deployment (local copy or SSH tar stream)
 6. Post-deployment commands (`deploy.post_commands`)
@@ -56,13 +57,13 @@ Some fields are validated in the manifest but not yet executed at runtime:
 
 ## What Works
 
-- Full local deploy pipeline for `static` and `binary` types.
+- Full local deploy pipeline for `static` and `binary` types (`static` works without `build` — copy/filter only).
 - Remote SSH deploy with tar-streaming and SCP fallback (`deploy.remote: legacy`).
 - Glob-based artifact filtering (include/exclude patterns).
 - Template variable substitution (`{{VAR}}` in config files).
 - Config inheritance — profile settings cascade into environments.
 - Automatic PATH registration (Windows, macOS, Linux user and system scope).
-- Backup and recreate strategies with protected path detection.
+- Backup, recreate, and rename-replace strategies with protected path detection (backup/recreate only).
 - `docker` type with local and remote (SSH) Docker Compose orchestration.
 - `git-sync` with local and remote (SSH) git clone/pull.
 - Environment variable injection via `.env` file generation.
