@@ -60,4 +60,5 @@ release-bump-versions.ps1
 release-force.bat
 release-hotfix.bat
 release-hotfix-docs.ps1
+release-generate-checksums.ps1
 RELEASING.md
