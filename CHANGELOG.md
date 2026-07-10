@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.5.5] - 2026-07-10
+
 ### Fixed
 
 - On Windows, `*` in include patterns could match across path segments (e.g. `*.exe` incorrectly included nested executables).
@@ -168,7 +170,9 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.1...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.5...HEAD
+[1.5.5]: https://github.com/septillioner/pablo/compare/v1.5.4...v1.5.5
+[1.5.4]: https://github.com/septillioner/pablo/compare/v1.5.1...v1.5.4
 [1.5.1]: https://github.com/septillioner/pablo/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/septillioner/pablo/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/septillioner/pablo/compare/v1.3.0...v1.4.0
