@@ -12,6 +12,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - hotfix
 
+## [1.5.61] - 2026-07-10
+
+### Fixed
+
+- hotfix
+
 ## [1.5.7] - 2026-07-10
 
 ### Fixed
@@ -192,7 +198,7 @@ Initial public release baseline tracked in `src/VERSION`.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
 [Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.61...HEAD
-[1.5.61]: https://github.com/septillioner/pablo/compare/v1.5.7...v1.5.61
+[1.5.61]: https://github.com/septillioner/pablo/compare/v1.5.60...v1.5.61
 [1.5.7]: https://github.com/septillioner/pablo/compare/v1.5.6...v1.5.7
 [1.5.6]: https://github.com/septillioner/pablo/compare/v1.5.5...v1.5.6
 [1.5.5]: https://github.com/septillioner/pablo/compare/v1.5.4...v1.5.5
