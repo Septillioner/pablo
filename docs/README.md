@@ -52,7 +52,7 @@ Pablo is a CLI deployment helper that automates building, filtering, and deployi
 | [Architecture](development/architecture.md) | Components, pipeline flow, services and adapters |
 | [Testing](development/testing.md) | Unit, E2E, and manual fixture testing |
 | [Contributing](development/contributing.md) | Contribution workflow (canonical: [CONTRIBUTING.md](../CONTRIBUTING.md)) |
-| [Release process](development/release-process.md) | Versioning and publishing (canonical: [RELEASING.md](../RELEASING.md)) |
+| [Release process](development/release-process.md) | Versioning and publishing |
 
 ---
 

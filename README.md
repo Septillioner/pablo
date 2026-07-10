@@ -188,7 +188,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/contributing.md](do
 
 **Security:** report vulnerabilities per [SECURITY.md](SECURITY.md) — do not open public issues for security reports.
 
-**Releasing:** [RELEASING.md](RELEASING.md) · [Release process](docs/development/release-process.md)
+**Releasing:** [Release process](docs/development/release-process.md)
 
 ---
 
