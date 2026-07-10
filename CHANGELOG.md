@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.5.7] - 2026-07-10
+
+### Fixed
+
+- fix install.sh checksum CRLF matching
+
 ## [1.5.6] - 2026-07-10
 
 ### Fixed
@@ -179,7 +185,8 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.6...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.7...HEAD
+[1.5.7]: https://github.com/septillioner/pablo/compare/v1.5.6...v1.5.7
 [1.5.6]: https://github.com/septillioner/pablo/compare/v1.5.5...v1.5.6
 [1.5.5]: https://github.com/septillioner/pablo/compare/v1.5.4...v1.5.5
 [1.5.4]: https://github.com/septillioner/pablo/compare/v1.5.1...v1.5.4
