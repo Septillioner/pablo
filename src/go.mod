@@ -6,8 +6,9 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/spf13/cobra v1.10.2
 	github.com/tliron/glsp v0.2.2
-	github.com/tliron/go-kutil v0.4.0
 	golang.org/x/crypto v0.47.0
+	golang.org/x/sys v0.40.0
+	golang.org/x/term v0.39.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -30,6 +31,4 @@ require (
 	github.com/tliron/commonlog v0.2.20 // indirect
 	github.com/tliron/kutil v0.3.27 // indirect
 	golang.org/x/net v0.48.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/term v0.39.0 // indirect
 )

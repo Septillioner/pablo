@@ -151,6 +151,8 @@ pablo version
 
 Downloads the latest Pablo CLI binary for your OS/architecture from GitHub Releases, verifies `checksums.txt`, and replaces the running executable. Editor extensions (VSIX) are not updated.
 
+If other processes are running the same Pablo binary (for example `pablo lsp` from an editor), Pablo lists them and asks whether to close them before continuing. In a non-interactive terminal, close those processes manually if the replace step fails.
+
 **Flags:**
 
 | Flag | Default | Description |

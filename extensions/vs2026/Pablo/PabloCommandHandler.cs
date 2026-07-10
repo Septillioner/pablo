@@ -103,7 +103,7 @@ namespace Pablo.VisualStudio
             ThreadHelper.ThrowIfNotOnUIThread();
             if (e is OleMenuCmdEventArgs args)
             {
-                PabloToolbarController.Instance.EnsureInspectForSelectedManifest();
+                PabloToolbarController.Instance.EnsureInspectForSelectedManifest(forceRefresh: true);
                 SetComboList(args, PabloToolbarController.Instance.GetProfileLabels());
             }
         }
@@ -125,7 +125,7 @@ namespace Pablo.VisualStudio
             ThreadHelper.ThrowIfNotOnUIThread();
             if (e is OleMenuCmdEventArgs args)
             {
-                PabloToolbarController.Instance.EnsureInspectForSelectedManifest();
+                PabloToolbarController.Instance.EnsureInspectForSelectedManifest(forceRefresh: true);
                 SetComboList(args, PabloToolbarController.Instance.GetEnvironmentLabels());
             }
         }

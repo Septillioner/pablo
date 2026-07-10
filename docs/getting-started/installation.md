@@ -77,6 +77,8 @@ pablo update
 
 Checks GitHub Releases for the latest CLI binary for your OS, verifies the checksum, and replaces the running `pablo` executable. Use `pablo update --check` to see if a newer version exists without downloading.
 
+If another process is using the same binary (for example `pablo lsp` from VS Code or Visual Studio), Pablo lists it and asks whether to close it before continuing the update.
+
 ---
 
 ## Option B — Pre-built binary

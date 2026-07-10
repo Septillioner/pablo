@@ -68,8 +68,12 @@ func (s *Service) Update(opts Options) (*CheckResult, error) {
 		return nil, err
 	}
 
-	if err := replaceExecutable(targetPath, tempPath); err != nil {
+	if err := ensureExecutableReplaceable(targetPath); err != nil {
 		return nil, err
+	}
+
+	if err := replaceExecutable(targetPath, tempPath); err != nil {
+		return nil, wrapReplaceError(targetPath, err)
 	}
 
 	return &CheckResult{

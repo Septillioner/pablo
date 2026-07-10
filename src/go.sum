@@ -41,8 +41,6 @@ github.com/tliron/commonlog v0.2.20 h1:LjzkpM5tc9pB2UHVe4wnKN5ay5BxSFnDGCNhsKFqE
 github.com/tliron/commonlog v0.2.20/go.mod h1:v/8FkL/gzsX/1N48vK1luLa4xFasHfzYBONX7/4mD5Y=
 github.com/tliron/glsp v0.2.2 h1:IKPfwpE8Lu8yB6Dayta+IyRMAbTVunudeauEgjXBt+c=
 github.com/tliron/glsp v0.2.2/go.mod h1:GMVWDNeODxHzmDPvYbYTCs7yHVaEATfYtXiYJ9w1nBg=
-github.com/tliron/go-kutil v0.4.0 h1:5JwcBacgnqS3XyhwCWZKvq8ftlbVttNXnt+kfCH+Y2E=
-github.com/tliron/go-kutil v0.4.0/go.mod h1:hpHVq+CP1uci2M208UEjPiPwsRsz/QweGBnLB3CaQ24=
 github.com/tliron/kutil v0.3.27 h1:Wb0V5jdbTci6Let1tiGY741J/9FIynmV/pCsPDPsjcM=
 github.com/tliron/kutil v0.3.27/go.mod h1:AHeLNIFBSKBU39ELVHZdkw2f/ez2eKGAAGoxwBlhMi8=
 go.yaml.in/yaml/v3 v3.0.4/go.mod h1:DhzuOOF2ATzADvBadXxruRBLzYTpT36CKvDb3+aBEFg=

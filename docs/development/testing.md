@@ -28,6 +28,32 @@ test.bat all           # Windows cmd
 
 Modes: `unit`, `integration`, `e2e`, `all` (default).
 
+Example output:
+
+```text
+======== UNIT ========
+  PASS  pablo/internal/services/deployer           1.28s
+  PASS  pablo/pkg/config                           1.03s
+  ...
+  12 packages passed, 0 failed
+
+======== E2E ========
+  Scenarios: ssh-docker-remote, ssh-rename-replace, ssh-static
+
+  PASS  TestSSH_StaticDeploy             (ssh-static            ) 0.33s
+  PASS  TestSSH_RenameReplace            (ssh-rename-replace    ) 0.59s
+  PASS  TestSSH_DockerRemoteDeploy       (ssh-docker-remote     ) 1.41s
+
+  3 scenarios passed, 0 failed
+
+======== SUMMARY ========
+  unit:          PASS
+  integration:   PASS
+  e2e:           PASS
+```
+
+Packages without tests and `[no test files]` noise are hidden. E2E results show the scenario folder name next to each test.
+
 ### Unit tests (run after every change)
 
 ```bash

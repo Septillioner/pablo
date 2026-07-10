@@ -6,8 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+
+- Visual Studio extension — Pablo toolbar Profile/Environment combos did not refresh after saving `pablo.yaml`; toolbar now re-inspects on save and when opening profile/environment dropdowns.
+
 ### Added
 
+- `pablo update` — when other processes are using the Pablo binary, list them and prompt to close before replacing the executable (interactive terminals).
 - `deploy.strategy: rename-replace` — per-file artifact replacement with timestamped rename, success cleanup, and full rollback on failure (local and remote SSH).
 - `test.sh` / `test.ps1` / `test.bat` — unified test runner for `unit`, `integration`, `e2e`, and `all` modes.
 - Progressive docs examples ([docs/examples](docs/examples/README.md)) — easy-to-hard manifests from local file copy (no build) through SSH, Docker, and multi-profile.
@@ -15,6 +20,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Changed
 
 - Quick start and configuration docs lead with no-build `static` copy; `build` documented as optional for `static`.
+- `test.sh` / `test.ps1` — scenario-focused output with section headers, PASS/FAIL lines, and a summary block (`all` mode).
 
 ### Removed
 

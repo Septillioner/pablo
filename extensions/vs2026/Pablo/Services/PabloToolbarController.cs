@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Pablo.VisualStudio.Services
 {
@@ -188,7 +189,39 @@ namespace Pablo.VisualStudio.Services
             }
         }
 
-        public void EnsureInspectForSelectedManifest()
+        public void InvalidateInspectCache()
+        {
+            lock (_gate)
+            {
+                _inspectResult = null;
+                _loadedInspectManifestPath = null;
+            }
+        }
+
+        public void NotifyManifestSaved(string path)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var normalized = PabloManifestPathResolver.NormalizeIfPabloManifest(path);
+            if (normalized == null)
+            {
+                return;
+            }
+
+            lock (_gate)
+            {
+                var selected = SelectedManifestPath;
+                if (selected == null
+                    || !string.Equals(selected, normalized, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            InvalidateInspectCache();
+            ThreadHelper.JoinableTaskFactory.Run(LoadInspectForSelectedManifestAsync);
+        }
+
+        public void EnsureInspectForSelectedManifest(bool forceRefresh = false)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             string? manifestPath;
@@ -200,7 +233,8 @@ namespace Pablo.VisualStudio.Services
                     return;
                 }
 
-                if (string.Equals(manifestPath, _loadedInspectManifestPath, StringComparison.OrdinalIgnoreCase)
+                if (!forceRefresh
+                    && string.Equals(manifestPath, _loadedInspectManifestPath, StringComparison.OrdinalIgnoreCase)
                     && _inspectResult != null)
                 {
                     return;
@@ -287,9 +321,18 @@ namespace Pablo.VisualStudio.Services
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             string? manifestPath;
+            string? previousProfileName;
+            string? previousEnvironmentName;
             lock (_gate)
             {
                 manifestPath = SelectedManifestPath;
+                var profile = GetSelectedProfileLocked();
+                previousProfileName = profile?.Name;
+                previousEnvironmentName = profile != null
+                    && _selectedEnvironmentIndex >= 0
+                    && _selectedEnvironmentIndex < profile.Environments.Length
+                    ? profile.Environments[_selectedEnvironmentIndex]
+                    : null;
             }
 
             if (string.IsNullOrWhiteSpace(manifestPath))
@@ -308,8 +351,53 @@ namespace Pablo.VisualStudio.Services
             {
                 _loadedInspectManifestPath = manifestPath;
                 _inspectResult = outcome.Status == InspectManifestStatus.Success ? outcome.Result : null;
-                _selectedProfileIndex = _inspectResult?.Profiles.Length > 0 ? 0 : -1;
-                _selectedEnvironmentIndex = GetSelectedProfileLocked()?.Environments.Length > 0 ? 0 : -1;
+                ApplySelectionAfterInspect(previousProfileName, previousEnvironmentName);
+            }
+
+            RefreshCommandUI();
+        }
+
+        private void ApplySelectionAfterInspect(string? previousProfileName, string? previousEnvironmentName)
+        {
+            if (_inspectResult?.Profiles == null || _inspectResult.Profiles.Length == 0)
+            {
+                _selectedProfileIndex = -1;
+                _selectedEnvironmentIndex = -1;
+                return;
+            }
+
+            var profileIndex = -1;
+            if (!string.IsNullOrWhiteSpace(previousProfileName))
+            {
+                profileIndex = Array.FindIndex(_inspectResult.Profiles, profile =>
+                    string.Equals(profile.Name, previousProfileName, StringComparison.OrdinalIgnoreCase));
+            }
+
+            _selectedProfileIndex = profileIndex >= 0 ? profileIndex : 0;
+
+            var selectedProfile = _inspectResult.Profiles[_selectedProfileIndex];
+            if (selectedProfile.Environments.Length == 0)
+            {
+                _selectedEnvironmentIndex = -1;
+                return;
+            }
+
+            var environmentIndex = -1;
+            if (!string.IsNullOrWhiteSpace(previousEnvironmentName))
+            {
+                environmentIndex = Array.FindIndex(selectedProfile.Environments, environment =>
+                    string.Equals(environment, previousEnvironmentName, StringComparison.OrdinalIgnoreCase));
+            }
+
+            _selectedEnvironmentIndex = environmentIndex >= 0 ? environmentIndex : 0;
+        }
+
+        private static void RefreshCommandUI()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (ServiceProvider.GlobalProvider.GetService(typeof(SVsUIShell)) is IVsUIShell shell)
+            {
+                shell.UpdateCommandUI(0);
             }
         }
     }
