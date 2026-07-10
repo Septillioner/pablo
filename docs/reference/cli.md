@@ -4,6 +4,12 @@ Command-line interface for running deployments, validating manifests, and managi
 
 **Defaults:** manifest = `pablo.yaml`, profile = `default`, environment = `production`
 
+## Global flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--verbose` | `false` | During `run`, list each artifact path after the deploy count |
+
 See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 
 ---
@@ -42,6 +48,7 @@ Executes the deployment pipeline for the selected profile and environment.
 pablo run -p frontend -e production
 pablo run -p api -e production -f deploy.yaml
 pablo run -e staging --force
+pablo run -p local-test -e dev --verbose
 ```
 
 ---

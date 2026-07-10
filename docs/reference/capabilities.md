@@ -59,7 +59,7 @@ Some fields are validated in the manifest but not yet executed at runtime:
 
 - Full local deploy pipeline for `static` and `binary` types (`static` works without `build` — copy/filter only).
 - Remote SSH deploy with tar-streaming and SCP fallback (`deploy.remote: legacy`).
-- Glob-based artifact filtering (include/exclude patterns).
+- Gitignore-style glob artifact filtering (`*.ext` at any depth, `/*.ext` root-only, `**` globstar).
 - Template variable substitution (`{{VAR}}` in config files).
 - Config inheritance — profile settings cascade into environments.
 - Automatic PATH registration (Windows, macOS, Linux user and system scope).

@@ -133,6 +133,16 @@ Artifact location and file filtering configuration. Can be a simple string (dire
 | `include` | List<String> | Glob patterns to include |
 | `exclude` | List<String> | Glob patterns to exclude |
 
+Patterns use gitignore-style semantics (relative to `dir`):
+
+| Pattern | Matches |
+|---------|---------|
+| `*.exe` | Any file named `*.exe` at any depth |
+| `/*.exe` or `./*.exe` | `.exe` files in the artifact root only |
+| `dist/*.exe` | One directory level under `dist/` |
+| `**/*.exe` | `.exe` files at any depth (explicit recursive) |
+| `**/*` | All files (same as omitting `include`) |
+
 **Simple form:**
 ```yaml
 output_dir: ./dist
@@ -209,8 +219,8 @@ Override artifact settings at the deploy level (takes precedence over profile `o
 | Field | Type | Description |
 |---|---|---|
 | `dir` | String | Artifact directory |
-| `include` | List<String> | Glob patterns to include |
-| `exclude` | List<String> | Glob patterns to exclude |
+| `include` | List<String> | Glob patterns to include (see [OutputDir](#outputdir) semantics) |
+| `exclude` | List<String> | Glob patterns to exclude (see [OutputDir](#outputdir) semantics) |
 
 **Example:**
 ```yaml

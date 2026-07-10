@@ -110,7 +110,7 @@ flowchart TD
 |---------|------|------|
 | pipeline | `services/pipeline/` | Full lifecycle orchestration |
 | deployer | `services/deployer/` | Local copy, SSH tar stream, protected paths |
-| filter | `services/filter/` | Glob include/exclude |
+| filter | `services/filter/` | Gitignore-style include/exclude globs |
 | scm | `services/scm/` | Git clone/pull |
 | hooks | `services/hooks/` | Shell/PowerShell hooks |
 | health | `services/health/` | HTTP GET with 30s retry |

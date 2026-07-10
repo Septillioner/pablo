@@ -56,7 +56,7 @@ profiles:
 Notes:
 
 - `output_dir` at profile level becomes the deploy source (inheritance).
-- `include: ["*.html"]` filters to HTML files only.
+- `include: ["*.html"]` matches HTML files by basename at any depth; use `/*.html` for the artifact root only.
 - `target_path: ./dist` is relative to the manifest directory.
 
 ---

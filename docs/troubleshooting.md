@@ -56,6 +56,8 @@ Pablo blocks `backup`/`recreate` against system directories. Use a safer `target
 
 Check `output_dir` / `deploy.source` `include` globs match built files. Run build manually first to confirm output location.
 
+If too many files match, remember that `*.exe` matches at every depth; use `/*.exe` or `./*.exe` for the artifact root only. See [Configuration — OutputDir](reference/configuration.md#outputdir).
+
 ### Health check timeout
 
 `pipeline.health_check` retries HTTP GET for 30 seconds expecting status 200. Verify URL, server start time, and firewall rules on the target.

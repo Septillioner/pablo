@@ -8,10 +8,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Fixed
 
+- On Windows, `*` in include patterns could match across path segments (e.g. `*.exe` incorrectly included nested executables).
 - Visual Studio extension — Pablo toolbar Profile/Environment combos did not refresh after saving `pablo.yaml`; toolbar now re-inspects on save and when opening profile/environment dropdowns.
 
 ### Added
 
+- Global `--verbose` flag — after the artifact count, lists each relative path selected for deploy.
+- `**` globstar support in `include` / `exclude` patterns (e.g. `**/*`, `**/*.exe`).
 - `pablo update` — when other processes are using the Pablo binary, list them and prompt to close before replacing the executable (interactive terminals).
 - `deploy.strategy: rename-replace` — per-file artifact replacement with timestamped rename, success cleanup, and full rollback on failure (local and remote SSH).
 - `test.sh` / `test.ps1` / `test.bat` — unified test runner for `unit`, `integration`, `e2e`, and `all` modes.
@@ -19,6 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- Include/exclude patterns use gitignore-style semantics: patterns without `/` match basenames at any depth; `/*.ext` or `./*.ext` limits to the artifact root.
 - Quick start and configuration docs lead with no-build `static` copy; `build` documented as optional for `static`.
 - `test.sh` / `test.ps1` — scenario-focused output with section headers, PASS/FAIL lines, and a summary block (`all` mode).
 

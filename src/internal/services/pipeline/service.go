@@ -51,7 +51,7 @@ func (s *Service) resolvePath(baseDir, path string) string {
 	return filepath.Join(baseDir, path)
 }
 
-func (s *Service) Run(manifestPath, profileName, envName string, allowProtected bool) error {
+func (s *Service) Run(manifestPath, profileName, envName string, allowProtected, verbose bool) error {
 	start := time.Now()
 
 	ui.Log("*", fmt.Sprintf("Loading manifest: %s", manifestPath))
@@ -132,7 +132,7 @@ func (s *Service) Run(manifestPath, profileName, envName string, allowProtected 
 	}
 
 	// 4. Deployment Phase
-	if err := s.handleDeployment(profile, env, cfg, vars, allowProtected, start); err != nil {
+	if err := s.handleDeployment(profile, env, cfg, vars, allowProtected, verbose, start); err != nil {
 		return err
 	}
 
@@ -235,7 +235,7 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 	return nil
 }
 
-func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environment, cfg *domain.Config, vars map[string]string, allowProtected bool, start time.Time) error {
+func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environment, cfg *domain.Config, vars map[string]string, allowProtected, verbose bool, start time.Time) error {
 	isRemote := env.Remote != nil && env.Remote.Method == "ssh"
 
 	// 1. Pre-deployment Commands
@@ -253,11 +253,11 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 	switch profile.Type {
 	case "static", "binary":
 		if isRemote {
-			if err := s.deployRemoteSSH(profile, env, cfg, start, allowProtected, vars); err != nil {
+			if err := s.deployRemoteSSH(profile, env, cfg, start, allowProtected, verbose, vars); err != nil {
 				return err
 			}
 		} else {
-			if err := s.deployLocal(profile, env, cfg.BaseDir, allowProtected, vars, start); err != nil {
+			if err := s.deployLocal(profile, env, cfg.BaseDir, allowProtected, verbose, vars, start); err != nil {
 				return err
 			}
 		}
@@ -349,7 +349,21 @@ func (s *Service) getSSHClient(env domain.Environment, cfg *domain.Config) (*ssh
 	return s.deployer.ConnectSSH(sshHost, cred)
 }
 
-func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, baseDir string, allowProtected bool, vars map[string]string, start time.Time) error {
+func logArtifacts(files []string, artifactBase string, verbose bool) {
+	ui.Log("+", fmt.Sprintf("Found %d artifact(s) to deploy", len(files)))
+	if !verbose {
+		return
+	}
+	for _, file := range files {
+		rel, err := filepath.Rel(artifactBase, file)
+		if err != nil {
+			rel = file
+		}
+		ui.Log(" ", filepath.ToSlash(rel))
+	}
+}
+
+func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, baseDir string, allowProtected, verbose bool, vars map[string]string, start time.Time) error {
 	ui.Log("*", "Local deployment initiated.")
 	artifactBase, include, exclude := s.resolveArtifacts(profile, env, baseDir)
 	if err := os.MkdirAll(artifactBase, 0o755); err != nil {
@@ -363,7 +377,7 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 		ui.Result(false, time.Since(start))
 		return err
 	}
-	ui.Log("+", fmt.Sprintf("Found %d artifact(s) to deploy", len(files)))
+	logArtifacts(files, artifactBase, verbose)
 
 	targetPath := s.resolvePath(baseDir, env.Deploy.TargetPath)
 	if err := os.MkdirAll(targetPath, 0o755); err != nil {
@@ -494,7 +508,7 @@ func (s *Service) handlePathRegistration(env domain.Environment, cfg *domain.Con
 	return nil
 }
 
-func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environment, cfg *domain.Config, start time.Time, allowProtected bool, vars map[string]string) error {
+func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environment, cfg *domain.Config, start time.Time, allowProtected, verbose bool, vars map[string]string) error {
 	ui.Log("*", "Remote SSH deployment initiated.")
 	sshClient, err := s.getSSHClient(env, cfg)
 	if err != nil {
@@ -512,7 +526,7 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 		ui.Result(false, time.Since(start))
 		return err
 	}
-	ui.Log("+", fmt.Sprintf("Found %d artifact(s) to deploy", len(files)))
+	logArtifacts(files, artifactBase, verbose)
 
 	targetPath := env.Deploy.TargetPath
 	strategy := env.Deploy.Strategy

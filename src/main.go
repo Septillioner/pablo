@@ -33,6 +33,7 @@ var (
 	profileName    string
 	manifest       string
 	allowProtected bool
+	verbose        bool
 	Version        string
 )
 
@@ -86,6 +87,8 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
   pablo lsp
   pablo update`
 
+	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "List each artifact path during deployment")
+
 	var runCmd = &cobra.Command{
 		Use:   "run [profile/env]",
 		Short: "Executes the deployment pipeline",
@@ -98,7 +101,7 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 			if err != nil {
 				return err
 			}
-			return pipelineSvc.Run(manifest, profile, env, allowProtected)
+			return pipelineSvc.Run(manifest, profile, env, allowProtected, verbose)
 		},
 	}
 	runCmd.Flags().StringVarP(&envName, "env", "e", "production", "Target environment")

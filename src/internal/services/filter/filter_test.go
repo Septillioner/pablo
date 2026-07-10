@@ -65,6 +65,34 @@ func TestMatch(t *testing.T) {
 			t.Fatal("expected error for invalid glob pattern")
 		}
 	})
+
+	t.Run("depth semantics", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			path     string
+			patterns []string
+			want     bool
+		}{
+			{"basename any depth", "sub/app.exe", []string{"*.exe"}, true},
+			{"root anchored slash", "app.exe", []string{"/*.exe"}, true},
+			{"root anchored dot slash", "app.exe", []string{"./*.exe"}, true},
+			{"root anchored excludes nested", "sub/app.exe", []string{"/*.exe"}, false},
+			{"globstar exe any depth", "a/b/c.exe", []string{"**/*.exe"}, true},
+			{"globstar exe root", "app.exe", []string{"**/*.exe"}, true},
+			{"globstar all", "deep/nested/file.txt", []string{"**/*"}, true},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				got, err := Match(tt.path, tt.patterns)
+				if err != nil {
+					t.Fatalf("Match() error = %v", err)
+				}
+				if got != tt.want {
+					t.Fatalf("Match(%q, %v) = %v, want %v", tt.path, tt.patterns, got, tt.want)
+				}
+			})
+		}
+	})
 }
 
 func TestGetFiles(t *testing.T) {
@@ -123,6 +151,19 @@ func TestGetFiles(t *testing.T) {
 			t.Fatalf("GetFiles() error = %v", err)
 		}
 		assertRelPaths(t, root, files, []string{"src/main.go", "src/app.js"})
+	})
+
+	t.Run("root only include", func(t *testing.T) {
+		root := setupTree(t)
+		mustWrite(t, filepath.Join(root, "app.exe"), "bin")
+		mustMkdir(t, filepath.Join(root, "bin"))
+		mustWrite(t, filepath.Join(root, "bin", "tool.exe"), "bin")
+
+		files, err := GetFiles(root, []string{"./*.exe"}, nil)
+		if err != nil {
+			t.Fatalf("GetFiles() error = %v", err)
+		}
+		assertRelPaths(t, root, files, []string{"app.exe"})
 	})
 
 	t.Run("empty source directory", func(t *testing.T) {

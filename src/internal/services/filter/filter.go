@@ -2,30 +2,108 @@ package filter
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
 
-func Match(path string, patterns []string) (bool, error) {
+func Match(relPath string, patterns []string) (bool, error) {
 	for _, pattern := range patterns {
-		// Standardize separators for Windows/Unix compatibility
-		pattern = filepath.ToSlash(pattern)
-		matchPath := filepath.ToSlash(path)
-
-		matched, err := filepath.Match(pattern, matchPath)
+		matched, err := matchPattern(pattern, relPath)
 		if err != nil {
 			return false, err
 		}
 		if matched {
 			return true, nil
 		}
-
-		// Handle directory-style patterns (e.g., "logs/")
-		if strings.HasSuffix(pattern, "/") && strings.HasPrefix(matchPath, strings.TrimSuffix(pattern, "/")) {
-			return true, nil
-		}
 	}
 	return false, nil
+}
+
+func matchPattern(pattern, relPath string) (bool, error) {
+	pattern = filepath.ToSlash(pattern)
+	matchPath := filepath.ToSlash(relPath)
+
+	if strings.HasSuffix(pattern, "/") {
+		dir := strings.TrimSuffix(pattern, "/")
+		return matchPath == dir || strings.HasPrefix(matchPath, dir+"/"), nil
+	}
+
+	if strings.Contains(pattern, "**") {
+		return matchGlobstar(pattern, matchPath)
+	}
+
+	if !strings.Contains(pattern, "/") {
+		return path.Match(pattern, path.Base(matchPath))
+	}
+
+	anchored := strings.TrimPrefix(pattern, "./")
+	anchored = strings.TrimPrefix(anchored, "/")
+	return path.Match(anchored, matchPath)
+}
+
+func matchGlobstar(pattern, matchPath string) (bool, error) {
+	if strings.HasPrefix(pattern, "**/") {
+		suffix := strings.TrimPrefix(pattern, "**/")
+		if suffix == "" || suffix == "*" {
+			return true, nil
+		}
+		if matched, err := path.Match(suffix, matchPath); err != nil {
+			return false, err
+		} else if matched {
+			return true, nil
+		}
+		if matched, err := path.Match(suffix, path.Base(matchPath)); err != nil {
+			return false, err
+		} else if matched {
+			return true, nil
+		}
+		for i := 0; i < len(matchPath); i++ {
+			if matchPath[i] != '/' {
+				continue
+			}
+			rest := matchPath[i+1:]
+			if matched, err := path.Match(suffix, rest); err != nil {
+				return false, err
+			} else if matched {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+
+	if pattern == "**" {
+		return true, nil
+	}
+
+	starIdx := strings.Index(pattern, "**")
+	if starIdx < 0 {
+		return path.Match(pattern, matchPath)
+	}
+
+	before := strings.TrimSuffix(pattern[:starIdx], "/")
+	after := pattern[starIdx+2:]
+	if strings.HasPrefix(after, "/") {
+		after = after[1:]
+	}
+
+	if before == "" {
+		if after == "" {
+			return true, nil
+		}
+		return matchGlobstar("**/"+after, matchPath)
+	}
+
+	if matchPath != before && !strings.HasPrefix(matchPath, before+"/") {
+		return false, nil
+	}
+
+	rest := strings.TrimPrefix(matchPath, before)
+	rest = strings.TrimPrefix(rest, "/")
+	if after == "" {
+		return true, nil
+	}
+	return matchGlobstar("**/"+after, rest)
 }
 
 func GetFiles(basePath string, includes, excludes []string) ([]string, error) {
@@ -43,7 +121,6 @@ func GetFiles(basePath string, includes, excludes []string) ([]string, error) {
 			return err
 		}
 
-		// Check excludes
 		if len(excludes) > 0 {
 			excluded, err := Match(relPath, excludes)
 			if err != nil {
@@ -54,7 +131,6 @@ func GetFiles(basePath string, includes, excludes []string) ([]string, error) {
 			}
 		}
 
-		// Check includes (if empty, include everything not excluded)
 		if len(includes) > 0 {
 			included, err := Match(relPath, includes)
 			if err != nil {

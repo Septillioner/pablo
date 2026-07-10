@@ -1,19 +1,36 @@
 # Pablo
 
-**Pablo** is a CLI deployment helper that automates building, filtering, and deploying artifacts across local and remote (SSH) environments from a single YAML manifest (`pablo.yaml`).
+CLI deployment helper for local and remote (SSH) environments — build, filter, and deploy from a single YAML manifest (`pablo.yaml`).
 
-> **Documentation:** [docs/](docs/README.md) — installation, guides, reference, and troubleshooting.
+**Docs:** [docs/](docs/README.md) · **Releases:** [GitHub Releases](https://github.com/septillioner/pablo/releases) · **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-## Key Features
+## Table of contents
 
-- **Multi-profile manifests** — manage frontend, backend, and infra in one `pablo.yaml`.
-- **Multi-stage pipeline** — hooks, build, filter, deploy, template variables, health check.
-- **Remote SSH deploy** — tar-based streaming for fast bulk transfers.
-- **Safety checks** — protected system directory detection and automatic backups.
-- **Self-deploy** — Pablo can build and install itself.
-- **VS Code extension** — LSP-powered completion, hover docs, validation, and Run commands for `pablo.yaml`.
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Getting started](#getting-started)
+- [CLI](#cli)
+- [Deployment types](#deployment-types)
+- [Editor support](#editor-support)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Features
+
+- **Multi-profile manifests** — frontend, backend, and infra in one `pablo.yaml`
+- **Full deploy pipeline** — hooks, optional build, filter, deploy, templates, health checks
+- **Local and remote SSH** — tar-streamed transfers for bulk deploys
+- **Four deployment types** — `static`, `binary`, `docker`, `git-sync`
+- **Deploy strategies** — `overwrite`, `backup`, `recreate`, `rename-replace` (with rollback where supported)
+- **Safety** — protected path detection and backup/rollback on failure
+- **Self-update** — `pablo update` from GitHub Releases
+- **Editor tooling** — VS Code and Visual Studio extensions with LSP (completion, validation, Run)
 
 ---
 
@@ -22,15 +39,19 @@
 | Component | When needed |
 |-----------|-------------|
 | **Go 1.25.5+** | Building from source only |
-| **Git** | `git-sync` and `docker` deployment types |
-| **Docker** | `docker` deployment type |
+| **Git** | `git-sync` and `docker` types |
+| **Docker** | `docker` type |
 | **OpenSSH client** | Remote SSH deploys |
 
-Supported host platforms: Windows, macOS, Linux.
+Supported hosts: **Windows**, **macOS**, **Linux**.
 
 ---
 
-## Install
+## Installation
+
+### One-liner (recommended)
+
+Downloads the latest release, verifies the SHA-256 checksum, and installs to a system or user path.
 
 **Windows (PowerShell):**
 
@@ -38,15 +59,11 @@ Supported host platforms: Windows, macOS, Linux.
 $s="$env:TEMP\pablo-install.ps1"; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' -OutFile $s; powershell -NoProfile -ExecutionPolicy Bypass -File $s
 ```
 
-Downloads the installer to a temp file and runs it in a clean PowerShell session (avoids `iex` / profile issues).
-
 **Windows (cmd):**
 
 ```bat
 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.cmd -o install.cmd && install.cmd
 ```
-
-Run from **PowerShell**, not cmd.
 
 **macOS / Linux:**
 
@@ -54,79 +71,126 @@ Run from **PowerShell**, not cmd.
 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.sh | bash
 ```
 
-Pin a version: set `PABLO_VERSION=v1.4.0` before running the one-liner.
+Pin a version with `PABLO_VERSION=v1.5.4` (or `$env:PABLO_VERSION` on Windows) before running the installer.
 
-Or download from [Releases](https://github.com/septillioner/pablo/releases), build from source, or use self-deploy.
+### Other options
 
-Full instructions: [docs/getting-started/installation.md](docs/getting-started/installation.md)
+| Method | How |
+|--------|-----|
+| Pre-built binary | Download from [Releases](https://github.com/septillioner/pablo/releases), verify `checksums.txt`, put on `PATH` |
+| Build from source | `git clone` → `./build.sh` → `./build/pablo` |
+| Update existing install | `pablo update` · `pablo update --check` |
+
+Verify:
+
+```bash
+pablo version
+```
+
+Full instructions: [Installation](docs/getting-started/installation.md)
 
 ---
 
-## Quick Start
+## Getting started
 
 ```bash
-pablo init
-pablo check
-pablo run -p default -e production
+pablo init                 # sample manifest (or: pablo init --template)
+pablo check                # validate
+pablo run                  # defaults: profile default, env production
 # or: pablo run default/production
+# or: pablo run -p default -e production
 ```
 
-Simplest path: `type: static` with `output_dir` and no `build` — copy files as-is. Progressive samples: [docs/examples](docs/examples/README.md). Full walkthrough: [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md).
+Simplest useful case: `type: static` with `output_dir` and no `build` — copy files as-is.
+
+```yaml
+name: my-app
+version: 0.1.0
+
+profiles:
+  default:
+    type: static
+    output_dir:
+      dir: ./src
+      include: ["**/*"]
+    environments:
+      production:
+        deploy:
+          target_path: ./deploy-output
+          strategy: overwrite
+```
+
+| Next step | Link |
+|-----------|------|
+| Full walkthrough | [Quick start](docs/getting-started/quick-start.md) |
+| Step-by-step first deploy | [First deployment](docs/getting-started/first-deployment.md) |
+| Progressive samples | [Examples](docs/examples/README.md) |
 
 ---
 
 ## CLI
 
-```
-pablo run [profile/env]  -p <profile> -e <env> [-f pablo.yaml] [--force]
-pablo check              -f <file> [-p profile] [-e env]
-pablo inspect            -f <file> [--json]
-pablo init              [-t|--template]
-pablo uninstall          -p <profile> -e <env> [--remove-backups]
-pablo version
-pablo lsp
-```
+| Command | Description |
+|---------|-------------|
+| `pablo run [profile/env]` | Run the deploy pipeline (`-p` / `-e` / `-f` / `--force`) |
+| `pablo check` | Validate a manifest |
+| `pablo inspect` | List profiles and environments (`--json`) |
+| `pablo init` | Generate a sample (`-t` / `--template` wizard) |
+| `pablo uninstall` | Remove deploy dir and PATH entries |
+| `pablo update` | Update CLI from GitHub Releases |
+| `pablo version` | Print version |
+| `pablo lsp` | Language server (stdio; used by editors) |
 
-Defaults: manifest = `pablo.yaml`, profile = `default`, env = `production`.
+Defaults: manifest `pablo.yaml`, profile `default`, environment `production`.
 
-Full reference: [docs/reference/cli.md](docs/reference/cli.md)
+Full reference: [CLI](docs/reference/cli.md)
 
 ---
 
-## Deployment Types
+## Deployment types
 
 | Type | Description | Local | Remote SSH |
 |------|-------------|-------|------------|
-| `static` | Frontend / SPA | Yes | Yes |
-| `binary` | Compiled executables + PATH | Yes | Yes |
-| `docker` | Docker Compose | Yes | Yes |
+| `static` | Files / SPA — `build` optional | Yes | Yes |
+| `binary` | Executables + PATH registration | Yes | Yes |
+| `docker` | Git sync + Docker Compose | Yes | Yes |
 | `git-sync` | Git pull + post commands | Yes | Yes |
 
-Details: [docs/reference/capabilities.md](docs/reference/capabilities.md)
+Details and limitations: [Capabilities](docs/reference/capabilities.md)
 
 ---
 
-## Known Limitations
+## Editor support
 
-- `blue-green` strategy — declared in schema, not implemented at runtime.
-- `deploy.service` (systemd/PM2) — schema only; use `post_commands` instead.
-- SSH host key verification disabled — see [SECURITY.md](SECURITY.md).
+| Editor | Install | Docs |
+|--------|---------|------|
+| **VS Code** | Marketplace: **Pablo** (`septillioner.pablo`), or `.vsix` from Releases | [VS Code guide](docs/guides/vscode.md) |
+| **Visual Studio** | `pablo-vs2026-*.vsix` from Releases (VS 2022 / 2026) | [Visual Studio guide](docs/guides/visual-studio.md) |
 
-More: [docs/reference/capabilities.md](docs/reference/capabilities.md) · [docs/roadmap.md](docs/roadmap.md)
+Both use `pablo lsp` for completion, hover, validation, and Run (CodeLens / tool window / toolbar).
+
+---
+
+## Documentation
+
+| Section | Pages |
+|---------|-------|
+| Getting started | [Installation](docs/getting-started/installation.md) · [Quick start](docs/getting-started/quick-start.md) · [First deployment](docs/getting-started/first-deployment.md) |
+| Guides | [SSH](docs/guides/ssh.md) · [Docker](docs/guides/docker.md) · [Credentials](docs/guides/credentials.md) · [Strategies](docs/guides/deploy-strategies.md) · [Git sync](docs/guides/git-sync.md) · [Binary / PATH](docs/guides/binary-and-path.md) |
+| Reference | [CLI](docs/reference/cli.md) · [Configuration](docs/reference/configuration.md) · [Capabilities](docs/reference/capabilities.md) · [API](docs/reference/api.md) |
+| More | [FAQ](docs/faq.md) · [Troubleshooting](docs/troubleshooting.md) · [Roadmap](docs/roadmap.md) · [Full index](docs/README.md) |
 
 ---
 
 ## Contributing
 
-Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/contributing.md](docs/development/contributing.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/contributing.md](docs/development/contributing.md).
 
-## Security
+**Security:** report vulnerabilities per [SECURITY.md](SECURITY.md) — do not open public issues for security reports.
 
-Report vulnerabilities per [SECURITY.md](SECURITY.md). Do not open public issues for security reports.
+**Releasing:** [RELEASING.md](RELEASING.md) · [Release process](docs/development/release-process.md)
 
-## Releasing
-
-[RELEASING.md](RELEASING.md) · [docs/development/release-process.md](docs/development/release-process.md)
+---
 
 ## License
 
