@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.5.6] - 2026-07-10
+
 ### Fixed
 
 - `install.sh` — resolving the latest release no longer fails with `curl: (23)` under `set -o pipefail` when `awk` exits early on a `curl | awk` pipe.
@@ -176,7 +178,8 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.5...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.6...HEAD
+[1.5.6]: https://github.com/septillioner/pablo/compare/v1.5.5...v1.5.6
 [1.5.5]: https://github.com/septillioner/pablo/compare/v1.5.4...v1.5.5
 [1.5.4]: https://github.com/septillioner/pablo/compare/v1.5.1...v1.5.4
 [1.5.1]: https://github.com/septillioner/pablo/compare/v1.5.0...v1.5.1

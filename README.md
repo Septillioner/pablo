@@ -71,7 +71,7 @@ curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.c
 curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.sh | bash
 ```
 
-Pin a version with `PABLO_VERSION=v1.5.4` (or `$env:PABLO_VERSION` on Windows) before running the installer.
+Pin a version with `PABLO_VERSION=v1.5.6` (or `$env:PABLO_VERSION` on Windows) before running the installer.
 
 ### Other options
 
