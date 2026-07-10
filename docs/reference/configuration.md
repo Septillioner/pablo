@@ -30,7 +30,35 @@ Environment `variables` are merged into `deploy.variables`.
 | `name` | String | Project name |
 | `version` | String | Project version |
 | `credentials` | Map<String, [Credential](#credential)> | Global reusable credentials (optional) |
+| `sequences` | Map<String, String[]> | Named ordered deployment sequences (optional); see [Sequences](#sequences) |
 | `profiles` | Map<String, [Profile](#profile)> | Application profiles |
+
+---
+
+## Sequences
+
+Named lists of `profile/environment` targets to run in order. **List order is execution order** — Pablo runs each step sequentially and stops on the first failure.
+
+| Field | Type | Description |
+|---|---|---|
+| `<name>` | String[] | Ordered steps; each item is `profile/env` (e.g. `extension/vsix`) |
+
+**Example:**
+
+```yaml
+sequences:
+  extension:
+    - extension/vsix
+    - extension/marketplace
+```
+
+Run with:
+
+```bash
+pablo run sequence extension
+```
+
+Cannot combine `pablo run sequence` with `-p` / `-e`. Global flags (`-f`, `--force`, `--verbose`) apply to every step.
 
 ---
 

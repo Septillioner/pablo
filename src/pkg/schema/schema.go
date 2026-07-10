@@ -14,6 +14,14 @@ var Root = &Field{
 		"version": {
 			Description: "The version of the configuration schema (e.g., '1.4.2').",
 		},
+		"sequences": {
+			Description: "Named ordered lists of profile/environment targets. List order is execution order.",
+			Children: map[string]*Field{
+				"*": {
+					Description: "Sequence name. Each item is a profile/environment target (e.g. extension/vsix).",
+				},
+			},
+		},
 		"credentials": {
 			Description: "Define reusable credentials (SSH keys, tokens).",
 			Children: map[string]*Field{

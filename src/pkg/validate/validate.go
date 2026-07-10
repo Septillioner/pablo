@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"pablo/pkg/config"
 	"pablo/pkg/domain"
+	"pablo/pkg/target"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -135,6 +136,33 @@ func Validate(cfg *domain.Config, positions map[string]*yaml.Node) []Diagnostic 
 
 			if profile.Type == "docker" && env.Deploy.Docker == nil {
 				diags = append(diags, warningDiagnostic(positions, envBase+".deploy", "docker profile should define deploy.docker"))
+			}
+		}
+	}
+
+	for seqName, steps := range cfg.Sequences {
+		seqBase := "sequences." + seqName
+		if len(steps) == 0 {
+			diags = append(diags, requiredDiagnostic(positions, seqBase, fmt.Sprintf("sequence %q must have at least one step", seqName)))
+			continue
+		}
+
+		for i, step := range steps {
+			stepPath := fmt.Sprintf("%s[%d]", seqBase, i)
+			profileName, envName, err := target.Parse(step)
+			if err != nil {
+				diags = append(diags, nodeDiagnostic(positions, seqBase, fmt.Sprintf("sequence %q step %d: %v", seqName, i+1, err), SeverityError))
+				continue
+			}
+
+			profile, _ := cfg.GetProfile(profileName)
+			if profile == nil {
+				diags = append(diags, refDiagnostic(positions, stepPath, fmt.Sprintf("profile %q not found", profileName)))
+				continue
+			}
+
+			if _, ok := profile.Environments[envName]; !ok {
+				diags = append(diags, refDiagnostic(positions, stepPath, fmt.Sprintf("environment %q not found in profile %q", envName, profileName)))
 			}
 		}
 	}

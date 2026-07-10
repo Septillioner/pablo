@@ -12,6 +12,7 @@ import (
 	"pablo/internal/adapters/system"
 	"pablo/pkg/config"
 	"pablo/pkg/domain"
+	"pablo/pkg/target"
 	"pablo/pkg/validate"
 	"pablo/internal/services/builder"
 	"pablo/internal/services/deployer"
@@ -167,6 +168,79 @@ func (s *Service) Run(manifestPath, profileName, envName string, allowProtected,
 
 	if profile.Pipeline.OnSuccess != "" {
 		hooks.Execute(profile.Pipeline.OnSuccess, "", vars)
+	}
+
+	ui.Result(true, time.Since(start))
+	return nil
+}
+
+func (s *Service) RunSequence(manifestPath, sequenceName string, allowProtected, verbose bool) error {
+	start := time.Now()
+
+	ui.Log("*", fmt.Sprintf("Loading manifest: %s", manifestPath))
+	absManifest, err := filepath.Abs(manifestPath)
+	if err != nil {
+		ui.Log("-", "Failed to resolve manifest path")
+		ui.Result(false, time.Since(start))
+		return err
+	}
+
+	manifestData, err := os.ReadFile(absManifest)
+	if err != nil {
+		ui.Log("-", "Failed to load manifest")
+		ui.Result(false, time.Since(start))
+		return err
+	}
+
+	diags, _, err := validate.ValidateYAML(manifestData, filepath.Dir(absManifest))
+	if err != nil {
+		ui.Log("-", "Failed to validate manifest")
+		ui.Result(false, time.Since(start))
+		return err
+	}
+	for _, d := range diags {
+		if d.Severity == validate.SeverityError {
+			ui.Log("-", validate.FormatDiagnostic(absManifest, d))
+		}
+	}
+	if validate.HasErrors(diags) {
+		ui.Result(false, time.Since(start))
+		return fmt.Errorf("manifest validation failed")
+	}
+
+	cfg, err := s.loader.Load(manifestPath)
+	if err != nil {
+		ui.Log("-", "Failed to load manifest")
+		ui.Result(false, time.Since(start))
+		return err
+	}
+
+	steps, ok := cfg.Sequences[sequenceName]
+	if !ok {
+		ui.Log("-", fmt.Sprintf("Sequence '%s' not found", sequenceName))
+		ui.Result(false, time.Since(start))
+		return fmt.Errorf("sequence not found")
+	}
+
+	total := len(steps)
+	ui.Section("Sequence")
+	ui.Log("*", fmt.Sprintf("Project: %s", cfg.Name))
+	ui.Log("*", fmt.Sprintf("Sequence: %s (%d steps)", sequenceName, total))
+
+	for i, step := range steps {
+		profileName, envName, err := target.Parse(step)
+		if err != nil {
+			ui.Log("-", fmt.Sprintf("Sequence step %d/%d: %v", i+1, total, err))
+			ui.Result(false, time.Since(start))
+			return err
+		}
+
+		ui.Log("*", fmt.Sprintf("Sequence step %d/%d: %s", i+1, total, step))
+		if err := s.Run(manifestPath, profileName, envName, allowProtected, verbose); err != nil {
+			ui.Log("-", fmt.Sprintf("Sequence aborted at step %d/%d", i+1, total))
+			ui.Result(false, time.Since(start))
+			return err
+		}
 	}
 
 	ui.Result(true, time.Since(start))

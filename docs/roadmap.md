@@ -25,6 +25,7 @@ Pablo
 │   ├── [x] Multi-profile pablo.yaml manifests
 │   ├── [x] Profile-to-environment inheritance
 │   ├── [x] check, run, init (--template), uninstall, version, inspect, update
+│   ├── [x] Manifest sequences (`pablo run sequence <name>`)
 │   ├── [x] lsp (language server, stdio)
 │   └── [ ] Streamlined build pipeline (unused builder cleanup)
 ├── Editor experience
@@ -76,6 +77,7 @@ Pablo
 - [x] Multi-profile `pablo.yaml` with environment-specific deploy settings
 - [x] `pablo check` — validate manifests before deploy
 - [x] `pablo run` — full deployment pipeline
+- [x] `pablo run sequence <name>` — run named manifest sequences in list order
 - [x] `pablo init` (optional `--template` / `-t` wizard), `uninstall`, `version`, `inspect`, `update`
 - [x] `pablo lsp` — embedded language server (single binary)
 

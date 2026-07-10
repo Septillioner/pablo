@@ -238,6 +238,48 @@ environments:
 		}
 	})
 
+	t.Run("sequences preserve step order", func(t *testing.T) {
+		dir := t.TempDir()
+		path := writeManifest(t, dir, "pablo.yaml", `
+name: seq-app
+sequences:
+  release:
+    - api/staging
+    - api/production
+    - web/production
+profiles:
+  api:
+    type: static
+    environments:
+      staging:
+        deploy:
+          target_path: ./a
+      production:
+        deploy:
+          target_path: ./b
+  web:
+    type: static
+    environments:
+      production:
+        deploy:
+          target_path: ./c
+`)
+		cfg, err := loader.Load(path)
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+		steps := cfg.Sequences["release"]
+		want := []string{"api/staging", "api/production", "web/production"}
+		if len(steps) != len(want) {
+			t.Fatalf("steps len = %d, want %d (%v)", len(steps), len(want), steps)
+		}
+		for i := range want {
+			if steps[i] != want[i] {
+				t.Fatalf("steps[%d] = %q, want %q", i, steps[i], want[i])
+			}
+		}
+	})
+
 	t.Run("file not found", func(t *testing.T) {
 		_, err := loader.Load(filepath.Join(t.TempDir(), "missing.yaml"))
 		if err == nil {

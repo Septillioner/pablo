@@ -24,6 +24,12 @@ Outputs JSON to stdout with no CLI header. Used by scripts and the VS Code exten
       "type": "static",
       "environments": ["production", "staging"]
     }
+  ],
+  "sequences": [
+    {
+      "name": "extension",
+      "steps": ["extension/vsix", "extension/marketplace"]
+    }
   ]
 }
 ```
@@ -36,6 +42,9 @@ Outputs JSON to stdout with no CLI header. Used by scripts and the VS Code exten
 | `profiles[].name` | string | Profile key |
 | `profiles[].type` | string | Deployment type |
 | `profiles[].environments` | string[] | Environment keys under this profile |
+| `sequences` | array | Named deployment sequences (optional) |
+| `sequences[].name` | string | Sequence key |
+| `sequences[].steps` | string[] | Ordered `profile/env` targets (list order = run order) |
 
 ---
 

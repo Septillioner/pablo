@@ -20,7 +20,7 @@ See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 |---------|-------------|
 | `run` | Execute the full deployment pipeline |
 | `check` | Validate a manifest file |
-| `inspect` | List profiles and environments from a manifest |
+| `inspect` | List profiles, environments, and sequences from a manifest |
 | `init` | Generate a sample manifest (`--template` / `-t` for type wizard) |
 | `uninstall` | Remove deployed files and clean up PATH entries |
 | `version` | Print Pablo version information |
@@ -31,25 +31,35 @@ See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 
 ## `run`
 
-Executes the deployment pipeline for the selected profile and environment.
+Executes the deployment pipeline for a single profile/environment, or runs a named sequence from the manifest.
 
 **Flags:**
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
-| `--profile` | `-p` | `default` | Target profile |
-| `--env` | `-e` | `production` | Target environment |
+| `--profile` | `-p` | `default` | Target profile (not used with `sequence`) |
+| `--env` | `-e` | `production` | Target environment (not used with `sequence`) |
 | `--file` | `-f` | `pablo.yaml` | Path to manifest |
 | `--force` | | `false` | Allow deployment to protected system directories |
 
-**Examples:**
+**Single target examples:**
 
 ```bash
 pablo run -p frontend -e production
 pablo run -p api -e production -f deploy.yaml
 pablo run -e staging --force
 pablo run -p local-test -e dev --verbose
+pablo run default/windows-local
 ```
+
+**Sequence examples:**
+
+```bash
+pablo run sequence extension
+pablo run sequence extension -f pablo-sepy.yaml --verbose
+```
+
+Runs each step in manifest list order; stops on the first failure. `-p` / `-e` cannot be combined with `sequence`.
 
 ---
 

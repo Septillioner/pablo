@@ -81,6 +81,7 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 `)
 
 	rootCmd.Example = `  pablo run default/windows-local
+  pablo run sequence extension
   pablo run --profile api --env production
   pablo check --file my-pipeline.yaml
   pablo init
@@ -90,13 +91,26 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "List each artifact path during deployment")
 
 	var runCmd = &cobra.Command{
-		Use:   "run [profile/env]",
+		Use:   "run [profile/env | sequence <name>]",
 		Short: "Executes the deployment pipeline",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.MaximumNArgs(2),
 		Example: `  pablo run default/windows-local
   pablo run default.windows-local -f pablo.yaml
+  pablo run sequence extension
   pablo run -p api -e staging`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 && args[0] == "sequence" {
+				if len(args) < 2 {
+					return fmt.Errorf("sequence name is required (usage: pablo run sequence <name>)")
+				}
+				if cmd.Flags().Changed("profile") || cmd.Flags().Changed("env") {
+					return fmt.Errorf("cannot combine sequence with -p/--profile or -e/--env")
+				}
+				return pipelineSvc.RunSequence(manifest, args[1], allowProtected, verbose)
+			}
+			if len(args) == 2 {
+				return fmt.Errorf("unexpected second argument; use 'pablo run sequence <name>' for sequences")
+			}
 			profile, env, err := resolveRunTarget(cmd, args)
 			if err != nil {
 				return err
@@ -311,6 +325,16 @@ func runInspect(manifestPath string, asJSON bool) error {
 		ui.Log(">", fmt.Sprintf("%s (%s)", profile.Name, profile.Type))
 		for _, env := range profile.Environments {
 			ui.Log(" ", fmt.Sprintf("- %s", env))
+		}
+	}
+
+	if len(result.Sequences) > 0 {
+		ui.Log("*", "Sequences:")
+		for _, seq := range result.Sequences {
+			ui.Log(">", seq.Name)
+			for _, step := range seq.Steps {
+				ui.Log(" ", fmt.Sprintf("- %s", step))
+			}
 		}
 	}
 	return nil

@@ -6,6 +6,7 @@ type Config struct {
 	Name        string                      `yaml:"name"`
 	Version     string                      `yaml:"version"`
 	Credentials map[string]CredentialConfig `yaml:"credentials,omitempty"`
+	Sequences   map[string][]string         `yaml:"sequences,omitempty"`
 	Profiles    map[string]Profile          `yaml:"profiles"`
 
 	// BaseDir is the directory where the manifest file is located.

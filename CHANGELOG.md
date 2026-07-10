@@ -6,31 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-## [1.5.61] - 2026-07-10
+## [1.5.62] - 2026-07-10
 
-### Fixed
+### Added
 
-- hotfix
-
-## [1.5.61] - 2026-07-10
-
-### Fixed
-
-- hotfix
+- `sequences` in manifest root — named ordered lists of `profile/env` targets; run with `pablo run sequence <name>` (list order is execution order; stops on first failure).
 
 ## [1.5.61] - 2026-07-10
-
-### Fixed
-
-- hotfix
-
-## [1.5.61] - 2026-07-10
-
-### Fixed
-
-- hotfix
-
-## [1.5.7] - 2026-07-10
 
 ### Fixed
 
