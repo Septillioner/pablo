@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.5.63] - 2026-07-13
+
 ### Added
 
 - SSH host key verification against OpenSSH `known_hosts` (enabled by default); optional `remote.trust_on_first_use: on` to record unknown keys on first connect.
@@ -200,7 +202,9 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.61...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.63...HEAD
+[1.5.63]: https://github.com/septillioner/pablo/compare/v1.5.62...v1.5.63
+[1.5.62]: https://github.com/septillioner/pablo/compare/v1.5.61...v1.5.62
 [1.5.61]: https://github.com/septillioner/pablo/compare/v1.5.60...v1.5.61
 [1.5.7]: https://github.com/septillioner/pablo/compare/v1.5.6...v1.5.7
 [1.5.6]: https://github.com/septillioner/pablo/compare/v1.5.5...v1.5.6
