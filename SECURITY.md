@@ -26,7 +26,7 @@ Pablo is pre-1.0 in spirit and currently follows the version embedded in `src/VE
 
 These are intentional or known limitations users should be aware of when operating Pablo in sensitive environments:
 
-- **SSH host key verification is currently disabled.** The SSH adapter uses `InsecureIgnoreHostKey`, which makes connections vulnerable to man-in-the-middle attacks. Treat SSH targets as trusted networks until host key pinning is implemented. Tracked as a TODO in the codebase.
+- **SSH host key verification is enabled by default.** Pablo checks the remote host key against the OpenSSH `known_hosts` file (`~/.ssh/known_hosts`, or `%USERPROFILE%\.ssh\known_hosts` on Windows). Unknown hosts fail with a fingerprint and instructions to add the key (`ssh-keyscan` or an interactive `ssh` login). Optional `remote.trust_on_first_use: on` records an unknown key on first connect (default off). Opt out per environment with `remote.host_key_verification: off` (emits a warning; not recommended on untrusted networks).
 - **No sandboxing of build / hook commands.** Pablo executes `build.command`, `hooks.pre`, `hooks.post`, `deploy.pre_commands`, and `deploy.post_commands` with the privileges of the invoking user. Treat `pablo.yaml` as trusted input.
 - **Template substitution does not escape values.** `{{VAR}}` replacement is a literal string substitution. Do not place untrusted user input into template variables that flow into shell commands or generated config.
 - **Protected path detection is shallow.** Only top-level system directories are checked. The `--force` flag bypasses this guard entirely.

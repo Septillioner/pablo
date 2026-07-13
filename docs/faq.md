@@ -89,7 +89,7 @@ Yes. Use POSIX absolute paths in `deploy.target_path` for Linux targets. Pablo h
 
 ### Is SSH host key verification enabled?
 
-**No.** Pablo currently uses `InsecureIgnoreHostKey`. Use trusted networks until host key pinning ships. See [SECURITY.md](../../SECURITY.md).
+**Yes, by default.** Pablo checks the remote host key against OpenSSH `known_hosts`. Unknown hosts fail with a fingerprint and add instructions. Optional `remote.trust_on_first_use: on` records the key on first connect. Opt out with `remote.host_key_verification: off` (not recommended). See [SECURITY.md](../../SECURITY.md) and the [SSH guide](guides/ssh.md).
 
 ### tar vs legacy transfer?
 

@@ -28,12 +28,14 @@ type Diagnostic struct {
 }
 
 var (
-	profileTypes      = []string{"static", "binary", "docker", "git-sync"}
-	credentialTypes   = []string{"ssh", "token", "basic"}
-	deployStrategies  = []string{"overwrite", "backup", "recreate", "rename-replace"}
-	deployRemoteModes = []string{"tar", "legacy"}
-	remoteMethods     = []string{"ssh"}
-	serviceTypes      = []string{"systemd", "pm2"}
+	profileTypes             = []string{"static", "binary", "docker", "git-sync"}
+	credentialTypes          = []string{"ssh", "token", "basic"}
+	deployStrategies         = []string{"overwrite", "backup", "recreate", "rename-replace"}
+	deployRemoteModes        = []string{"tar", "legacy"}
+	remoteMethods            = []string{"ssh"}
+	hostKeyVerificationModes = []string{"on", "off"}
+	trustOnFirstUseModes     = []string{"on", "off"}
+	serviceTypes             = []string{"systemd", "pm2"}
 )
 
 func ValidateYAML(content []byte, baseDir string) ([]Diagnostic, *domain.Config, error) {
@@ -125,6 +127,12 @@ func Validate(cfg *domain.Config, positions map[string]*yaml.Node) []Diagnostic 
 					if _, ok := cfg.Credentials[env.Remote.Credential]; !ok {
 						diags = append(diags, refDiagnostic(positions, envBase+".remote.credential", fmt.Sprintf("credential %q not found", env.Remote.Credential)))
 					}
+				}
+				if env.Remote.HostKeyVerification != "" && !contains(hostKeyVerificationModes, env.Remote.HostKeyVerification) {
+					diags = append(diags, enumDiagnostic(positions, envBase+".remote.host_key_verification", env.Remote.HostKeyVerification, hostKeyVerificationModes))
+				}
+				if env.Remote.TrustOnFirstUse != "" && !contains(trustOnFirstUseModes, env.Remote.TrustOnFirstUse) {
+					diags = append(diags, enumDiagnostic(positions, envBase+".remote.trust_on_first_use", env.Remote.TrustOnFirstUse, trustOnFirstUseModes))
 				}
 			}
 
@@ -248,13 +256,13 @@ func warningDiagnostic(index map[string]*yaml.Node, path, message string) Diagno
 
 func nodeDiagnostic(index map[string]*yaml.Node, path, message string, severity Severity) Diagnostic {
 	d := Diagnostic{
-		Path:     path,
-		Line:     1,
-		Column:   1,
-		EndLine:  1,
+		Path:      path,
+		Line:      1,
+		Column:    1,
+		EndLine:   1,
 		EndColumn: 1,
-		Message:  message,
-		Severity: severity,
+		Message:   message,
+		Severity:  severity,
 	}
 
 	node := index[path]

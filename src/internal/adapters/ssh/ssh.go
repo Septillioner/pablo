@@ -19,8 +19,9 @@ func New() *Adapter {
 	return &Adapter{}
 }
 
-// Connect establishes an SSH connection using the provided credentials
-func (a *Adapter) Connect(host string, cred *domain.CredentialConfig) (*ssh.Client, error) {
+// Connect establishes an SSH connection using the provided credentials.
+// Host key verification defaults to on (known_hosts); pass HostKeyOptions to opt out or enable TOFU.
+func (a *Adapter) Connect(host string, cred *domain.CredentialConfig, opts HostKeyOptions) (*ssh.Client, error) {
 	var authMethod ssh.AuthMethod
 
 	switch cred.Type {
@@ -53,15 +54,20 @@ func (a *Adapter) Connect(host string, cred *domain.CredentialConfig) (*ssh.Clie
 		return nil, fmt.Errorf("unsupported credential type: %s", cred.Type)
 	}
 
+	hostKeyCallback, err := buildHostKeyCallback(opts)
+	if err != nil {
+		return nil, err
+	}
+
 	config := &ssh.ClientConfig{
 		User:            cred.Username,
 		Auth:            []ssh.AuthMethod{authMethod},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // TODO: Add proper host key verification
+		HostKeyCallback: hostKeyCallback,
 	}
 
 	// Add default port if not specified
 	if !strings.Contains(host, ":") {
-		host = host + ":22"
+		host = host + ":" + defaultSSHPort
 	}
 
 	client, err := ssh.Dial("tcp", host, config)

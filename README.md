@@ -2,12 +2,15 @@
 
 CLI deployment helper for local and remote (SSH) environments — build, filter, and deploy from a single YAML manifest (`pablo.yaml`).
 
+![Pablo demo](docs/assets/demo.gif)
+
 **Docs:** [docs/](docs/README.md) · **Releases:** [GitHub Releases](https://github.com/septillioner/pablo/releases) · **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
 ## Table of contents
 
+- [Why Pablo?](#why-pablo)
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -18,6 +21,14 @@ CLI deployment helper for local and remote (SSH) environments — build, filter,
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
+
+---
+
+## Why Pablo?
+
+Pablo is for solo developers and small teams who deploy to their own server over SSH and do not want to stand up a full CI/CD pipeline. You keep one binary and one YAML manifest; VS Code and Visual Studio get completion, validation, and CodeLens Run via an embedded LSP — uncommon in this niche.
+
+It is not a replacement for Ansible, rsync-only workflows, or GitHub Actions. Use those when you need configuration management fleets, pure file sync, or push-triggered cloud CI. Use Pablo when you want push-to-deploy simplicity from your laptop (or a minimal runner) with build, filter, and remote deploy in one place.
 
 ---
 

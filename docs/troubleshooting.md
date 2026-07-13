@@ -83,7 +83,7 @@ If too many files match, remember that `*.exe` matches at every depth; use `/*.e
 | Remote command fails | Test SSH manually: `ssh user@host 'ls /opt/app'` |
 | Slow transfer | Ensure `deploy.remote` is `tar` (default), not `legacy` |
 
-**Security:** host key verification is disabled — see [SSH guide](guides/ssh.md) and [SECURITY.md](../SECURITY.md).
+**Security:** host key verification is on by default — see [SSH guide](guides/ssh.md) and [SECURITY.md](../SECURITY.md).
 
 ---
 

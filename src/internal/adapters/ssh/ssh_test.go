@@ -37,16 +37,17 @@ func TestExpandPath(t *testing.T) {
 
 func TestConnectErrors(t *testing.T) {
 	a := New()
+	opts := HostKeyOptions{Verification: hostKeyVerificationOff}
 
 	t.Run("unsupported credential type", func(t *testing.T) {
-		_, err := a.Connect("host", &domain.CredentialConfig{Type: "token", Username: "u"})
+		_, err := a.Connect("host", &domain.CredentialConfig{Type: "token", Username: "u"}, opts)
 		if err == nil || !strings.Contains(err.Error(), "unsupported credential type") {
 			t.Fatalf("expected unsupported type error, got %v", err)
 		}
 	})
 
 	t.Run("ssh missing key and password", func(t *testing.T) {
-		_, err := a.Connect("host", &domain.CredentialConfig{Type: "ssh", Username: "deploy"})
+		_, err := a.Connect("host", &domain.CredentialConfig{Type: "ssh", Username: "deploy"}, opts)
 		if err == nil || !strings.Contains(err.Error(), "must have either key or password") {
 			t.Fatalf("expected key/password error, got %v", err)
 		}
@@ -57,7 +58,7 @@ func TestConnectErrors(t *testing.T) {
 			Type:     "ssh",
 			Username: "deploy",
 			Key:      filepath.Join(t.TempDir(), "nonexistent_key"),
-		})
+		}, opts)
 		if err == nil || !strings.Contains(err.Error(), "failed to read SSH key") {
 			t.Fatalf("expected read key error, got %v", err)
 		}

@@ -85,7 +85,7 @@ Some fields are validated in the manifest but not yet executed at runtime:
 - **Partial unit test coverage** — catalog in [tests/TEST_SPEC.md](../../tests/TEST_SPEC.md).
 - `blue-green` **strategy** — declared but not implemented (returns error).
 - **`deploy.service`** — schema exists; systemd/PM2 restart not implemented at runtime.
-- **SSH host key verification** — currently disabled (`InsecureIgnoreHostKey`); see [SECURITY.md](../../SECURITY.md).
+- **SSH host key verification** — enabled by default via `known_hosts`; opt out with `remote.host_key_verification: off`; optional `remote.trust_on_first_use` — see [SECURITY.md](../../SECURITY.md).
 - **Schema validation coverage** — core rules in `pkg/validate`; advanced cross-field rules still expanding (see [roadmap](../roadmap.md)).
 - `builder.Service` — exists as a standalone service but is currently unused; builds run inline.
 - **Snippet versions** — hardcoded in the VS Code extension; not synced with the `VERSION` file.

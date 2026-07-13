@@ -15,7 +15,7 @@ import (
 )
 
 type sshPort interface {
-	Connect(host string, cred *domain.CredentialConfig) (*ssh.Client, error)
+	Connect(host string, cred *domain.CredentialConfig, opts sshAdapter.HostKeyOptions) (*ssh.Client, error)
 	ExecuteCommand(client *ssh.Client, command string) (string, error)
 	CreateBackup(client *ssh.Client, targetPath string) error
 	TransferPipeline(client *ssh.Client, files []string, sourceBase, remotePath string) error
@@ -222,9 +222,9 @@ func (s *Service) copyFile(src, dst string) error {
 	return os.Chmod(dst, sourceInfo.Mode())
 }
 
-// ConnectSSH establishes an SSH connection using credentials
-func (s *Service) ConnectSSH(host string, cred *domain.CredentialConfig) (*ssh.Client, error) {
-	return s.ssh.Connect(host, cred)
+// ConnectSSH establishes an SSH connection using credentials and host key options
+func (s *Service) ConnectSSH(host string, cred *domain.CredentialConfig, opts sshAdapter.HostKeyOptions) (*ssh.Client, error) {
+	return s.ssh.Connect(host, cred, opts)
 }
 
 // ExecuteRemoteCommand runs a command on the remote server

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	sshAdapter "pablo/internal/adapters/ssh"
 	"pablo/pkg/domain"
 
 	"golang.org/x/crypto/ssh"
@@ -351,7 +352,7 @@ type mockSSH struct {
 	remoteFileExists  bool
 }
 
-func (m *mockSSH) Connect(host string, cred *domain.CredentialConfig) (*ssh.Client, error) {
+func (m *mockSSH) Connect(host string, cred *domain.CredentialConfig, opts sshAdapter.HostKeyOptions) (*ssh.Client, error) {
 	return nil, nil
 }
 

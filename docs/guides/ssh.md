@@ -133,15 +133,39 @@ Pablo clones/pulls the repo on the remote host, writes env files, and runs `dock
 
 ---
 
-## Security warning
+## Host key verification
 
-SSH host key verification is **currently disabled** (`InsecureIgnoreHostKey`). Connections are vulnerable to man-in-the-middle attacks on untrusted networks.
+SSH host key verification is **enabled by default**. Pablo checks the remote key against the OpenSSH `known_hosts` file:
 
-Mitigations until host key pinning ships:
+- macOS / Linux: `~/.ssh/known_hosts`
+- Windows: `%USERPROFILE%\.ssh\known_hosts`
 
-- Deploy only on trusted networks or VPNs.
-- Use SSH config `KnownHostsFile` and tunnel through a bastion you control.
-- Track [roadmap — SSH host key verification](../roadmap.md).
+If the host is unknown, Pablo fails with the presented key fingerprint and suggests adding it:
+
+```bash
+ssh-keyscan -H your.server.example >> ~/.ssh/known_hosts
+# or connect once: ssh user@your.server.example
+```
+
+Optional trust-on-first-use (default off):
+
+```yaml
+remote:
+  method: ssh
+  host: web.example.com
+  credential: prod-ssh
+  trust_on_first_use: on
+```
+
+Opt out per environment (emits a warning; not recommended on untrusted networks):
+
+```yaml
+remote:
+  method: ssh
+  host: web.example.com
+  credential: prod-ssh
+  host_key_verification: off
+```
 
 Full policy: [SECURITY.md](../../SECURITY.md).
 
@@ -153,6 +177,8 @@ Full policy: [SECURITY.md](../../SECURITY.md).
 |---------|-------|
 | Connection refused | Host, port (default 22), firewall on target |
 | Permission denied | Username, key path, key permissions (`chmod 600`) |
+| Host key not in known_hosts | Add with `ssh-keyscan` or interactive `ssh`; or set `trust_on_first_use: on` |
+| Host key mismatch | Confirm the server was reinstalled; remove the stale known_hosts entry only if you trust the new key |
 | Remote path errors | Use absolute POSIX paths on Linux |
 | Slow deploy | Switch from `legacy` to `tar` (default) |
 

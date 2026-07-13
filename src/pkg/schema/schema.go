@@ -98,9 +98,11 @@ var Root = &Field{
 										"remote": {
 											Description: "Connection to a remote server.",
 											Children: map[string]*Field{
-												"method":     {Description: "Connection method.", Enum: []string{"ssh"}},
-												"host":       {Description: "Remote host address."},
-												"credential": {Description: "Credential name for remote access."},
+												"method":                {Description: "Connection method.", Enum: []string{"ssh"}},
+												"host":                  {Description: "Remote host address."},
+												"credential":            {Description: "Credential name for remote access."},
+												"host_key_verification": {Description: "Verify the remote host key against known_hosts. Default: on.", Enum: []string{"on", "off"}},
+												"trust_on_first_use":    {Description: "When on, record an unknown host key on first connect. Default: off.", Enum: []string{"on", "off"}},
 											},
 										},
 										"deploy": {

@@ -90,9 +90,11 @@ type Environment struct {
 }
 
 type RemoteConfig struct {
-	Method     string `yaml:"method"`
-	Host       string `yaml:"host"`
-	Credential string `yaml:"credential"`
+	Method              string `yaml:"method"`
+	Host                string `yaml:"host"`
+	Credential          string `yaml:"credential"`
+	HostKeyVerification string `yaml:"host_key_verification,omitempty"`
+	TrustOnFirstUse     string `yaml:"trust_on_first_use,omitempty"`
 }
 
 type DeployConfig struct {

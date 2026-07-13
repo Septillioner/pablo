@@ -9,11 +9,8 @@ import (
 	"time"
 
 	"pablo/internal/adapters/docker"
+	sshAdapter "pablo/internal/adapters/ssh"
 	"pablo/internal/adapters/system"
-	"pablo/pkg/config"
-	"pablo/pkg/domain"
-	"pablo/pkg/target"
-	"pablo/pkg/validate"
 	"pablo/internal/services/builder"
 	"pablo/internal/services/deployer"
 	"pablo/internal/services/filter"
@@ -21,8 +18,12 @@ import (
 	"pablo/internal/services/hooks"
 	"pablo/internal/services/scm"
 	"pablo/internal/services/template"
+	"pablo/pkg/config"
+	"pablo/pkg/domain"
 	"pablo/pkg/pathutil"
+	"pablo/pkg/target"
 	"pablo/pkg/ui"
+	"pablo/pkg/validate"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -397,9 +398,12 @@ func (s *Service) runCommands(commands []string, env domain.Environment, isRemot
 
 func (s *Service) getSSHClient(env domain.Environment, cfg *domain.Config) (*ssh.Client, error) {
 	var sshHost, sshCredential string
+	hostKeyOpts := sshAdapter.HostKeyOptions{}
 	if env.Remote != nil {
 		sshHost = env.Remote.Host
 		sshCredential = env.Remote.Credential
+		hostKeyOpts.Verification = env.Remote.HostKeyVerification
+		hostKeyOpts.TrustOnFirstUse = env.Remote.TrustOnFirstUse
 	} else if env.Deploy.SSH != nil { // Fallback for older configs
 		sshHost = env.Deploy.SSH.Host
 		sshCredential = env.Deploy.SSH.Credential
@@ -419,8 +423,12 @@ func (s *Service) getSSHClient(env domain.Environment, cfg *domain.Config) (*ssh
 		cred = &domain.CredentialConfig{Type: "ssh", Username: "root", Key: "~/.ssh/id_rsa"}
 	}
 
+	if hostKeyOpts.VerificationDisabled() {
+		ui.Log("!", "SSH host key verification is disabled for this environment (remote.host_key_verification: off)")
+	}
+
 	ui.Log("*", fmt.Sprintf("Connecting to %s as %s", sshHost, cred.Username))
-	return s.deployer.ConnectSSH(sshHost, cred)
+	return s.deployer.ConnectSSH(sshHost, cred, hostKeyOpts)
 }
 
 func logArtifacts(files []string, artifactBase string, verbose bool) {

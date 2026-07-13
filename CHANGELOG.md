@@ -6,6 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- SSH host key verification against OpenSSH `known_hosts` (enabled by default); optional `remote.trust_on_first_use: on` to record unknown keys on first connect.
+- README "Why Pablo?" section and VHS demo tape (`docs/assets/demo.tape`) for terminal GIF recording.
+
+### Changed
+
+- SSH connections no longer skip host key checks by default. Existing manifests keep working when the host is already in `known_hosts`; otherwise add the key or set `remote.host_key_verification: off` (emits a warning).
+
 ## [1.5.62] - 2026-07-10
 
 ### Added

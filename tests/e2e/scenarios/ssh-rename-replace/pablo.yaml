@@ -19,6 +19,7 @@ profiles:
           method: ssh
           host: 127.0.0.1:2222
           credential: e2e-ssh
+          host_key_verification: off
         deploy:
           target_path: /tmp/pablo-e2e-rename-replace
           strategy: rename-replace

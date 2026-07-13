@@ -65,7 +65,7 @@ Pablo
 │   ├── [x] Test strategy and catalog
 │   └── [ ] Docs kept in sync with each release
 └── Security
-    └── [ ] SSH host key verification
+    └── [x] SSH host key verification
 ```
 
 ---
@@ -106,6 +106,7 @@ Pablo
 - [x] Hooks, health checks, pre/post deploy commands
 - [x] Local and remote SSH deploy
 - [x] Remote Docker Compose orchestration
+- [x] SSH host key verification (`known_hosts`, optional TOFU / opt-out)
 
 ### Platform integration
 
@@ -170,7 +171,7 @@ Catalog: [tests/TEST_SPEC.md](../tests/TEST_SPEC.md)
 
 ### Security (P0)
 
-- [ ] **SSH host key verification** — replace `InsecureIgnoreHostKey`; see [SECURITY.md](../SECURITY.md)
+- [x] **SSH host key verification** — `known_hosts` by default; `remote.host_key_verification` / `remote.trust_on_first_use`; see [SECURITY.md](../SECURITY.md)
 
 ### Automation (P4)
 

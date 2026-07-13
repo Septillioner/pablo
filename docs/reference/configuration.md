@@ -212,6 +212,8 @@ Remote server connection configuration. When present, deployment targets the rem
 | `method` | String | **Required.** Connection method: `ssh` |
 | `host` | String | **Required.** Remote host address (port defaults to 22) |
 | `credential` | String | **Required.** Credential reference name |
+| `host_key_verification` | String | Host key check against OpenSSH `known_hosts`. `on` (default) or `off` |
+| `trust_on_first_use` | String | When `on`, record an unknown host key on first connect. `on` or `off` (default). Only applies when verification is on |
 
 **Example:**
 ```yaml
@@ -220,6 +222,18 @@ remote:
   host: 192.168.1.100
   credential: prod_server
 ```
+
+**Host key verification (opt-out / TOFU):**
+```yaml
+remote:
+  method: ssh
+  host: 192.168.1.100
+  credential: prod_server
+  host_key_verification: off   # not recommended; emits a warning
+  # trust_on_first_use: on     # optional; default is off
+```
+
+By default Pablo verifies the remote host key using `~/.ssh/known_hosts` (Windows: `%USERPROFILE%\.ssh\known_hosts`). See [SSH guide](../guides/ssh.md) and [SECURITY.md](../../SECURITY.md).
 
 ---
 
