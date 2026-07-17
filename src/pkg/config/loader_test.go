@@ -28,6 +28,8 @@ profiles:
     environments:
       prod:
         deploy:
+          source:
+            dir: ./dist
           target_path: /var/www
 `)
 		cfg, err := loader.Load(path)
@@ -56,6 +58,8 @@ profiles:
         variables:
           ENV_ONLY: local
         deploy:
+          source:
+            dir: ./dist
           target_path: /var/www
 `)
 		cfg, err := loader.Load(path)
@@ -88,6 +92,8 @@ profiles:
     environments:
       prod:
         deploy:
+          source:
+            dir: ./build
           target_path: /opt/app
 `)
 		cfg, err := loader.Load(path)
@@ -125,6 +131,8 @@ profiles:
           variables:
             CGO: "1"
         deploy:
+          source:
+            dir: ./build
           target_path: /opt/app
 `)
 		cfg, err := loader.Load(path)
@@ -146,98 +154,6 @@ profiles:
 		}
 	})
 
-	t.Run("propagate output_dir to deploy source", func(t *testing.T) {
-		dir := t.TempDir()
-		path := writeManifest(t, dir, "pablo.yaml", `
-profiles:
-  default:
-    type: static
-    output_dir:
-      dir: ./dist
-      include: ["*.js"]
-      exclude: ["*.map"]
-    environments:
-      prod:
-        deploy:
-          target_path: /var/www
-`)
-		cfg, err := loader.Load(path)
-		if err != nil {
-			t.Fatalf("Load() error = %v", err)
-		}
-		src := cfg.Profiles["default"].Environments["prod"].Deploy.Source
-		if src == nil {
-			t.Fatal("expected deploy source from output_dir")
-		}
-		if src.Dir != "./dist" || len(src.Include) != 1 || src.Include[0] != "*.js" {
-			t.Fatalf("source = %+v", src)
-		}
-	})
-
-	t.Run("propagate environment variables to deploy level", func(t *testing.T) {
-		dir := t.TempDir()
-		path := writeManifest(t, dir, "pablo.yaml", `
-profiles:
-  default:
-    type: static
-    environments:
-      prod:
-        variables:
-          API_URL: https://api.example.com
-        env_file: .env.deploy
-        deploy:
-          target_path: /var/www
-`)
-		cfg, err := loader.Load(path)
-		if err != nil {
-			t.Fatalf("Load() error = %v", err)
-		}
-		deploy := cfg.Profiles["default"].Environments["prod"].Deploy
-		if deploy.EnvConfig.Variables["API_URL"] != "https://api.example.com" {
-			t.Fatalf("API_URL = %q", deploy.EnvConfig.Variables["API_URL"])
-		}
-		if deploy.EnvConfig.EnvFile != ".env.deploy" {
-			t.Fatalf("EnvFile = %q, want .env.deploy", deploy.EnvConfig.EnvFile)
-		}
-	})
-
-	t.Run("legacy top level type and environments", func(t *testing.T) {
-		dir := t.TempDir()
-		path := writeManifest(t, dir, "pablo.yaml", `
-type: static
-source:
-  include: ["*.html"]
-  exclude: ["*.tmp"]
-environments:
-  prod:
-    target_path: /var/www
-    strategy: overwrite
-    variables:
-      MODE: prod
-`)
-		cfg, err := loader.Load(path)
-		if err != nil {
-			t.Fatalf("Load() error = %v", err)
-		}
-		profile, ok := cfg.Profiles["default"]
-		if !ok {
-			t.Fatal("expected default profile from legacy manifest")
-		}
-		if profile.Type != "static" {
-			t.Fatalf("Type = %q, want static", profile.Type)
-		}
-		if len(profile.OutputDir.Include) != 1 || profile.OutputDir.Include[0] != "*.html" {
-			t.Fatalf("OutputDir.Include = %v", profile.OutputDir.Include)
-		}
-		env := profile.Environments["prod"]
-		if env.Deploy.TargetPath != "/var/www" || env.Deploy.Strategy != "overwrite" {
-			t.Fatalf("deploy = %+v", env.Deploy)
-		}
-		if env.EnvConfig.Variables["MODE"] != "prod" {
-			t.Fatalf("MODE = %q, want prod", env.EnvConfig.Variables["MODE"])
-		}
-	})
-
 	t.Run("sequences preserve step order", func(t *testing.T) {
 		dir := t.TempDir()
 		path := writeManifest(t, dir, "pablo.yaml", `
@@ -253,15 +169,21 @@ profiles:
     environments:
       staging:
         deploy:
+          source:
+            dir: ./a
           target_path: ./a
       production:
         deploy:
+          source:
+            dir: ./b
           target_path: ./b
   web:
     type: static
     environments:
       production:
         deploy:
+          source:
+            dir: ./c
           target_path: ./c
 `)
 		cfg, err := loader.Load(path)

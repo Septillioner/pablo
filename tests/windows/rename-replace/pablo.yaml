@@ -4,11 +4,11 @@ version: 1.0.0
 profiles:
   default:
     type: static
-    output_dir:
-      dir: ./src
-      include: ["*.txt"]
     environments:
       local:
         deploy:
+          source:
+            dir: ./src
+            include: ["*.txt"]
           target_path: "C:\\PabloTest\\RenameReplace"
           strategy: rename-replace

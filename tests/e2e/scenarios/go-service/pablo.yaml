@@ -1,0 +1,30 @@
+name: go-microservice
+version: 1.2.0
+
+credentials:
+  e2e-ssh:
+    type: ssh
+    username: deploy
+    key: ../../keys/id_ed25519
+
+profiles:
+  default:
+    type: binary
+    build:
+      path: ./src
+      command: "GOOS=linux GOARCH=amd64 go build -o ../dist/myservice ."
+    environments:
+      production:
+        remote:
+          host: 127.0.0.1:2222
+          credential: e2e-ssh
+          host_key_verification: off
+        deploy:
+          source:
+            dir: ./dist
+            include: ["myservice"]
+          target_path: /opt/go-service
+          strategy: backup
+          post_commands:
+            - "chmod +x /opt/go-service/myservice"
+            - "/opt/go-service/myservice --version > /opt/go-service/VERSION.txt"

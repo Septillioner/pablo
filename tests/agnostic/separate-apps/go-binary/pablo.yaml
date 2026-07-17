@@ -10,54 +10,35 @@ credentials:
 profiles:
   default:
     type: binary
-    
-    hooks:
-      pre: go test ./...
-      post: echo 'Service deployed and restarted!'
-    
     environments:
       development:
         build:
           command: go build -ldflags="-s -w" -o myservice ./cmd/server
           path: ./
-        
         deploy:
           source:
             dir: ./
             include: ["myservice"]
           target_path: /usr/local/bin
           strategy: backup
-          service:
-            type: systemd
-            name: myservice-dev
-            restart: true
-        
+          post_commands:
+            - systemctl restart myservice-dev
         register_path:
           scope: user
-      
       production:
         build:
           command: go build -ldflags="-s -w" -o myservice ./cmd/server
           path: ./
-        
         remote:
-          method: ssh
           host: 192.168.1.102
           credential: prod_server
-        
         deploy:
           source:
             dir: ./
             include: ["myservice"]
           target_path: /usr/local/bin
           strategy: backup
-          service:
-            type: systemd
-            name: myservice
-            restart: true
-        
+          post_commands:
+            - systemctl restart myservice
         register_path:
           scope: system
-    
-    pipeline:
-      health_check: http://localhost:9090/health

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>Pablo: PHP / Git-Sync App</Title>
+      <Shortcut>pablo-tpl-php-app</Shortcut>
+      <Description>Git-sync PHP app with env_file, variables, and post_commands</Description>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Code Language="yaml"><![CDATA[name: "$1"
+version: "2.0.0"
+
+credentials:
+  $2:
+    type: ssh
+    username: deploy
+    key: "~/.ssh/id_rsa"
+
+profiles:
+  default:
+    type: git-sync
+    variables:
+      APP_ENV: production
+      APP_DEBUG: "false"
+    env_file: ".env"
+    git:
+      repo: "$3"
+      branch: "main"
+    environments:
+      production:
+        remote:
+          host: "$4"
+          credential: "$2"
+        deploy:
+          target_path: "$5"
+          strategy: overwrite
+          post_commands:
+            - "mkdir -p $5/storage"
+            - "composer install --no-dev --optimize-autoloader"]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

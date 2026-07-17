@@ -2,31 +2,40 @@
 <CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
   <CodeSnippet Format="1.0.0">
     <Header>
-      <Title>Pablo: Docker Compose Template</Title>
+      <Title>Pablo: Docker Compose</Title>
       <Shortcut>pablo-tpl-docker</Shortcut>
-      <Description>Ready-to-use template for Docker Compose deployments</Description>
+      <Description>Docker Compose deploy via git sync over SSH</Description>
       <SnippetTypes>
         <SnippetType>Expansion</SnippetType>
       </SnippetTypes>
     </Header>
     <Snippet>
       <Code Language="yaml"><![CDATA[name: "$1"
-version: "1.4.0"
+version: "2.0.0"
+
+credentials:
+  $2:
+    type: ssh
+    username: deploy
+    key: "~/.ssh/id_rsa"
 
 profiles:
-  app-stack:
+  default:
     type: docker
     git:
-      repo: "$2"
+      repo: "$3"
       branch: "main"
     environments:
-      swarm-cluster:
-        target_path: "$3"
+      production:
+        remote:
+          host: "$4"
+          credential: "$2"
         deploy:
+          target_path: "$5"
           docker:
-            compose_file: "docker-compose.prod.yml"
-            build: true
-            command: "up -d"]]></Code>
+            compose_file: "docker-compose.yml"
+            build: false
+            stop_before_sync: true]]></Code>
     </Snippet>
   </CodeSnippet>
 </CodeSnippets>

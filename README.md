@@ -35,7 +35,7 @@ It is not a replacement for Ansible, rsync-only workflows, or GitHub Actions. Us
 ## Features
 
 - **Multi-profile manifests** — frontend, backend, and infra in one `pablo.yaml`
-- **Full deploy pipeline** — hooks, optional build, filter, deploy, templates, health checks
+- **Full deploy pipeline** — optional build, filter, deploy, templates, pre/post commands
 - **Local and remote SSH** — tar-streamed transfers for bulk deploys
 - **Four deployment types** — `static`, `binary`, `docker`, `git-sync`
 - **Deploy strategies** — `overwrite`, `backup`, `recreate`, `rename-replace` (with rollback where supported)
@@ -67,19 +67,19 @@ Downloads the latest release, verifies the SHA-256 checksum, and installs to a s
 **Windows (PowerShell):**
 
 ```powershell
-$s="$env:TEMP\pablo-install.ps1"; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' -OutFile $s; powershell -NoProfile -ExecutionPolicy Bypass -File $s
+$s="$env:TEMP\pablo-install.ps1"; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; irm 'https://raw.githubusercontent.com/septillioner/pablo/master/scripts/install.ps1' -OutFile $s; powershell -NoProfile -ExecutionPolicy Bypass -File $s
 ```
 
 **Windows (cmd):**
 
 ```bat
-curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.cmd -o install.cmd && install.cmd
+curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/scripts/install.cmd -o install.cmd && install.cmd
 ```
 
 **macOS / Linux:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/septillioner/pablo/master/scripts/install.sh | bash
 ```
 
 Pin a version with `PABLO_VERSION=v1.5.6` (or `$env:PABLO_VERSION` on Windows) before running the installer.
@@ -89,7 +89,7 @@ Pin a version with `PABLO_VERSION=v1.5.6` (or `$env:PABLO_VERSION` on Windows) b
 | Method | How |
 |--------|-----|
 | Pre-built binary | Download from [Releases](https://github.com/septillioner/pablo/releases), verify `checksums.txt`, put on `PATH` |
-| Build from source | `git clone` → `./build.sh` → `./build/pablo` |
+| Build from source | `git clone` → `./scripts/build.sh` → `./build/pablo` |
 | Update existing install | `pablo update` · `pablo update --check` |
 
 Verify:
@@ -113,7 +113,7 @@ pablo run                  # defaults: profile default, env production
 # or: pablo run sequence release   # named multi-target sequence
 ```
 
-Simplest useful case: `type: static` with `output_dir` and no `build` — copy files as-is.
+Simplest useful case: `type: static` with `deploy.source` and no `build` — copy files as-is.
 
 ```yaml
 name: my-app
@@ -122,12 +122,12 @@ version: 0.1.0
 profiles:
   default:
     type: static
-    output_dir:
-      dir: ./src
-      include: ["**/*"]
     environments:
       production:
         deploy:
+          source:
+            dir: ./src
+            include: ["**/*"]
           target_path: ./deploy-output
           strategy: overwrite
 ```
@@ -188,7 +188,8 @@ Both use `pablo lsp` for completion, hover, validation, and Run (CodeLens / tool
 
 | Section | Pages |
 |---------|-------|
-| Getting started | [Installation](docs/getting-started/installation.md) · [Quick start](docs/getting-started/quick-start.md) · [First deployment](docs/getting-started/first-deployment.md) |
+| Getting started | [Installation](docs/getting-started/installation.md) · [Quick start](docs/getting-started/quick-start.md) · [First deployment](docs/getting-started/first-deployment.md) · [Project structure](docs/getting-started/project-structure.md) |
+| Examples | [Sixteen scenarios](docs/examples/README.md) — local → SSH → Docker → git-sync → sequences → Windows |
 | Guides | [Sequences](docs/guides/sequences.md) · [SSH](docs/guides/ssh.md) · [Docker](docs/guides/docker.md) · [Credentials](docs/guides/credentials.md) · [Strategies](docs/guides/deploy-strategies.md) · [Git sync](docs/guides/git-sync.md) · [Binary / PATH](docs/guides/binary-and-path.md) |
 | Reference | [CLI](docs/reference/cli.md) · [Configuration](docs/reference/configuration.md) · [Capabilities](docs/reference/capabilities.md) · [API](docs/reference/api.md) |
 | More | [FAQ](docs/faq.md) · [Troubleshooting](docs/troubleshooting.md) · [Roadmap](docs/roadmap.md) · [Full index](docs/README.md) |

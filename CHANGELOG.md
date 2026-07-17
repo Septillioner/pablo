@@ -6,6 +6,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- **Repo scripts under `scripts/`** — Install, build, and test runners moved from the repo root to `scripts/` (`install.sh` / `install.ps1` / `install.cmd`, `build.sh`, `test.sh` / `test.ps1` / `test.bat`). One-liner install URLs now use `.../master/scripts/install.*`.
+- **Docs rewrite (schema v2)** — Public documentation under `docs/` rewritten for the current manifest model only, with a sixteen-scenario [Examples](docs/examples/README.md) catalog and fluent guides/reference.
+- **Schema v2 (breaking)** — Manifest shape simplified around three nouns: Profile (what), Environment (where), Deploy (how). All deploy config lives under `profiles`; profile inheritance is limited to `variables`, `env_file`, and `build`.
+- **`deploy.remote` renamed to `deploy.transfer`** — Values unchanged: `tar` (default) or `legacy`.
+- **`remote` block** — Presence implies SSH; removed `remote.method`. Required fields: `host`, `credential`.
+- **Artifacts** — Static/binary types require explicit `deploy.source` (`dir`, `include`, `exclude`) on each environment; no profile-level `output_dir` or source inheritance.
+
+### Added
+
+- Unknown YAML keys are validation errors (`pablo check` / LSP).
+- Stricter type gates: required/forbidden fields by profile `type`; empty `environments` is an error; `remote.credential` is required and must resolve.
+
+### Removed
+
+- **Schema v2 (breaking)** — `output_dir`, `hooks`, `pipeline`, `deploy.service`, `deploy.strategy: blue-green`, `remote.method`, `deploy.ssh` / flat env `target_path` / `strategy`, `docker.command`, sequence `profile.env` form (only `profile/env`), silent default SSH credential invent, and legacy top-level `type` / `environments` auto-wrap. Use `deploy.pre_commands` / `deploy.post_commands` instead of hooks; reference credentials by name at the root.
+
 ## [1.7.3] - 2026-07-17
 
 ### Fixed

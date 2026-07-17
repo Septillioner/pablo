@@ -1,0 +1,31 @@
+name: php-laravel-app
+version: 1.0.0
+
+credentials:
+  e2e-ssh:
+    type: ssh
+    username: deploy
+    key: ../../keys/id_ed25519
+
+profiles:
+  default:
+    type: git-sync
+    variables:
+      APP_ENV: production
+      APP_DEBUG: "false"
+    env_file: .env
+    git:
+      repo: file:///home/deploy/repos/sample-php-app.git
+      branch: main
+    environments:
+      production:
+        remote:
+          host: 127.0.0.1:2222
+          credential: e2e-ssh
+          host_key_verification: off
+        deploy:
+          target_path: /var/www/php-app
+          strategy: overwrite
+          post_commands:
+            - "mkdir -p /var/www/php-app/storage"
+            - "touch /var/www/php-app/storage/.deployed"

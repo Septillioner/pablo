@@ -24,7 +24,7 @@ Thanks for your interest in contributing. This document is the canonical contrib
 | [docs/reference/api.md](docs/reference/api.md) | `inspect --json` and LSP protocol surface |
 | [PMAP.md](PMAP.md) | Internal architecture map (maintainers and agents; not user-facing) |
 | [tests/TEST_SPEC.md](tests/TEST_SPEC.md) | Test catalog and coverage status |
-| [RELEASING.md](RELEASING.md) | Version bump and publish process |
+| [docs/development/release-process.md](docs/development/release-process.md) | Version bump and publish process |
 
 ## Project setup
 
@@ -42,10 +42,10 @@ Thanks for your interest in contributing. This document is the canonical contrib
 
 ```bash
 # Current platform
-./build.sh
+./scripts/build.sh
 
 # All supported platforms
-./build.sh all
+./scripts/build.sh all
 ```
 
 Binaries are written to `build/`.
@@ -66,16 +66,16 @@ go run main.go inspect -f ../pablo.yaml --json
 Prefer the test runner from the repo root:
 
 ```bash
-./test.sh all          # unit + integration + e2e (Docker required for e2e)
-./test.sh unit         # fast package tests only
+./scripts/test.sh all          # unit + integration + e2e (Docker required for e2e)
+./scripts/test.sh unit         # fast package tests only
 ```
 
 Windows:
 
 ```powershell
-.\test.ps1 unit
-.\test.ps1 e2e
-# or: test.bat unit
+.\scripts\test.ps1 unit
+.\scripts\test.ps1 e2e
+# or: scripts\test.bat unit
 ```
 
 Or run Go tests directly:
@@ -99,7 +99,7 @@ go run ../../../src/main.go run -p local-test -e dev
 For remote SSH / Docker scenarios (requires Docker):
 
 ```bash
-./test.sh e2e
+./scripts/test.sh e2e
 # or:
 cd tests/e2e
 go test -tags=integration -v -timeout 10m ./...

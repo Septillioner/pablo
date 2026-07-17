@@ -10,7 +10,7 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 
 | ID | Sistem | Katman | Konum | Dogruladigi davranis | Durum |
 |----|--------|--------|-------|----------------------|-------|
-| U-CFG-01 | YAML yukleme | unit | `config/loader_test.go` | Minimal manifest, BaseDir, kalitim (variables, build, output_dir) | done |
+| U-CFG-01 | YAML yukleme | unit | `config/loader_test.go` | Minimal manifest, BaseDir, kalitim (variables, build, env_file) | done |
 | U-CFG-02 | YAML hatalar | unit | `config/loader_test.go` | Eksik dosya, gecersiz YAML | done |
 | M-CFG-01 | Manifest ornekleri | manuel | `agnostic/inheritance-test/` | Elle `pablo check` | done |
 
@@ -41,7 +41,7 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 |----|--------|--------|-------|----------------------|-------|
 | U-DEP-01 | Korumali path | unit | `deployer/service_test.go` | isProtectedPath (Unix/Windows) | done |
 | U-DEP-02 | Stratejiler | unit | `deployer/service_test.go` | overwrite, backup, recreate, rename-replace | done |
-| U-DEP-03 | blue-green | unit | `deployer/service_test.go` | Henuz implemente degil → hata | done |
+| U-DEP-03 | Gecersiz strateji | unit | `deployer/service_test.go` | Bilinmeyen strategy → hata | done |
 | U-DEP-04 | Dosya kopyalama | unit | `deployer/service_test.go` | copyFile mode | done |
 | U-DEP-05 | Remote deploy | unit | `deployer/service_test.go` | DeployRemote mock SSH, tar/scp | done |
 | U-DEP-06 | rename-replace remote | unit | `deployer/service_test.go` | Staging, cleanup, transfer rollback | done |
@@ -76,9 +76,23 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 | U-SSH-02 | Connect hatalar | unit | `ssh/ssh_test.go` | Desteklenmeyen tip, eksik key/password, okunamayan key | done |
 | U-SSH-03 | Tar stream | unit | `ssh/ssh_test.go` | addToTar goreli yol ve icerik | done |
 | U-SSH-04 | Remote komut | unit | — | ExecuteCommand / CreateBackup mock | planned |
-| E-SSH-01 | Static remote deploy | e2e | `TestSSH_StaticDeploy` | SSH tar deploy, dosya varligi | done |
-| E-SSH-02 | Docker remote deploy | e2e | `TestSSH_DockerRemoteDeploy` | git clone + compose; ikinci run redeploy | done |
-| E-SSH-03 | rename-replace remote | e2e | `TestSSH_RenameReplace` | Per-file rename, replace, cleanup | done |
+
+---
+
+## E2E — real-world SSH stories
+
+| ID | Sistem | Katman | Konum | Dogruladigi davranis | Durum |
+|----|--------|--------|-------|----------------------|-------|
+| E-SSH-01 | Static marketing site | e2e | `TestSSH_StaticSite` | Nested assets → `/var/www/static-site`, `overwrite` | done |
+| E-SSH-02 | Static hotfix | e2e | `TestSSH_StaticSiteHotfix` | Live swap with `rename-replace` | done |
+| E-SSH-03 | Go microservice | e2e | `TestSSH_GoService` | Binary build + deploy + `post_commands` | done |
+| E-SSH-04 | Compose API | e2e | `TestSSH_ComposeAPI` | Git + remote Compose; redeploy while up | done |
+| E-SSH-05 | PHP git-sync | e2e | `TestSSH_PHPApp` | Bare repo → `/var/www/php-app`, env_file, deploy marker | done |
+| E-SSH-06 | Release sequence | e2e | `TestSSH_ReleaseSequence` | Staging then prod via `pablo run sequence` | done |
+| E-SSH-07 | Site with backup | e2e | `TestSSH_SiteWithBackup` | `strategy: backup` keeps previous tree | done |
+| E-SSH-08 | Clean redeploy | e2e | `TestSSH_CleanRedeploy` | `strategy: recreate` removes stale files | done |
+| E-SSH-09 | Legacy transfer | e2e | `TestSSH_LegacyTransfer` | Multi-file site with `transfer: legacy` | done |
+| E-SSH-10 | Verified transfer | e2e | `TestSSH_VerifiedTransfer` | `verify_checksum: true` succeeds | done |
 
 ---
 
@@ -87,8 +101,8 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 | ID | Sistem | Katman | Konum | Dogruladigi davranis | Durum |
 |----|--------|--------|-------|----------------------|-------|
 | U-PIP-01 | resolvePath | unit | `pipeline/helpers_test.go` | Goreli/mutlak yol, baseDir | done |
-| U-PIP-02 | resolveVariables | unit | `pipeline/helpers_test.go` | env.Deploy.Variables kopyasi | done |
-| U-PIP-03 | resolveArtifacts | unit | `pipeline/helpers_test.go` | output_dir vs deploy.source onceligi | done |
+| U-PIP-02 | resolveVariables | unit | `pipeline/helpers_test.go` | env.Variables kopyasi (Schema v2) | done |
+| U-PIP-03 | resolveArtifacts | unit | `pipeline/helpers_test.go` | deploy.source dir/include/exclude | done |
 | U-PIP-04 | writeEnvFile | unit | `pipeline/helpers_test.go` | KEY=VALUE format, bos map | done |
 | U-PIP-05 | runCommands | unit | `pipeline/helpers_test.go` | Bos liste, lokal echo, remote SSH hatasi | done |
 
@@ -99,7 +113,8 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 | ID | Sistem | Katman | Konum | Dogruladigi davranis | Durum |
 |----|--------|--------|-------|----------------------|-------|
 | U-SCM-01 | CloneOrPull | unit | `scm/service_test.go` | nil config, gecersiz URL, temp repo clone/pull | done |
-| E-SCM-01 | Remote git | e2e | `ssh-docker-remote` | file:// bare repo clone uzakta | done |
+| E-SCM-01 | Remote git (Compose) | e2e | `TestSSH_ComposeAPI` | file:// bare repo clone on target | done |
+| E-SCM-02 | Remote git (PHP) | e2e | `TestSSH_PHPApp` | file:// bare repo git-sync | done |
 
 ---
 
@@ -109,8 +124,8 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 |----|--------|--------|-------|----------------------|-------|
 | U-DOCK-01 | Compose arg | unit | `docker/adapter_test.go` | composeUpArgs, composeDownArgs | done |
 | U-DOCK-02 | Gercek daemon | unit | — | integration tag ile docker calistirma | planned |
-| E-DOCK-01 | Remote compose | e2e | `TestSSH_DockerRemoteDeploy` | Uzak `docker compose up` | done |
-| E-DOCK-02 | Remote redeploy | e2e | `TestSSH_DockerRemoteDeploy` (2. run) | Stack ayaktayken `stop_before_sync` + sync + up | done |
+| E-DOCK-01 | Remote compose | e2e | `TestSSH_ComposeAPI` | Uzak `docker compose up` | done |
+| E-DOCK-02 | Remote redeploy | e2e | `TestSSH_ComposeAPI` (2. run) | Stack ayaktayken `stop_before_sync` + sync + up | done |
 
 ---
 

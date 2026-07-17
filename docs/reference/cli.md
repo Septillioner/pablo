@@ -4,13 +4,15 @@ Command-line interface for running deployments, validating manifests, and managi
 
 **Defaults:** manifest = `pablo.yaml`, profile = `default`, environment = `production`
 
+See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
+
+---
+
 ## Global flags
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--verbose` | `false` | During `run`, list each artifact path after the deploy count |
-
-See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 
 ---
 
@@ -25,15 +27,13 @@ See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 | `uninstall` | Remove deployed files and clean up PATH entries |
 | `version` | Print Pablo version information |
 | `update` | Update the Pablo CLI binary from GitHub Releases |
-| `lsp` | Start the language server (stdio; used by the VS Code extension) |
+| `lsp` | Start the language server (stdio; used by editor extensions) |
 
 ---
 
 ## `run`
 
 Executes the deployment pipeline for a single profile/environment, or runs a named sequence from the manifest.
-
-**Flags:**
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
@@ -42,7 +42,7 @@ Executes the deployment pipeline for a single profile/environment, or runs a nam
 | `--file` | `-f` | `pablo.yaml` | Path to manifest |
 | `--force` | | `false` | Allow deployment to protected system directories |
 
-**Single target examples:**
+Single target:
 
 ```bash
 pablo run -p frontend -e production
@@ -52,7 +52,7 @@ pablo run -p local-test -e dev --verbose
 pablo run default/windows-local
 ```
 
-**Sequence examples:**
+Sequence:
 
 ```bash
 pablo run sequence extension
@@ -67,15 +67,11 @@ Runs each step in manifest list order; stops on the first failure. `-p` / `-e` c
 
 Loads and validates the manifest (semantic schema rules via `pkg/validate`, with `path:line:col` diagnostics). Optionally checks that a profile and environment exist.
 
-**Flags:**
-
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
 | `--file` | `-f` | `pablo.yaml` | Path to manifest |
 | `--profile` | `-p` | *(empty)* | Validate a specific profile |
 | `--env` | `-e` | *(empty)* | Validate a specific environment |
-
-**Examples:**
 
 ```bash
 pablo check
@@ -86,23 +82,19 @@ pablo check -f pablo.yaml -p frontend -e production
 
 ## `inspect`
 
-Lists profiles, environments, and named sequences from a manifest. Used by the VS Code extension to populate profile/environment pickers.
-
-**Flags:**
+Lists profiles, environments, and named sequences from a manifest. Editor extensions use this to populate profile/environment pickers.
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
 | `--file` | `-f` | `pablo.yaml` | Path to manifest |
 | `--json` | | `false` | Output machine-readable JSON (no CLI header) |
 
-**Examples:**
-
 ```bash
 pablo inspect
 pablo inspect -f pablo.yaml --json
 ```
 
-**JSON shape:** see [API](api.md#inspect-json).
+JSON shape: [API](api.md#inspect-json).
 
 ---
 
@@ -110,15 +102,11 @@ pablo inspect -f pablo.yaml --json
 
 Creates a sample manifest file named `pablo_sample.yaml` in the current directory.
 
-**Flags:**
-
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
 | `--template` | `-t` | `false` | Interactive template type wizard (`static`, `binary`, `docker`, `git-sync`) |
 
 Without `--template`, writes a local `static` sample. With `--template`, shows a numbered menu in the terminal (requires an interactive TTY).
-
-**Examples:**
 
 ```bash
 pablo init
@@ -132,16 +120,12 @@ pablo init -t
 
 Removes deployed files from the target path and cleans up PATH registrations for binary deployments. Local targets only.
 
-**Flags:**
-
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
 | `--profile` | `-p` | `default` | Profile to uninstall |
 | `--env` | `-e` | *(required)* | Environment to uninstall |
 | `--file` | `-f` | `pablo.yaml` | Path to manifest |
 | `--remove-backups` | | `false` | Also remove backup directories |
-
-**Examples:**
 
 ```bash
 pablo uninstall -p api -e production
@@ -153,10 +137,6 @@ pablo uninstall -p api -e production --remove-backups
 ## `version`
 
 Prints the current Pablo version and architecture label.
-
-**Flags:** none
-
-**Example:**
 
 ```bash
 pablo version
@@ -170,14 +150,10 @@ Downloads the latest Pablo CLI binary for your OS/architecture from GitHub Relea
 
 If other processes are running the same Pablo binary (for example `pablo lsp` from an editor), Pablo lists them and asks whether to close them before continuing. In a non-interactive terminal, close those processes manually if the replace step fails.
 
-**Flags:**
-
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--check` | `false` | Report whether a newer release exists; exit code `1` when an update is available |
 | `--version` | *(empty)* | Pin a release tag (e.g. `v1.5.0`); also reads `PABLO_VERSION` |
-
-**Examples:**
 
 ```bash
 pablo update
@@ -191,11 +167,7 @@ After a successful update, open a new terminal (or invoke `pablo version` again)
 
 ## `lsp`
 
-Starts the Pablo language server on stdio. Used by the VS Code extension (`pablo lsp`). Does not print the CLI header to stdout.
-
-**Flags:** none
-
-**Example:**
+Starts the Pablo language server on stdio. Used by editor extensions. Does not print the CLI header to stdout.
 
 ```bash
 pablo lsp

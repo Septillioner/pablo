@@ -9,128 +9,121 @@ type Field struct {
 var Root = &Field{
 	Children: map[string]*Field{
 		"name": {
-			Description: "The unique name of your project.",
+			Description: "Project name.",
 		},
 		"version": {
-			Description: "The version of the configuration schema (e.g., '1.4.2').",
+			Description: "Project version.",
 		},
 		"sequences": {
 			Description: "Named ordered lists of profile/environment targets. List order is execution order.",
 			Children: map[string]*Field{
 				"*": {
-					Description: "Sequence name. Each item is a profile/environment target (e.g. extension/vsix).",
+					Description: "Sequence name. Each item is a profile/environment target (e.g. app/linux-remote).",
 				},
 			},
 		},
 		"credentials": {
-			Description: "Define reusable credentials (SSH keys, tokens).",
+			Description: "Named reusable credentials. Referenced by string from remote.credential or git.credential.",
 			Children: map[string]*Field{
 				"*": {
 					Children: map[string]*Field{
 						"type": {
-							Description: "Type of credential.",
+							Description: "Credential type.",
 							Enum:        []string{"ssh", "token", "basic"},
 						},
-						"username":   {Description: "Username for basic auth or SSH."},
-						"password":   {Description: "Password for basic auth."},
-						"key":        {Description: "SSH private key content or path."},
-						"passphrase": {Description: "Passphrase for the SSH key."},
+						"username":   {Description: "Username (ssh, basic)."},
+						"password":   {Description: "Password (basic, or ssh password auth)."},
+						"key":        {Description: "SSH private key path."},
+						"passphrase": {Description: "SSH key passphrase."},
+						"value":      {Description: "Token value (token type)."},
 					},
 				},
 			},
 		},
 		"profiles": {
-			Description: "Define one or more deployment profiles. Each profile defines build and packaging strategy.",
+			Description: "Application profiles. Profile = what you build; environments = where it runs.",
 			Children: map[string]*Field{
 				"*": {
 					Children: map[string]*Field{
 						"type": {
-							Description: "Defines how the application is processed.",
+							Description: "Profile type. Gates which fields are allowed.",
 							Enum:        []string{"static", "binary", "docker", "git-sync"},
 						},
+						"variables": {Description: "Variables inherited by every environment unless overridden."},
+						"env_file":  {Description: "Default env file name for environments."},
 						"build": {
-							Description: "Configuration for the build command.",
+							Description: "Build command. Required for binary; optional for static.",
 							Children: map[string]*Field{
-								"command":   {Description: "The shell command to execute (e.g., 'npm run build')."},
-								"path":      {Description: "The working directory for the command."},
-								"variables": {Description: "Environment variables to inject during build."},
-								"env_file":  {Description: "File to write variables to before building."},
-							},
-						},
-						"output_dir": {
-							Description: "Defines where the build artifacts are located.",
-							Children: map[string]*Field{
-								"dir":     {Description: "The directory containing artifacts."},
-								"include": {Description: "Patterns of files to include."},
-								"exclude": {Description: "Patterns of files to exclude."},
+								"command":   {Description: "Shell command to build."},
+								"path":      {Description: "Working directory for the build command."},
+								"variables": {Description: "Environment variables for the build process only."},
+								"env_file":  {Description: "Write variables to this file before building."},
 							},
 						},
 						"git": {
-							Description: "Git repository settings.",
+							Description: "Git repository settings (docker and git-sync).",
 							Children: map[string]*Field{
 								"repo":       {Description: "Git repository URL."},
-								"branch":     {Description: "Git branch to use."},
-								"credential": {Description: "Name of the credential to use for Git."},
-							},
-						},
-						"hooks": {
-							Description: "Lifecycle hooks.",
-							Children: map[string]*Field{
-								"pre":  {Description: "Command to run before deployment."},
-								"post": {Description: "Command to run after deployment."},
-							},
-						},
-						"pipeline": {
-							Description: "Pipeline orchestration settings.",
-							Children: map[string]*Field{
-								"on_success":   {Description: "Command to run on success."},
-								"on_failure":   {Description: "Command to run on failure."},
-								"health_check": {Description: "URL or command for health check."},
+								"branch":     {Description: "Git branch."},
+								"credential": {Description: "Credential name for Git access."},
 							},
 						},
 						"environments": {
-							Description: "Configuration for different deployment environments.",
+							Description: "Deployment environments for this profile.",
 							Children: map[string]*Field{
 								"*": {
 									Children: map[string]*Field{
 										"variables": {Description: "Runtime variables for this environment."},
-										"build":     {Description: "Override profile build settings."},
-										"remote": {
-											Description: "Connection to a remote server.",
+										"env_file":  {Description: "Env file name written into the deploy target."},
+										"build": {
+											Description: "Override profile build for this environment.",
 											Children: map[string]*Field{
-												"method":                {Description: "Connection method.", Enum: []string{"ssh"}},
-												"host":                  {Description: "Remote host address."},
-												"credential":            {Description: "Credential name for remote access."},
-												"host_key_verification": {Description: "Verify the remote host key against known_hosts. Default: on.", Enum: []string{"on", "off"}},
-												"trust_on_first_use":    {Description: "When on, record an unknown host key on first connect. Default: off.", Enum: []string{"on", "off"}},
+												"command":   {Description: "Shell command to build."},
+												"path":      {Description: "Working directory for the build command."},
+												"variables": {Description: "Environment variables for the build process only."},
+												"env_file":  {Description: "Write variables to this file before building."},
+											},
+										},
+										"remote": {
+											Description: "SSH connection. Present = remote deploy; absent = local.",
+											Children: map[string]*Field{
+												"host":                  {Description: "Remote host (host or host:port)."},
+												"credential":            {Description: "Credential name for SSH."},
+												"host_key_verification": {Description: "Verify host key against known_hosts. Default: on.", Enum: []string{"on", "off"}},
+												"trust_on_first_use":    {Description: "Record unknown host key on first connect. Default: off.", Enum: []string{"on", "off"}},
+											},
+										},
+										"register_path": {
+											Description: "Register target_path on PATH (binary only).",
+											Children: map[string]*Field{
+												"scope": {Description: "PATH scope.", Enum: []string{"user", "system"}},
 											},
 										},
 										"deploy": {
-											Description: "Physical deployment parameters.",
+											Description: "How artifacts land on the target.",
 											Children: map[string]*Field{
-												"target_path":     {Description: "Absolute path on the target machine."},
+												"source": {
+													Description: "Artifact location (static/binary). Object only.",
+													Children: map[string]*Field{
+														"dir":     {Description: "Directory containing artifacts."},
+														"include": {Description: "Include patterns."},
+														"exclude": {Description: "Exclude patterns."},
+													},
+												},
+												"target_path":     {Description: "Absolute or relative path on the target machine."},
 												"strategy":        {Description: "Deployment strategy.", Enum: []string{"overwrite", "backup", "recreate", "rename-replace"}},
-												"remote":          {Description: "Transfer method.", Enum: []string{"tar", "legacy"}},
-												"verify_checksum": {Description: "After remote static/binary deploy, verify SHA-256 of transferred files (default false)."},
+												"transfer":        {Description: "Remote transfer method. Default: tar.", Enum: []string{"tar", "legacy"}},
+												"verify_checksum": {Description: "After remote static/binary deploy, verify SHA-256 (default false)."},
+												"pre_commands":    {Description: "Commands to run before artifacts are transferred."},
+												"post_commands":   {Description: "Commands to run after artifacts are transferred."},
 												"docker": {
-													Description: "Docker Compose specific settings.",
+													Description: "Docker Compose settings (docker type).",
 													Children: map[string]*Field{
 														"compose_file":     {Description: "Path to docker-compose file."},
-														"build":            {Description: "Whether to build images."},
-														"command":          {Description: "Custom docker-compose command."},
-														"stop_before_sync": {Description: "If true (default), stop a running Compose stack before git sync on redeploy."},
+														"build":            {Description: "Whether to build images on up."},
+														"stop_before_sync": {Description: "If true (default), stop a running Compose stack before git sync."},
 													},
 												},
-												"service": {
-													Description: "Service management settings.",
-													Children: map[string]*Field{
-														"type":    {Description: "Service manager type.", Enum: []string{"systemd", "pm2"}},
-														"name":    {Description: "Service name."},
-														"restart": {Description: "Whether to restart the service."},
-													},
-												},
-												"pre_commands":  {Description: "Commands to run before deployment artifacts are transferred."},
-												"post_commands": {Description: "Commands to run after deployment artifacts are transferred."},
 											},
 										},
 									},

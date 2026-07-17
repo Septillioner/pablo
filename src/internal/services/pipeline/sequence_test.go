@@ -43,12 +43,12 @@ version: 1.0.0
 profiles:
   local:
     type: static
-    output_dir:
-      dir: ./src
-      include: ["*.html"]
     environments:
       a:
         deploy:
+          source:
+            dir: ./src
+            include: ["*.html"]
           target_path: ./dist-a
           strategy: overwrite
 `)
@@ -81,16 +81,19 @@ sequences:
 profiles:
   app:
     type: static
-    output_dir:
-      dir: ./src
-      include: ["*.html"]
     environments:
       first:
         deploy:
+          source:
+            dir: ./src
+            include: ["*.html"]
           target_path: ./dist-first
           strategy: overwrite
       second:
         deploy:
+          source:
+            dir: ./src
+            include: ["*.html"]
           target_path: ./dist-second
           strategy: overwrite
 `)
@@ -128,19 +131,22 @@ sequences:
 profiles:
   app:
     type: static
-    output_dir:
-      dir: ./src
-      include: ["*.html"]
     environments:
       fail:
         build:
           command: "`+failBuildCommand()+`"
           path: .
         deploy:
+          source:
+            dir: ./src
+            include: ["*.html"]
           target_path: ./dist-fail
           strategy: overwrite
       ok:
         deploy:
+          source:
+            dir: ./src
+            include: ["*.html"]
           target_path: ./dist-ok
           strategy: overwrite
 `)

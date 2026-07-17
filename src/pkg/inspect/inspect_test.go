@@ -58,9 +58,13 @@ profiles:
     environments:
       staging:
         deploy:
+          source:
+            dir: ./dist
           target_path: ./a
       prod:
         deploy:
+          source:
+            dir: ./dist
           target_path: ./b
 `)
 	result, err := FromYAML(content, ".")

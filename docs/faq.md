@@ -8,15 +8,15 @@ Common questions about Pablo.
 
 ### What is Pablo?
 
-A CLI tool that automates optional build → filter → deploy pipelines from a YAML manifest (`pablo.yaml`). Supports local and remote (SSH) targets, multiple profiles, and four deployment types: `static`, `binary`, `docker`, `git-sync`. For `static`, you can omit `build` and only copy files.
+A CLI that automates optional build → filter → deploy from a YAML manifest (`pablo.yaml`). It supports local and remote (SSH) targets, multiple profiles, and four deployment types: `static`, `binary`, `docker`, and `git-sync`. For `static`, you can omit `build` and only copy files.
 
 ### Does Pablo replace CI/CD?
 
-No. Pablo is a deployment helper you run locally or in CI to push artifacts to servers. It does not manage pipelines, PR checks, or infrastructure provisioning.
+No. Pablo is a deployment helper you run locally or in CI to push artifacts to servers. It does not manage PR checks or provision infrastructure.
 
 ### What license is Pablo under?
 
-The repository [LICENSE](../../LICENSE) is Apache 2.0. The VS Code extension `package.json` also lists Apache-2.0.
+The repository [LICENSE](../LICENSE) is Apache 2.0. The VS Code extension `package.json` also lists Apache-2.0.
 
 ---
 
@@ -30,7 +30,7 @@ Yes. Pass `-f`:
 pablo run -f pablo-sepy.yaml -p cli-release -e production
 ```
 
-The VS Code extension recognizes `pablo*.yaml` and `pablo*.yml`.
+Editor extensions recognize `pablo*.yaml` and `pablo*.yml`.
 
 ### What are the defaults?
 
@@ -40,23 +40,23 @@ The VS Code extension recognizes `pablo*.yaml` and `pablo*.yml`.
 | Profile | `default` |
 | Environment | `production` |
 
-### What's the difference between `output_dir` and `deploy.source`?
+### Where do I set artifact paths?
 
-`output_dir` is defined at profile level and inherited as the deploy source. `deploy.source` overrides per environment. Use `output_dir` for shared artifact config; `deploy.source` when one environment needs different includes.
+On each environment under `deploy.source` (`dir`, `include`, `exclude`). Static and binary types require an explicit `deploy.source` per environment.
 
 ### Can I deploy static files without a build step?
 
-Yes. For `type: static`, omit `build`. Pablo copies filtered files from `output_dir` / `deploy.source` to `target_path`. See [Examples #1](examples/README.md#1-copy-files-locally-no-build) and [First deployment](getting-started/first-deployment.md).
+Yes. For `type: static`, omit `build`. Pablo copies filtered files from `deploy.source` to `target_path`. See [Examples #1](examples/README.md#1-local-static-no-build) and [First deployment](getting-started/first-deployment.md).
 
 ### Can I run multiple environments in order?
 
-Yes. Define a root-level `sequences` list of `profile/env` targets, then:
+Yes. Define a root-level `sequences` map of `profile/env` targets, then:
 
 ```bash
 pablo run sequence release
 ```
 
-Steps run in list order; the first failure aborts the rest. See [Sequences](guides/sequences.md) · [Configuration — Sequences](reference/configuration.md#sequences).
+Steps run in list order; the first failure aborts the rest. See [Sequences](guides/sequences.md) · [Examples #11](examples/README.md#11-sequences).
 
 ---
 
@@ -68,20 +68,16 @@ No. Pablo deploys files, binaries, git repos, and Docker Compose stacks. Reverse
 
 ### Is systemd / PM2 restart supported?
 
-The `deploy.service` field exists in the schema but is **not implemented** at runtime. Use `post_commands`:
+Use `deploy.post_commands`:
 
 ```yaml
 post_commands:
   - systemctl restart myapp
 ```
 
-### Is blue-green deployment supported?
-
-No. `strategy: blue-green` returns an error. Use `backup` or `recreate` today.
-
 ### Can I deploy from Windows to Linux?
 
-Yes. Use POSIX absolute paths in `deploy.target_path` for Linux targets. Pablo handles remote path joining via `pathutil`.
+Yes. Use POSIX absolute paths in `deploy.target_path` for Linux targets. Pablo joins remote paths via `pathutil`.
 
 ---
 
@@ -89,11 +85,11 @@ Yes. Use POSIX absolute paths in `deploy.target_path` for Linux targets. Pablo h
 
 ### Is SSH host key verification enabled?
 
-**Yes, by default.** Pablo checks the remote host key against OpenSSH `known_hosts`. Unknown hosts fail with a fingerprint and add instructions. Optional `remote.trust_on_first_use: on` records the key on first connect. Opt out with `remote.host_key_verification: off` (not recommended). See [SECURITY.md](../../SECURITY.md) and the [SSH guide](guides/ssh.md).
+Yes, by default. Pablo checks the remote host key against OpenSSH `known_hosts`. Unknown hosts fail with a fingerprint and add instructions. Optional `remote.trust_on_first_use: on` records the key on first connect. Opt out with `remote.host_key_verification: off` (not recommended). See [SECURITY.md](../SECURITY.md) and the [SSH guide](guides/ssh.md).
 
 ### tar vs legacy transfer?
 
-`tar` (default) streams an archive — faster for many files. `legacy` uses SCP file-by-file — useful for debugging transfer issues.
+`tar` (default) streams an archive — faster for many files. `legacy` uses SCP file-by-file — set `deploy.transfer: legacy`. Useful for debugging transfer issues. See [Examples #14](examples/README.md#14-transfer--checksum).
 
 ---
 
@@ -105,7 +101,7 @@ The VS Code extension prompts you to choose. Use **Pablo: Select Executable** or
 
 ### Does uninstall work on remote servers?
 
-`pablo uninstall` targets **local** deploy paths only. Remove remote deployments manually or via SSH commands.
+`pablo uninstall` targets local deploy paths only. Remove remote deployments manually or via SSH commands.
 
 ---
 
@@ -124,5 +120,6 @@ It can use a bundled binary or resolve from `pablo.path` / PATH. See [VS Code gu
 ## More help
 
 - [Troubleshooting](troubleshooting.md)
+- [Examples](examples/README.md)
 - [Roadmap](roadmap.md)
 - [GitHub Issues](https://github.com/septillioner/pablo/issues)

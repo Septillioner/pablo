@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"pablo/pkg/config"
 	"pablo/pkg/domain"
+	"pablo/pkg/schema"
 	"pablo/pkg/target"
 	"strings"
 
@@ -31,11 +32,10 @@ var (
 	profileTypes             = []string{"static", "binary", "docker", "git-sync"}
 	credentialTypes          = []string{"ssh", "token", "basic"}
 	deployStrategies         = []string{"overwrite", "backup", "recreate", "rename-replace"}
-	deployRemoteModes        = []string{"tar", "legacy"}
-	remoteMethods            = []string{"ssh"}
+	deployTransferModes      = []string{"tar", "legacy"}
 	hostKeyVerificationModes = []string{"on", "off"}
 	trustOnFirstUseModes     = []string{"on", "off"}
-	serviceTypes             = []string{"systemd", "pm2"}
+	registerPathScopes       = []string{"user", "system"}
 )
 
 func ValidateYAML(content []byte, baseDir string) ([]Diagnostic, *domain.Config, error) {
@@ -52,6 +52,7 @@ func ValidateYAML(content []byte, baseDir string) ([]Diagnostic, *domain.Config,
 
 	positions := buildPositionIndex(doc)
 	diags := Validate(cfg, positions)
+	diags = append(diags, checkUnknownKeys(doc, schema.Root, "")...)
 	return diags, cfg, nil
 }
 
@@ -66,7 +67,7 @@ func Validate(cfg *domain.Config, positions map[string]*yaml.Node) []Diagnostic 
 		diags = append(diags, requiredDiagnostic(positions, "name", "name is required"))
 	}
 
-	if len(cfg.Profiles) == 0 && cfg.Type == "" {
+	if len(cfg.Profiles) == 0 {
 		diags = append(diags, requiredDiagnostic(positions, "profiles", "profiles is required"))
 	}
 
@@ -93,58 +94,24 @@ func Validate(cfg *domain.Config, positions map[string]*yaml.Node) []Diagnostic 
 			}
 		}
 
+		switch profile.Type {
+		case "docker", "git-sync":
+			if profile.Git == nil || profile.Git.Repo == "" {
+				diags = append(diags, requiredDiagnostic(positions, base+".git", "git.repo is required for "+profile.Type+" profiles"))
+			}
+		case "static", "binary":
+			if profile.Git != nil {
+				diags = append(diags, nodeDiagnostic(positions, base+".git", "git is not allowed for "+profile.Type+" profiles", SeverityError))
+			}
+		}
+
 		if len(profile.Environments) == 0 {
-			diags = append(diags, warningDiagnostic(positions, base+".environments", "profile has no environments defined"))
+			diags = append(diags, requiredDiagnostic(positions, base+".environments", "profile must define at least one environment"))
 		}
 
 		for envName, env := range profile.Environments {
 			envBase := base + ".environments." + envName
-			targetPath := env.Deploy.TargetPath
-			if targetPath == "" {
-				targetPath = env.TargetPath
-			}
-			if targetPath == "" {
-				diags = append(diags, requiredDiagnostic(positions, envBase+".deploy.target_path", "deploy.target_path is required"))
-			}
-
-			strategy := env.Deploy.Strategy
-			if strategy == "" {
-				strategy = env.Strategy
-			}
-			if strategy != "" && !contains(deployStrategies, strategy) {
-				diags = append(diags, enumDiagnostic(positions, envBase+".deploy.strategy", strategy, deployStrategies))
-			}
-
-			if env.Deploy.Remote != "" && !contains(deployRemoteModes, env.Deploy.Remote) {
-				diags = append(diags, enumDiagnostic(positions, envBase+".deploy.remote", env.Deploy.Remote, deployRemoteModes))
-			}
-
-			if env.Remote != nil {
-				if env.Remote.Method != "" && !contains(remoteMethods, env.Remote.Method) {
-					diags = append(diags, enumDiagnostic(positions, envBase+".remote.method", env.Remote.Method, remoteMethods))
-				}
-				if env.Remote.Credential != "" {
-					if _, ok := cfg.Credentials[env.Remote.Credential]; !ok {
-						diags = append(diags, refDiagnostic(positions, envBase+".remote.credential", fmt.Sprintf("credential %q not found", env.Remote.Credential)))
-					}
-				}
-				if env.Remote.HostKeyVerification != "" && !contains(hostKeyVerificationModes, env.Remote.HostKeyVerification) {
-					diags = append(diags, enumDiagnostic(positions, envBase+".remote.host_key_verification", env.Remote.HostKeyVerification, hostKeyVerificationModes))
-				}
-				if env.Remote.TrustOnFirstUse != "" && !contains(trustOnFirstUseModes, env.Remote.TrustOnFirstUse) {
-					diags = append(diags, enumDiagnostic(positions, envBase+".remote.trust_on_first_use", env.Remote.TrustOnFirstUse, trustOnFirstUseModes))
-				}
-			}
-
-			if env.Deploy.Service != nil {
-				if env.Deploy.Service.Type != "" && !contains(serviceTypes, env.Deploy.Service.Type) {
-					diags = append(diags, enumDiagnostic(positions, envBase+".deploy.service.type", env.Deploy.Service.Type, serviceTypes))
-				}
-			}
-
-			if profile.Type == "docker" && env.Deploy.Docker == nil {
-				diags = append(diags, warningDiagnostic(positions, envBase+".deploy", "docker profile should define deploy.docker"))
-			}
+			diags = append(diags, validateEnvironment(cfg, profile, env, envBase, positions)...)
 		}
 	}
 
@@ -175,6 +142,125 @@ func Validate(cfg *domain.Config, positions map[string]*yaml.Node) []Diagnostic 
 		}
 	}
 
+	return diags
+}
+
+func validateEnvironment(cfg *domain.Config, profile domain.Profile, env domain.Environment, envBase string, positions map[string]*yaml.Node) []Diagnostic {
+	var diags []Diagnostic
+
+	if env.Deploy.TargetPath == "" {
+		diags = append(diags, requiredDiagnostic(positions, envBase+".deploy.target_path", "deploy.target_path is required"))
+	}
+
+	if env.Deploy.Strategy != "" && !contains(deployStrategies, env.Deploy.Strategy) {
+		diags = append(diags, enumDiagnostic(positions, envBase+".deploy.strategy", env.Deploy.Strategy, deployStrategies))
+	}
+
+	if env.Deploy.Transfer != "" && !contains(deployTransferModes, env.Deploy.Transfer) {
+		diags = append(diags, enumDiagnostic(positions, envBase+".deploy.transfer", env.Deploy.Transfer, deployTransferModes))
+	}
+
+	if env.Remote != nil {
+		if env.Remote.Host == "" {
+			diags = append(diags, requiredDiagnostic(positions, envBase+".remote.host", "remote.host is required"))
+		}
+		if env.Remote.Credential == "" {
+			diags = append(diags, requiredDiagnostic(positions, envBase+".remote.credential", "remote.credential is required"))
+		} else if _, ok := cfg.Credentials[env.Remote.Credential]; !ok {
+			diags = append(diags, refDiagnostic(positions, envBase+".remote.credential", fmt.Sprintf("credential %q not found", env.Remote.Credential)))
+		}
+		if env.Remote.HostKeyVerification != "" && !contains(hostKeyVerificationModes, env.Remote.HostKeyVerification) {
+			diags = append(diags, enumDiagnostic(positions, envBase+".remote.host_key_verification", env.Remote.HostKeyVerification, hostKeyVerificationModes))
+		}
+		if env.Remote.TrustOnFirstUse != "" && !contains(trustOnFirstUseModes, env.Remote.TrustOnFirstUse) {
+			diags = append(diags, enumDiagnostic(positions, envBase+".remote.trust_on_first_use", env.Remote.TrustOnFirstUse, trustOnFirstUseModes))
+		}
+	}
+
+	if env.RegisterPath != nil {
+		if profile.Type != "binary" {
+			diags = append(diags, nodeDiagnostic(positions, envBase+".register_path", "register_path is only allowed for binary profiles", SeverityError))
+		}
+		if env.RegisterPath.Scope != "" && !contains(registerPathScopes, env.RegisterPath.Scope) {
+			diags = append(diags, enumDiagnostic(positions, envBase+".register_path.scope", env.RegisterPath.Scope, registerPathScopes))
+		}
+	}
+
+	switch profile.Type {
+	case "static", "binary":
+		if env.Deploy.Source == nil || env.Deploy.Source.Dir == "" {
+			diags = append(diags, requiredDiagnostic(positions, envBase+".deploy.source", "deploy.source.dir is required for "+profile.Type+" profiles"))
+		}
+		if env.Deploy.Docker != nil {
+			diags = append(diags, nodeDiagnostic(positions, envBase+".deploy.docker", "deploy.docker is not allowed for "+profile.Type+" profiles", SeverityError))
+		}
+		if profile.Type == "binary" {
+			if env.Build == nil || env.Build.Command == "" {
+				diags = append(diags, requiredDiagnostic(positions, envBase+".build", "build.command is required for binary profiles (set on profile or environment)"))
+			}
+		}
+	case "docker":
+		if env.Deploy.Source != nil {
+			diags = append(diags, nodeDiagnostic(positions, envBase+".deploy.source", "deploy.source is not allowed for docker profiles", SeverityError))
+		}
+		if env.Deploy.Docker == nil || env.Deploy.Docker.ComposeFile == "" {
+			diags = append(diags, requiredDiagnostic(positions, envBase+".deploy.docker", "deploy.docker.compose_file is required for docker profiles"))
+		}
+	case "git-sync":
+		if env.Deploy.Source != nil {
+			diags = append(diags, nodeDiagnostic(positions, envBase+".deploy.source", "deploy.source is not allowed for git-sync profiles", SeverityError))
+		}
+		if env.Deploy.Docker != nil {
+			diags = append(diags, nodeDiagnostic(positions, envBase+".deploy.docker", "deploy.docker is not allowed for git-sync profiles", SeverityError))
+		}
+	}
+
+	return diags
+}
+
+func checkUnknownKeys(node *yaml.Node, field *schema.Field, path string) []Diagnostic {
+	if node == nil || field == nil || field.Children == nil {
+		return nil
+	}
+	if node.Kind == yaml.DocumentNode && len(node.Content) > 0 {
+		return checkUnknownKeys(node.Content[0], field, path)
+	}
+	if node.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	var diags []Diagnostic
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		keyNode := node.Content[i]
+		valueNode := node.Content[i+1]
+		key := keyNode.Value
+
+		childPath := key
+		if path != "" {
+			childPath = path + "." + key
+		}
+
+		childField, ok := field.Children[key]
+		if !ok {
+			childField, ok = field.Children["*"]
+		}
+		if !ok {
+			diags = append(diags, Diagnostic{
+				Path:      childPath,
+				Line:      keyNode.Line,
+				Column:    keyNode.Column,
+				EndLine:   keyNode.Line,
+				EndColumn: keyNode.Column + len(key),
+				Message:   fmt.Sprintf("unknown field %q", key),
+				Severity:  SeverityError,
+			})
+			continue
+		}
+
+		if childField != nil && childField.Children != nil {
+			diags = append(diags, checkUnknownKeys(valueNode, childField, childPath)...)
+		}
+	}
 	return diags
 }
 
@@ -248,10 +334,6 @@ func enumDiagnostic(index map[string]*yaml.Node, path, value string, allowed []s
 
 func refDiagnostic(index map[string]*yaml.Node, path, message string) Diagnostic {
 	return nodeDiagnostic(index, path, message, SeverityError)
-}
-
-func warningDiagnostic(index map[string]*yaml.Node, path, message string) Diagnostic {
-	return nodeDiagnostic(index, path, message, SeverityWarning)
 }
 
 func nodeDiagnostic(index map[string]*yaml.Node, path, message string, severity Severity) Diagnostic {

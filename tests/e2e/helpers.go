@@ -188,3 +188,16 @@ func scenarioDir(t *testing.T, name string) string {
 	t.Helper()
 	return filepath.Join(initE2ERoot(t), "scenarios", name)
 }
+
+func assertRemoteFile(t *testing.T, path string) {
+	t.Helper()
+	sshExec(t, fmt.Sprintf("test -f %s", path))
+}
+
+func assertRemoteContains(t *testing.T, path, substr string) {
+	t.Helper()
+	content := strings.TrimSpace(sshExec(t, fmt.Sprintf("cat %s", path)))
+	if !strings.Contains(content, substr) {
+		t.Fatalf("expected %q in %s, got: %q", substr, path, content)
+	}
+}

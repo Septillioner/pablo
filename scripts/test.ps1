@@ -1,5 +1,5 @@
 # Pablo test runner (PowerShell)
-# Usage: .\test.ps1 [unit|integration|e2e|all]
+# Usage: .\scripts\test.ps1 [unit|integration|e2e|all]
 
 param(
     [Parameter(Position = 0)]
@@ -8,7 +8,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$Root = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$Root = Split-Path -Parent $ScriptDir
 
 $script:E2EScenarioMap = @{
     "TestSSH_StaticDeploy"       = "ssh-static"
@@ -20,7 +21,7 @@ $script:Summary = @{}
 
 function Show-Usage {
     Write-Host @"
-Usage: .\test.ps1 [unit|integration|e2e|all]
+Usage: .\scripts\test.ps1 [unit|integration|e2e|all]
 
   unit         Run unit tests in src/
   integration  Run integration-tagged tests in src/

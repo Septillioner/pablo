@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MODE="${1:-all}"
 
 declare -A SUMMARY
@@ -13,7 +14,7 @@ declare -A E2E_SCENARIO_MAP=(
 
 usage() {
   cat <<'EOF'
-Usage: ./test.sh [unit|integration|e2e|all]
+Usage: ./scripts/test.sh [unit|integration|e2e|all]
 
   unit         Run unit tests in src/
   integration  Run integration-tagged tests in src/

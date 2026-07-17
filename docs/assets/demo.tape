@@ -31,17 +31,17 @@ Type "  default:"
 Enter
 Type "    type: static"
 Enter
-Type "    output_dir:"
-Enter
-Type "      dir: ./src"
-Enter
-Type `      include: ["**/*"]`
-Enter
 Type "    environments:"
 Enter
 Type "      production:"
 Enter
 Type "        deploy:"
+Enter
+Type "          source:"
+Enter
+Type "            dir: ./src"
+Enter
+Type `            include: ["**/*"]`
 Enter
 Type "          target_path: ./deploy-output"
 Enter

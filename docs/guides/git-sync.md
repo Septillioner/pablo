@@ -1,24 +1,32 @@
 # Git Sync
 
-Deploy interpreted applications by pulling source and running post-deploy commands.
+Deploy interpreted applications by pulling source into `deploy.target_path` and running post-deploy commands. There is no Pablo build step — install dependencies and restart processes with `post_commands`.
 
-**See also:** [Configuration](../reference/configuration.md) · [Docker guide](docker.md) (also uses git)
+**See also:** [Configuration](../reference/configuration.md) · [Docker](docker.md) · [Examples #8](../examples/README.md#8-git-sync--post-commands)
 
 ---
 
-## Overview
+## How it works
 
-The `git-sync` type:
-
-1. Clones or pulls a Git repository to `deploy.target_path`
-2. Writes environment variables (optional `.env` file)
-3. Runs `deploy.post_commands` on the target
-
-No build step — use `post_commands` to install dependencies and restart processes.
+1. Clone or pull a Git repository to `deploy.target_path`.
+2. Write environment variables (optional env file).
+3. Run `deploy.post_commands` on the target (local shell or remote over SSH).
 
 ```yaml
+name: api
+version: 0.1.0
+
+credentials:
+  prod-ssh:
+    type: ssh
+    username: deploy
+    key: ~/.ssh/id_ed25519
+  github:
+    type: token
+    value: "${GITHUB_TOKEN}"
+
 profiles:
-  api:
+  default:
     type: git-sync
     git:
       repo: https://github.com/user/my-api.git
@@ -27,7 +35,6 @@ profiles:
     environments:
       production:
         remote:
-          method: ssh
           host: api.example.com
           credential: prod-ssh
         deploy:
@@ -42,6 +49,8 @@ profiles:
         env_file: .env
 ```
 
+Git-sync forbids `deploy.source`, `deploy.docker`, and `register_path`.
+
 ---
 
 ## Local git-sync
@@ -49,20 +58,30 @@ profiles:
 Omit `remote` to run on your machine:
 
 ```yaml
-environments:
-  local:
-    deploy:
-      target_path: ./runtime/my-api
-      post_commands:
-        - npm install
-        - pm2 restart my-api
+name: api
+version: 0.1.0
+
+profiles:
+  default:
+    type: git-sync
+    git:
+      repo: https://github.com/user/my-api.git
+      branch: main
+    environments:
+      local:
+        deploy:
+          target_path: ./runtime/my-api
+          strategy: overwrite
+          post_commands:
+            - npm install
+            - pm2 restart my-api
 ```
 
 ---
 
 ## Remote git-sync
 
-With `remote` set, clone/pull and `post_commands` execute on the remote host over SSH.
+With `remote` set, clone/pull and `post_commands` execute on the remote host over SSH. See [SSH](ssh.md).
 
 ---
 
@@ -74,7 +93,7 @@ With `remote` set, clone/pull and `post_commands` execute on the remote host ove
 | `git.branch` | No | Branch (default: `main`) |
 | `git.credential` | No | Token credential for private HTTPS repos |
 
-For SSH Git URLs on the remote host, ensure the remote user has deploy keys configured — Pablo's SSH credential is for Pablo's connection to the host, not necessarily for Git on that host.
+For SSH Git URLs on the remote host, ensure the remote user has deploy keys configured. Pablo’s SSH credential authenticates Pablo’s connection to the host, not necessarily Git on that host.
 
 ---
 
@@ -85,13 +104,13 @@ For SSH Git URLs on the remote host, ensure the remote user has deploy keys conf
 | Runtime | Native on host | Containers |
 | Dependencies | `post_commands` | Compose file |
 | Isolation | Low | High |
-| Best for | PHP, Node without containers, legacy apps | Microservices, reproducible stacks |
+| Best for | PHP, Node without containers | Microservices, reproducible stacks |
 
 ---
 
-## Service management
+## Service restart
 
-`deploy.service` (systemd/PM2) is validated in the schema but **not executed** at runtime. Use explicit commands in `post_commands`:
+Put restart commands in `post_commands`:
 
 ```yaml
 post_commands:
@@ -99,11 +118,10 @@ post_commands:
   - systemctl restart my-api
 ```
 
-Service management is planned — see [roadmap](../roadmap.md).
-
 ---
 
 ## Example fixtures
 
+- [Examples #8](../examples/README.md#8-git-sync--post-commands)
 - [tests/agnostic/separate-apps/php-app](../../tests/agnostic/separate-apps/php-app/)
 - [tests/agnostic/multi-profile](../../tests/agnostic/multi-profile/) (git-sync profile)

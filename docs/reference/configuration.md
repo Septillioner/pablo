@@ -1,128 +1,147 @@
 # Configuration Reference
 
-Complete reference for Pablo's deployment configuration file (`pablo.yaml`).
+Complete field reference for Pablo’s deployment manifest (`pablo.yaml`). Progressive copy-paste scenarios live in [Examples](../examples/README.md). Capabilities and limits: [Capabilities](capabilities.md). Credentials guide: [Credentials](../guides/credentials.md).
 
-See also: [Capabilities](capabilities.md) · [Credentials guide](../guides/credentials.md)
+---
+
+## Three nouns
+
+| Noun | YAML location | Meaning |
+|------|---------------|---------|
+| **Profile** | `profiles.<name>` | **What** you deploy — type, build, git, shared variables |
+| **Environment** | `profiles.<name>.environments.<name>` | **Where** it runs — local or remote (`remote`), deploy settings |
+| **Deploy** | `environments.<name>.deploy` | **How** artifacts land — source, strategy, commands, docker |
+
+Everything deployable lives under `profiles`. Root-level fields are project metadata (`name`, `version`), shared `credentials`, and optional `sequences`.
+
+---
+
+## Core rules
+
+1. **Profiles only** — All deploy config is under `profiles`.
+2. **Remote means SSH** — If `remote` is present, Pablo deploys over SSH. If absent, deploy is local. Fields: `host`, `credential`, `host_key_verification`, `trust_on_first_use`.
+3. **Artifacts via `deploy.source`** — Static and binary types use `deploy.source` (`dir`, `include`, `exclude`) on each environment.
+4. **Shell around deploy** — Use `deploy.pre_commands` and `deploy.post_commands`.
+5. **Named credentials** — Define credentials at the root; reference by name (`remote.credential`, `git.credential`).
 
 ---
 
 ## Inheritance
 
-Profile-level settings cascade into each environment unless overridden:
+Only these profile fields cascade into each environment:
 
 | Profile field | Inherited as |
 |---------------|--------------|
-| `variables` | Merged into environment variables |
-| `env_file` | Default env file name for environments |
-| `build` | Copied to environment when env has no `build`; partial field merge when env `build` exists |
-| `output_dir` | Becomes `env.deploy.source` when environment has no `source` |
+| `variables` | Merged into environment `variables` (env wins on conflict) |
+| `env_file` | Default env file name when environment omits `env_file` |
+| `build` | Copied when env has no `build`; partial merge when env `build` exists |
 
-Environment `variables` are merged into `deploy.variables`.
-
-**Legacy format:** If `profiles` is omitted and a top-level `type` field exists, Pablo auto-wraps the config into `profiles.default`.
+`deploy.source`, `deploy.target_path`, and `remote` are always set on the environment — they do not inherit.
 
 ---
 
-## Root Fields
+## Type matrix
+
+| Type | Required | Forbidden on environment |
+|------|----------|--------------------------|
+| `static` | `deploy.source`, `deploy.target_path` | `git`, `deploy.docker` |
+| `binary` | `build.command` (profile or env), `deploy.source`, `deploy.target_path` | `git`, `deploy.docker` |
+| `docker` | `git.repo`, `deploy.target_path`, `deploy.docker.compose_file` | `deploy.source`, `register_path` |
+| `git-sync` | `git.repo`, `deploy.target_path` | `deploy.source`, `deploy.docker`, `register_path` |
+
+`build` is optional for `static` (omit to copy files as-is). `build.command` is required for `binary`.
+
+---
+
+## Root fields
 
 | Field | Type | Description |
 |---|---|---|
 | `name` | String | Project name |
 | `version` | String | Project version |
-| `credentials` | Map<String, [Credential](#credential)> | Global reusable credentials (optional) |
+| `credentials` | Map<String, [Credential](#credential)> | Named reusable credentials (optional) |
 | `sequences` | Map<String, String[]> | Named ordered deployment sequences (optional); see [Sequences](#sequences) |
-| `profiles` | Map<String, [Profile](#profile)> | Application profiles |
+| `profiles` | Map<String, [Profile](#profile)> | **Required.** Application profiles |
 
 ---
 
 ## Sequences
 
-Named lists of `profile/environment` targets to run in order. **List order is execution order** — Pablo runs each step sequentially and stops on the first failure.
+Named lists of `profile/environment` targets. List order is execution order — Pablo runs each step sequentially and stops on the first failure.
 
 | Field | Type | Description |
 |---|---|---|
-| `<name>` | String[] | Ordered steps; each item is `profile/env` (e.g. `extension/vsix`) |
-
-**Example:**
+| `<name>` | String[] | Ordered steps; each item is `profile/env` (e.g. `api/staging`) |
 
 ```yaml
 sequences:
-  extension:
-    - extension/vsix
-    - extension/marketplace
+  release:
+    - api/staging
+    - api/production
 ```
 
-Run with:
-
 ```bash
-pablo run sequence extension
+pablo run sequence release
 ```
 
 Cannot combine `pablo run sequence` with `-p` / `-e`. Global flags (`-f`, `--force`, `--verbose`) apply to every step.
 
-Guide: [Sequences](../guides/sequences.md).
+Guide: [Sequences](../guides/sequences.md) · [Examples #11](../examples/README.md#11-sequences).
 
 ---
 
 ## Credential
 
-Reusable credentials for SSH, Git, Docker registries, etc.
-
 | Field | Type | Description |
 |---|---|---|
-| `type` | String | **Required.** Credential type: `ssh`, `token`, `basic` |
-| `username` | String | Username (for `ssh`, `basic`) |
-| `password` | String | Password (for `basic`, `ssh` password auth) |
-| `key` | String | SSH private key path (for `ssh`) |
+| `type` | String | **Required.** `ssh`, `token`, or `basic` |
+| `username` | String | Username (`ssh`, `basic`) |
+| `password` | String | Password (`basic`, or `ssh` password auth) |
+| `key` | String | SSH private key path (`ssh`) |
 | `passphrase` | String | SSH key passphrase (optional) |
-| `value` | String | Token value (for `token`) |
+| `value` | String | Token value (`token`) |
 
-**Example:**
 ```yaml
 credentials:
-  prod_server:
+  prod-ssh:
     type: ssh
     username: deploy
-    key: ~/.ssh/id_rsa
+    key: ~/.ssh/id_ed25519
   github:
     type: token
     value: ghp_xxxxx
+  registry:
+    type: basic
+    username: dockeruser
+    password: "${REGISTRY_PASSWORD}"
 ```
 
 ---
 
 ## Profile
 
-A complete application configuration.
-
 | Field | Type | Description |
 |---|---|---|
-| `type` | String | **Required.** Deployment type: `static`, `binary`, `docker`, `git-sync` |
-| `build` | [Build](#build) | Build configuration (inherited by environments unless overridden) |
-| `git` | [Git](#git) | Git repository config (for `docker`, `git-sync`) |
-| `output_dir` | [OutputDir](#outputdir) | Artifact location and filtering rules |
-| `environments` | Map<String, [Environment](#environment)> | **Required.** Deployment targets |
-| `hooks` | [Hooks](#hooks) | Lifecycle hooks |
-| `pipeline` | [Pipeline](#pipeline) | Pipeline settings |
+| `type` | String | **Required.** `static`, `binary`, `docker`, or `git-sync` |
 | `variables` | Map<String, String> | Variables inherited by all environments |
 | `env_file` | String | Env file name inherited by all environments |
+| `build` | [Build](#build) | Build config (required for `binary`; optional for `static`) |
+| `git` | [Git](#git) | Git repo config (`docker`, `git-sync` only) |
+| `environments` | Map<String, [Environment](#environment)> | **Required.** Deployment targets |
 
 ---
 
 ## Build
 
-Build configuration. Can be defined at profile level (inherited) or overridden per environment.
-
-For `static` profiles, `build` is **optional**. Omit it to copy files from `output_dir` / `deploy.source` without a compile step.
+At profile level (inherited) or overridden per environment.
 
 | Field | Type | Description |
 |---|---|---|
-| `command` | String | **Required when `build` is set.** Build command (e.g., `npm run build`, `go build -o app .`) |
+| `command` | String | **Required when `build` is set.** Shell command (e.g. `npm run build`, `go build -o app .`) |
 | `path` | String | Working directory for the build command (relative to manifest) |
-| `variables` | Map<String, String> | Environment variables injected during build |
-| `env_file` | String | File to write variables to before building |
+| `variables` | Map<String, String> | Environment variables for the build process only |
+| `env_file` | String | Write variables to this file before building |
 
-**Example:**
 ```yaml
 build:
   command: npm run build
@@ -135,15 +154,14 @@ build:
 
 ## Git
 
-Git repository configuration for `docker` and `git-sync` types.
+For `docker` and `git-sync` profiles.
 
 | Field | Type | Description |
 |---|---|---|
 | `repo` | String | **Required.** Git repository URL |
 | `branch` | String | Branch name (default: `main`) |
-| `credential` | String | Credential reference (optional) |
+| `credential` | String | Credential name for private HTTPS repos |
 
-**Example:**
 ```yaml
 git:
   repo: https://github.com/user/project.git
@@ -153,13 +171,72 @@ git:
 
 ---
 
-## OutputDir
-
-Artifact location and file filtering configuration. Can be a simple string (directory path) or an object.
+## Environment
 
 | Field | Type | Description |
 |---|---|---|
-| `dir` | String | Directory containing build artifacts (relative to manifest) |
+| `deploy` | [Deploy](#deploy) | **Required.** Deployment settings |
+| `remote` | [Remote](#remote) | SSH connection — present means remote deploy |
+| `build` | [Build](#build) | Override profile-level build |
+| `variables` | Map<String, String> | Runtime variables (merged with profile) |
+| `env_file` | String | Env file written into the deploy target |
+| `register_path` | [RegisterPath](#registerpath) | PATH registration (`binary` only) |
+
+---
+
+## Remote
+
+When present, deployment targets the remote host via SSH. Omit for local deploy.
+
+| Field | Type | Description |
+|---|---|---|
+| `host` | String | **Required.** Remote host (`host` or `host:port`; port defaults to 22) |
+| `credential` | String | **Required.** Credential name from root `credentials` |
+| `host_key_verification` | String | Verify host key against `known_hosts`. `on` (default) or `off` |
+| `trust_on_first_use` | String | Record unknown host key on first connect. `on` or `off` (default) |
+
+```yaml
+remote:
+  host: web.example.com
+  credential: prod-ssh
+```
+
+Host key opt-out / TOFU:
+
+```yaml
+remote:
+  host: web.example.com
+  credential: prod-ssh
+  host_key_verification: off
+  # trust_on_first_use: on
+```
+
+By default Pablo verifies the remote host key using `~/.ssh/known_hosts` (Windows: `%USERPROFILE%\.ssh\known_hosts`). See [SSH guide](../guides/ssh.md) and [SECURITY.md](../../SECURITY.md).
+
+---
+
+## Deploy
+
+| Field | Type | Description |
+|---|---|---|
+| `target_path` | String | **Required.** Path on the target machine (absolute for remote Linux) |
+| `source` | [Source](#source) | Artifact location (`static`, `binary` only) |
+| `strategy` | String | `overwrite` (default), `backup`, `recreate`, `rename-replace` |
+| `transfer` | String | Remote transfer method: `tar` (default) or `legacy` (SCP one-by-one) |
+| `verify_checksum` | Boolean | After remote static/binary deploy, verify SHA-256 (default: `false`) |
+| `pre_commands` | List<String> | Commands before artifacts are transferred |
+| `post_commands` | List<String> | Commands after artifacts are transferred |
+| `docker` | [Docker](#docker) | Docker Compose settings (`docker` type only) |
+
+---
+
+## Source
+
+Artifact filtering for `static` and `binary` types. Set on each environment — not inherited.
+
+| Field | Type | Description |
+|---|---|---|
+| `dir` | String | **Required.** Directory containing artifacts (relative to manifest) |
 | `include` | List<String> | Glob patterns to include |
 | `exclude` | List<String> | Glob patterns to exclude |
 
@@ -173,215 +250,61 @@ Patterns use gitignore-style semantics (relative to `dir`):
 | `**/*.exe` | `.exe` files at any depth (explicit recursive) |
 | `**/*` | All files (same as omitting `include`) |
 
-**Simple form:**
-```yaml
-output_dir: ./dist
-```
-
-**Object form:**
-```yaml
-output_dir:
-  dir: ./dist
-  include: ["**/*"]
-  exclude: ["*.map", "*.log"]
-```
-
----
-
-## Environment
-
-Deployment target configuration.
-
-| Field | Type | Description |
-|---|---|---|
-| `deploy` | [Deploy](#deploy) | **Required.** Deployment settings |
-| `remote` | [Remote](#remote) | Remote server connection (enables SSH deployment) |
-| `build` | [Build](#build) | Override profile-level build settings |
-| `variables` | Map<String, String> | Runtime variables for this environment (merged with profile variables) |
-| `env_file` | String | Env file name (inherited from profile if not set) |
-| `register_path` | [RegisterPath](#registerpath) | PATH registration (binary type only) |
-
----
-
-## Remote
-
-Remote server connection configuration. When present, deployment targets the remote host via SSH.
-
-| Field | Type | Description |
-|---|---|---|
-| `method` | String | **Required.** Connection method: `ssh` |
-| `host` | String | **Required.** Remote host address (port defaults to 22) |
-| `credential` | String | **Required.** Credential reference name |
-| `host_key_verification` | String | Host key check against OpenSSH `known_hosts`. `on` (default) or `off` |
-| `trust_on_first_use` | String | When `on`, record an unknown host key on first connect. `on` or `off` (default). Only applies when verification is on |
-
-**Example:**
-```yaml
-remote:
-  method: ssh
-  host: 192.168.1.100
-  credential: prod_server
-```
-
-**Host key verification (opt-out / TOFU):**
-```yaml
-remote:
-  method: ssh
-  host: 192.168.1.100
-  credential: prod_server
-  host_key_verification: off   # not recommended; emits a warning
-  # trust_on_first_use: on     # optional; default is off
-```
-
-By default Pablo verifies the remote host key using `~/.ssh/known_hosts` (Windows: `%USERPROFILE%\.ssh\known_hosts`). See [SSH guide](../guides/ssh.md) and [SECURITY.md](../../SECURITY.md).
-
----
-
-## Deploy
-
-Deployment method and settings.
-
-| Field | Type | Description |
-|---|---|---|
-| `target_path` | String | **Required.** Absolute path on the target machine |
-| `strategy` | String | Strategy: `overwrite` (default), `backup`, `recreate`, `rename-replace` |
-| `remote` | String | Transfer method: `tar` (default, high performance) or `legacy` (SCP one-by-one) |
-| `source` | [Source](#source) | Override profile-level artifact settings for this environment |
-| `docker` | [Docker](#docker) | Docker config (for `docker` type) |
-| `service` | [Service](#service) | Service management (schema only — not implemented at runtime) |
-| `pre_commands` | List<String> | Commands to run before artifacts are deployed |
-| `post_commands` | List<String> | Commands to run after artifacts are deployed |
-| `variables` | Map<String, String> | Deploy-level variables (merged from environment) |
-| `env_file` | String | Generate an env file at this relative path inside `target_path` |
-| `verify_checksum` | Boolean | After remote static/binary deploy, verify SHA-256 of transferred files on the target (default: `false`) |
-
----
-
-## Source
-
-Override artifact settings at the deploy level (takes precedence over profile `output_dir`).
-
-| Field | Type | Description |
-|---|---|---|
-| `dir` | String | Artifact directory |
-| `include` | List<String> | Glob patterns to include (see [OutputDir](#outputdir) semantics) |
-| `exclude` | List<String> | Glob patterns to exclude (see [OutputDir](#outputdir) semantics) |
-
-**Example:**
 ```yaml
 deploy:
   source:
-    dir: ./build
-    include: ["pablo"]
-    exclude: ["*.tmp"]
-  target_path: /opt/app
+    dir: ./dist
+    include: ["**/*"]
+    exclude: ["*.map", "*.log"]
+  target_path: /var/www/html
+  strategy: backup
 ```
 
 ---
 
 ## Docker
 
-Docker deployment configuration.
+For the `docker` profile type.
 
 | Field | Type | Description |
 |---|---|---|
-| `compose_file` | String | **Required.** Path to docker-compose file |
-| `build` | Boolean | Build images before up |
-| `command` | String | Docker compose command (default: `up -d`; schema field — runtime uses `up -d` and optional `--build`) |
-| `stop_before_sync` | Boolean | Stop a running Compose stack before git sync on redeploy (default: `true`) |
+| `compose_file` | String | **Required.** Path to docker-compose file (relative to cloned repo) |
+| `build` | Boolean | Pass `--build` to `docker compose up` |
+| `stop_before_sync` | Boolean | Stop running Compose stack before git sync (default: `true`) |
 
-**Example:**
 ```yaml
-docker:
-  compose_file: docker-compose.yml
-  build: true
-  command: up -d --build
-  stop_before_sync: true
+deploy:
+  target_path: /opt/app
+  docker:
+    compose_file: docker-compose.yml
+    build: true
+    stop_before_sync: true
 ```
 
-When `stop_before_sync` is omitted or `true`, Pablo runs `docker compose ps -q` before git clone/pull. If containers are present, it runs `docker compose down` (without `-v`, so volumes stay) then syncs and brings the stack back up. Set `false` to skip that precheck.
-
----
-
-## Service
-
-Service management configuration. **Schema only** — not executed at runtime. Use `post_commands` (e.g. `systemctl restart myapp`) until service management ships.
-
-| Field | Type | Description |
-|---|---|---|
-| `type` | String | **Required.** Service type: `systemd`, `pm2` |
-| `name` | String | **Required.** Service name |
-| `restart` | Boolean | Restart after deployment |
+When `stop_before_sync` is omitted or `true`, Pablo runs `docker compose ps -q` before git clone/pull. If containers are present, it runs `docker compose down` (without `-v`) then syncs and brings the stack back up.
 
 ---
 
 ## RegisterPath
 
-PATH registration (binary type only).
+PATH registration for `binary` profiles only.
 
 | Field | Type | Description |
 |---|---|---|
-| `scope` | String | Scope: `user` (default), `system` |
+| `scope` | String | `user` (default) or `system` |
+
+```yaml
+register_path:
+  scope: user
+```
 
 ---
 
-## Hooks
+## Examples by type
 
-Lifecycle hooks executed at the profile level (before/after the entire deployment).
+One complete sample per type. For the full easy→hard ladder (SSH, strategies, sequences, Windows, and more), see [Examples](../examples/README.md).
 
-| Field | Type | Description |
-|---|---|---|
-| `pre` | String | Command before deployment |
-| `post` | String | Command after deployment |
-
----
-
-## Pipeline
-
-Pipeline-wide settings.
-
-| Field | Type | Description |
-|---|---|---|
-| `on_success` | String | Command on success |
-| `on_failure` | String | Command on failure |
-| `health_check` | String | Health check URL (HTTP GET, retries for 30s) |
-
----
-
-## Deployment Types
-
-### `static` — Files / frontend / SPA
-
-Optional build → Filter artifacts → Deploy files
-
-**Required:** `output_dir` or `deploy.source`, `environments.deploy.target_path`
-
-`build` is optional. Omit it to copy existing files (HTML, assets, pre-built `dist`, etc.).
-
-### `binary` — Compiled Executables
-Build → Deploy binary → Register PATH
-
-**Required:** `build`, `environments.deploy.target_path`
-
-### `docker` — Containerized Services
-Git clone/pull → Generate env file → Docker compose up
-
-On redeploy, when `stop_before_sync` is enabled (default), a running Compose stack is stopped before git sync.
-
-**Required:** `git`, `environments.deploy.docker`
-
-### `git-sync` — Interpreted Languages
-Git pull → Generate env file → Run post commands
-
-**Required:** `git`, `environments.deploy.target_path`
-
----
-
-## Examples (easy → hard)
-
-Progressive copy-paste samples live in [Examples](../examples/README.md). Minimal patterns below.
-
-### Local copy (no build)
+### `static` — local copy (no build)
 
 ```yaml
 name: site
@@ -390,120 +313,104 @@ version: 0.1.0
 profiles:
   default:
     type: static
-    output_dir:
-      dir: ./src
-      include: ["**/*"]
     environments:
       production:
-        deploy:
-          target_path: ./deploy-output
-          strategy: overwrite
-```
-
-### Local build then copy
-
-```yaml
-profiles:
-  default:
-    type: static
-    build:
-      command: npm run build
-      path: .
-    output_dir:
-      dir: ./dist
-      include: ["**/*"]
-    environments:
-      production:
-        deploy:
-          target_path: ./deploy-output
-          strategy: overwrite
-```
-
-### SSH static
-
-```yaml
-credentials:
-  server-ssh:
-    type: ssh
-    username: deploy
-    key: ~/.ssh/id_rsa
-
-profiles:
-  frontend:
-    type: static
-    output_dir:
-      dir: ./dist
-      include: ["**/*"]
-    environments:
-      production:
-        remote:
-          method: ssh
-          host: web.example.com
-          credential: server-ssh
-        deploy:
-          target_path: /var/www/html
-          strategy: backup
-```
-
-### Full multi-profile (kitchen sink)
-
-```yaml
-name: my-app
-version: 1.0.46
-credentials:
-  server-ssh:
-    type: ssh
-    username: deploy
-    key: ~/.ssh/id_rsa
-
-profiles:
-  frontend:
-    type: static
-    build:
-      command: npm run build
-      path: ./frontend
-    output_dir:
-      dir: ./frontend/dist
-      include: ["**/*"]
-      exclude: ["*.map"]
-    hooks:
-      pre: echo "Starting frontend deploy"
-    environments:
-      production:
-        remote:
-          method: ssh
-          host: web.example.com
-          credential: server-ssh
-        deploy:
-          target_path: /var/www/html
-          strategy: backup
-
-  api:
-    type: binary
-    build:
-      command: go build -o api-server .
-      path: ./backend
-    environments:
-      production:
-        remote:
-          method: ssh
-          host: api.example.com
-          credential: server-ssh
         deploy:
           source:
-            dir: ./backend
-            include: ["api-server"]
+            dir: ./src
+            include: ["**/*"]
+          target_path: ./deploy-output
+          strategy: overwrite
+```
+
+### `binary` — build, deploy, PATH
+
+```yaml
+name: cli
+version: 0.1.0
+
+profiles:
+  default:
+    type: binary
+    build:
+      command: go build -o mycli .
+      path: .
+    environments:
+      production:
+        deploy:
+          source:
+            dir: .
+            include: ["mycli"]
+          target_path: /usr/local/bin
+          strategy: overwrite
+        register_path:
+          scope: user
+```
+
+### `docker` — git sync + Compose
+
+```yaml
+name: stack
+version: 0.1.0
+
+credentials:
+  github:
+    type: token
+    value: ghp_xxxxx
+  prod-ssh:
+    type: ssh
+    username: deploy
+    key: ~/.ssh/id_ed25519
+
+profiles:
+  default:
+    type: docker
+    git:
+      repo: https://github.com/user/app.git
+      branch: main
+      credential: github
+    environments:
+      production:
+        remote:
+          host: docker.example.com
+          credential: prod-ssh
+        deploy:
+          target_path: /opt/app
+          docker:
+            compose_file: docker-compose.yml
+            build: true
+```
+
+### `git-sync` — pull + post commands
+
+```yaml
+name: api
+version: 0.1.0
+
+credentials:
+  prod-ssh:
+    type: ssh
+    username: deploy
+    key: ~/.ssh/id_ed25519
+
+profiles:
+  default:
+    type: git-sync
+    git:
+      repo: https://github.com/user/api.git
+      branch: main
+    environments:
+      production:
+        remote:
+          host: api.example.com
+          credential: prod-ssh
+        deploy:
           target_path: /opt/api
           strategy: backup
           post_commands:
-            - systemctl daemon-reload
-            - systemctl restart api-server
+            - composer install --no-dev
+            - systemctl restart my-api
         variables:
           APP_ENV: production
-          DB_HOST: db.internal
-        register_path:
-          scope: system
-    pipeline:
-      health_check: https://api.example.com/health
-      on_failure: "echo 'Deploy failed!' | mail admin@example.com"
+        env_file: .env
 ```

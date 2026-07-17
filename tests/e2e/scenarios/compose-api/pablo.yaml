@@ -1,0 +1,27 @@
+name: compose-api
+version: 1.0.0
+
+credentials:
+  e2e-ssh:
+    type: ssh
+    username: deploy
+    key: ../../keys/id_ed25519
+
+profiles:
+  default:
+    type: docker
+    git:
+      repo: file:///home/deploy/repos/sample-docker-app.git
+      branch: main
+    environments:
+      production:
+        remote:
+          host: 127.0.0.1:2222
+          credential: e2e-ssh
+          host_key_verification: off
+        deploy:
+          target_path: /opt/compose-api
+          docker:
+            compose_file: docker-compose.yml
+            build: false
+            stop_before_sync: true

@@ -50,19 +50,16 @@ func TestResolvePath(t *testing.T) {
 
 func TestResolveVariables(t *testing.T) {
 	s := newTestPipeline()
-	profile := &domain.Profile{}
 	env := domain.Environment{
-		Deploy: domain.DeployConfig{
-			EnvConfig: domain.EnvConfig{
-				Variables: map[string]string{
-					"APP_ENV": "production",
-					"PORT":    "8080",
-				},
+		EnvConfig: domain.EnvConfig{
+			Variables: map[string]string{
+				"APP_ENV": "production",
+				"PORT":    "8080",
 			},
 		},
 	}
 
-	vars := s.resolveVariables(profile, env)
+	vars := s.resolveVariables(env)
 	if len(vars) != 2 {
 		t.Fatalf("len(vars) = %d, want 2", len(vars))
 	}
@@ -70,7 +67,7 @@ func TestResolveVariables(t *testing.T) {
 		t.Fatalf("unexpected vars: %v", vars)
 	}
 
-	empty := s.resolveVariables(profile, domain.Environment{})
+	empty := s.resolveVariables(domain.Environment{})
 	if len(empty) != 0 {
 		t.Fatalf("expected empty map, got %v", empty)
 	}
@@ -79,13 +76,6 @@ func TestResolveVariables(t *testing.T) {
 func TestResolveArtifacts(t *testing.T) {
 	s := newTestPipeline()
 	baseDir := t.TempDir()
-	profile := &domain.Profile{
-		OutputDir: domain.ArtifactsConfig{
-			Dir:     "out",
-			Include: []string{"*.html"},
-			Exclude: []string{"*.map"},
-		},
-	}
 	env := domain.Environment{
 		Deploy: domain.DeployConfig{
 			Source: &domain.ArtifactsConfig{
@@ -96,7 +86,7 @@ func TestResolveArtifacts(t *testing.T) {
 		},
 	}
 
-	artifactBase, include, exclude := s.resolveArtifacts(profile, env, baseDir)
+	artifactBase, include, exclude := s.resolveArtifacts(env, baseDir)
 	wantBase := filepath.Join(baseDir, "build")
 	if artifactBase != wantBase {
 		t.Fatalf("artifactBase = %q, want %q", artifactBase, wantBase)
@@ -158,8 +148,8 @@ func TestRunCommandsRemoteMissingHost(t *testing.T) {
 	s := newTestPipeline()
 	env := domain.Environment{
 		Remote: &domain.RemoteConfig{
-			Method: "ssh",
-			Host:   "",
+			Host:       "",
+			Credential: "missing",
 		},
 		Deploy: domain.DeployConfig{
 			TargetPath: "/tmp/target",

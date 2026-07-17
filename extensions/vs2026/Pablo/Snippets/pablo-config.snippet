@@ -4,20 +4,23 @@
     <Header>
       <Title>Pablo Config (Empty)</Title>
       <Shortcut>pablo-config</Shortcut>
-      <Description>Basic Pablo configuration skeleton</Description>
+      <Description>Basic Schema v2 Pablo configuration skeleton</Description>
       <SnippetTypes>
         <SnippetType>Expansion</SnippetType>
       </SnippetTypes>
     </Header>
     <Snippet>
       <Code Language="yaml"><![CDATA[name: "$1"
-version: "1.4.0"
+version: "2.0.0"
 profiles:
   $2:
     type: $3
     environments:
       $4:
-        target_path: "$5"]]></Code>
+        deploy:
+          source:
+            dir: "$5"
+          target_path: "$6"]]></Code>
     </Snippet>
   </CodeSnippet>
 </CodeSnippets>

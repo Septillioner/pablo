@@ -7,11 +7,18 @@ Pablo is a powerful deployment helper for managing multi-environment builds and 
 - **LSP Powered Intelligence**: Real-time validation, diagnostics, and autocompletion via `pablo lsp` (same binary as the CLI).
 - **Smart Autocompletion**: Context-aware suggestions for all Pablo configuration fields and enum values.
 - **Hover Documentation**: Quick access to documentation and field descriptions directly within the editor.
-- **Scaffold Templates**: Ready-to-use templates for common scenarios:
-    - `pablo-tpl-static`: Static Website
-    - `pablo-tpl-node-pm2`: Node.js with PM2
-    - `pablo-tpl-go-systemd`: Go with Systemd
-    - `pablo-tpl-docker`: Docker Compose
+- **Scaffold Templates**: Ready-to-use Schema v2 templates (type `pablo-` to browse):
+    - `pablo-config`: Empty skeleton
+    - `pablo-tpl-static-site`: Static site (overwrite)
+    - `pablo-tpl-static-hotfix`: Static hotfix (rename-replace)
+    - `pablo-tpl-go-service`: Go/binary service with post_commands
+    - `pablo-tpl-compose`: Docker Compose (git + deploy.docker)
+    - `pablo-tpl-php-app`: PHP git-sync with env_file + post_commands
+    - `pablo-tpl-sequence`: Staging → production release sequence
+    - `pablo-tpl-site-backup`: Static site with backup strategy
+    - `pablo-tpl-clean-redeploy`: Clean redeploy (recreate)
+    - `pablo-tpl-legacy-transfer`: Legacy transfer mode
+    - `pablo-tpl-verified-transfer`: Checksum-verified transfer
 - **Custom File Icon**: Beautiful logo integration for your `pablo.yaml` files.
 - **CLI Integration**: Run Pablo commands (`check`, `init`, `run`) directly from the command palette. **Run** prompts for profile and environment.
 - **CodeLens Run**: Each environment line shows **$(play) Run** (hover for `profile/env`); runs `pablo run -f ... profile/env` without QuickPick.

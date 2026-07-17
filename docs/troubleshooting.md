@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Diagnose common Pablo CLI and VS Code extension issues.
+Diagnose common Pablo CLI and editor extension issues.
 
 ---
 
@@ -37,6 +37,10 @@ Each sequence step must be `profile/env` and both keys must exist. Empty sequenc
 
 `pablo run` re-validates the manifest. Ensure `-p` and `-e` match existing keys. For sequences, use `pablo run sequence <name>` without `-p` / `-e`.
 
+### Unknown field errors
+
+Unknown YAML keys are rejected. Confirm the field against [Configuration](reference/configuration.md). Progressive samples: [Examples](examples/README.md).
+
 ---
 
 ## Build failures
@@ -44,8 +48,9 @@ Each sequence step must be `profile/env` and both keys must exist. Empty sequenc
 | Symptom | Check |
 |---------|-------|
 | Command not found | Is the tool (npm, go, etc.) on PATH where Pablo runs? |
-| Wrong directory | Set `build.path` relative to manifest location |
+| Wrong directory | Set `build.path` relative to the manifest location |
 | Env vars missing | Add `build.variables` or `build.env_file` |
+| Binary type missing build | Set `build.command` on the profile or environment |
 
 Build runs with your user privileges — no sandbox.
 
@@ -59,17 +64,17 @@ Build runs with your user privileges — no sandbox.
 refusing to deploy to protected path
 ```
 
-Pablo blocks `backup`/`recreate` against system directories. Use a safer `target_path` or pass `--force` (dangerous).
+Pablo blocks `backup` / `recreate` against system directories. Use a safer `target_path` or pass `--force` (dangerous).
 
 ### Empty artifact set
 
-Check `output_dir` / `deploy.source` `include` globs match built files. Run build manually first to confirm output location.
+Check `deploy.source` `include` globs match built files. Run the build manually first to confirm the output location.
 
-If too many files match, remember that `*.exe` matches at every depth; use `/*.exe` or `./*.exe` for the artifact root only. See [Configuration — OutputDir](reference/configuration.md#outputdir).
+If too many files match, remember that `*.exe` matches at every depth; use `/*.exe` or `./*.exe` for the artifact root only. See [Configuration — Source](reference/configuration.md#source).
 
-### Health check timeout
+### Missing deploy.source
 
-`pipeline.health_check` retries HTTP GET for 30 seconds expecting status 200. Verify URL, server start time, and firewall rules on the target.
+Static and binary environments require `deploy.source.dir`. It does not inherit from the profile.
 
 ---
 
@@ -79,11 +84,11 @@ If too many files match, remember that `*.exe` matches at every depth; use `/*.e
 |---------|-----|
 | Connection refused | Host reachable, port 22 open, SSH daemon running |
 | Permission denied (publickey) | Correct `username`, `key` path, key permissions (`chmod 600`) |
-| Permission denied (password) | Set `password` in credential or use key auth |
+| Permission denied (password) | Set `password` in the credential or use key auth |
 | Remote command fails | Test SSH manually: `ssh user@host 'ls /opt/app'` |
-| Slow transfer | Ensure `deploy.remote` is `tar` (default), not `legacy` |
+| Slow transfer | Ensure `deploy.transfer` is `tar` (default), not `legacy` |
 
-**Security:** host key verification is on by default — see [SSH guide](guides/ssh.md) and [SECURITY.md](../SECURITY.md).
+Host key verification is on by default — see [SSH guide](guides/ssh.md) and [SECURITY.md](../SECURITY.md).
 
 ---
 
@@ -91,11 +96,11 @@ If too many files match, remember that `*.exe` matches at every depth; use `/*.e
 
 | Symptom | Fix |
 |---------|-----|
-| `docker: command not found` | Install Docker on target host |
+| `docker: command not found` | Install Docker on the target host |
 | Compose file not found | `compose_file` path relative to cloned repo root |
-| Permission denied (docker) | Add SSH user to `docker` group on Linux |
+| Permission denied (docker) | Add the SSH user to the `docker` group on Linux |
 | Git pull fails while containers run | Default `stop_before_sync: true` stops the stack before sync; ensure it is not set to `false` |
-| Private repo clone fails | Set `git.credential` with valid token |
+| Private repo clone fails | Set `git.credential` with a valid token |
 
 ---
 
@@ -103,7 +108,7 @@ If too many files match, remember that `*.exe` matches at every depth; use `/*.e
 
 | Symptom | Fix |
 |---------|-----|
-| Binary not found after deploy | Open new shell (PATH changes need reload) |
+| Binary not found after deploy | Open a new shell (PATH changes need reload) |
 | System scope fails | Run elevated / with sudo where required |
 | Wrong binary on PATH | Check for duplicate installs; use `which pablo` |
 
@@ -116,16 +121,16 @@ Windows: PATH updated via PowerShell. macOS system scope uses `/etc/paths.d/`. L
 | Symptom | Fix |
 |---------|-----|
 | "Pablo not found" dialog | Install CLI or **Pablo: Select Executable** |
-| No LSP features | Binary must be 1.3+ with `pablo lsp`; old PATH binary may lack LSP |
-| Multiple binaries on PATH | Pick correct one in selector |
-| LSP EPIPE / crash loop | Extension disables auto-restart; fix binary path, reload window |
-| CodeLens missing | Reload file; ensure environment block is valid YAML |
+| No LSP features | Binary must be 1.3+ with `pablo lsp`; an old PATH binary may lack LSP |
+| Multiple binaries on PATH | Pick the correct one in the selector |
+| LSP EPIPE / crash loop | Extension disables auto-restart; fix the binary path, reload the window |
+| CodeLens missing | Reload the file; ensure the environment block is valid YAML |
 
-**Debug:**
+Debug:
 
 1. **View → Output → Pablo Language Server**
 2. Set `"pablo.trace.server": "verbose"`
-3. Confirm `pablo.path` points to current build
+3. Confirm `pablo.path` points to the current build
 
 Full guide: [VS Code](guides/vscode.md)
 
@@ -138,10 +143,10 @@ Full guide: [VS Code](guides/vscode.md)
 | No LSP / CodeLens | Pablo CLI 1.3+ with `pablo lsp`; **Tools → Pablo: Select Executable**; open a `pablo*.yaml` |
 | Run cannot find manifest | Focus or reopen the manifest, or use the **Pablo** toolbar Manifest combo |
 | Tool window: missing executable / inspect error | Select a valid CLI binary, then **Refresh** |
-| Terminal path / quoting errors on Run | Update the extension; Run uses shell-aware quoting (`cmd /s /k` on cmd) |
-| F5: no Pablo commands in Tools | Rebuild **Debug**, close both VS windows, F5 again (extension loads only in Experimental Instance) |
+| Terminal path / quoting errors on Run | Update the extension; Run uses shell-aware quoting |
+| F5: no Pablo commands in Tools | Rebuild **Debug**, close both VS windows, F5 again |
 
-**Debug:** **View → Output → Pablo Language Server**
+Debug: **View → Output → Pablo Language Server**
 
 Full guide: [Visual Studio](guides/visual-studio.md)
 

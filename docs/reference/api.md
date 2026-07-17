@@ -1,6 +1,6 @@
 # API Reference
 
-Pablo does not expose an HTTP REST API. The programmatic surfaces are the CLI `inspect --json` output and the embedded Language Server Protocol (LSP) server.
+Pablo does not expose an HTTP REST API. The programmatic surfaces are CLI `inspect --json` and the embedded Language Server Protocol (LSP) server.
 
 ---
 
@@ -10,9 +10,7 @@ Pablo does not expose an HTTP REST API. The programmatic surfaces are the CLI `i
 pablo inspect -f pablo.yaml --json
 ```
 
-Outputs JSON to stdout with no CLI header. Used by scripts and the VS Code extension as a fallback when LSP is unavailable.
-
-**Response shape:**
+Outputs JSON to stdout with no CLI header. Scripts and editor extensions use this as a fallback when LSP is unavailable.
 
 ```json
 {
@@ -50,7 +48,7 @@ Outputs JSON to stdout with no CLI header. Used by scripts and the VS Code exten
 
 ## Language Server (`pablo lsp`)
 
-Transport: stdio. Started by the VS Code extension or manually for debugging.
+Transport: stdio. Started by editor extensions or manually for debugging.
 
 ### Standard LSP capabilities
 
@@ -92,7 +90,7 @@ If the document is open in the editor, the server reads the in-memory buffer; ot
 
 CodeLens **Run profile/env** invokes `pablo run` with the manifest path, profile, and environment from the clicked line.
 
-See [VS Code guide](../guides/vscode.md) for setup and troubleshooting.
+See [VS Code guide](../guides/vscode.md).
 
 ---
 

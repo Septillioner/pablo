@@ -66,8 +66,6 @@ func (s *Service) Deploy(files []string, sourceBase, targetPath string, strategy
 		if err := os.MkdirAll(targetPath, 0755); err != nil {
 			return fmt.Errorf("failed to recreate target directory: %w", err)
 		}
-	case "blue-green":
-		return fmt.Errorf("blue-green strategy not yet fully implemented")
 	}
 
 	for _, file := range files {

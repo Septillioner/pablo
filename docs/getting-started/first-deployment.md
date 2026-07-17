@@ -1,16 +1,8 @@
 # First Deployment
 
-A hands-on local static deploy using the repository test fixture.
+Walk through a local static deploy end to end — HTML from `./src` into `./dist`, with no build step and no remote server. The same shape lives in the repository fixture [tests/agnostic/local-deploy](../../tests/agnostic/local-deploy/).
 
 **Prerequisites:** [Installation](installation.md) · [Quick start](quick-start.md)
-
----
-
-## Scenario
-
-Deploy HTML files from `./src` to `./dist` on your machine — no build step, no remote server.
-
-This matches [tests/agnostic/local-deploy/pablo.yaml](../../tests/agnostic/local-deploy/pablo.yaml).
 
 ---
 
@@ -41,23 +33,17 @@ version: 0.0.1
 profiles:
   local-test:
     type: static
-
-    output_dir:
-      dir: ./src
-      include: ["*.html"]
-
     environments:
       dev:
         deploy:
+          source:
+            dir: ./src
+            include: ["*.html"]
           target_path: ./dist
           strategy: overwrite
 ```
 
-Notes:
-
-- `output_dir` at profile level becomes the deploy source (inheritance).
-- `include: ["*.html"]` matches HTML files by basename at any depth; use `/*.html` for the artifact root only.
-- `target_path: ./dist` is relative to the manifest directory.
+For `static` profiles, every environment needs its own `deploy.source`. The glob `*.html` matches HTML files by basename at any depth; use `/*.html` for the artifact root only. `target_path: ./dist` is relative to the manifest directory.
 
 ---
 
@@ -77,12 +63,7 @@ Fix any reported errors before continuing.
 pablo run -p local-test -e dev -f pablo.yaml
 ```
 
-Expected outcome:
-
-- `./dist/` is created (or overwritten).
-- `index.html` appears in `./dist/`.
-
-Verify:
+Pablo creates or overwrites `./dist/` and places `index.html` there. Confirm with:
 
 ```bash
 # macOS / Linux
@@ -98,7 +79,7 @@ type dist\index.html
 
 ## Step 5 — Re-deploy with backup
 
-Change `strategy` to `backup` and run again:
+Change `strategy` to `backup` and run again. Pablo renames the existing `./dist` to a timestamped directory (for example `./dist.20260709-143022`) before writing fresh files — a local rollback copy you can rename back by hand if needed.
 
 ```yaml
 deploy:
@@ -106,21 +87,19 @@ deploy:
   strategy: backup
 ```
 
-Pablo renames the existing `./dist` to something like `./dist.20260709-143022` before deploying fresh files.
-
 ---
 
 ## Step 6 — Clean up
-
-`pablo uninstall` removes the deployed directory and PATH entries (for binary type). For this static example, delete `./dist` manually or use uninstall:
 
 ```bash
 pablo uninstall -p local-test -e dev -f pablo.yaml
 ```
 
+Uninstall removes the deployed directory (and PATH entries for `binary` profiles). You can also delete `./dist` manually.
+
 ---
 
-## Try from the repo fixture
+## Try the repo fixture
 
 ```bash
 cd tests/agnostic/local-deploy
@@ -134,8 +113,8 @@ pablo run -p local-test -e dev -f pablo.yaml
 
 | Topic | Guide |
 |-------|-------|
-| More examples (easy → hard) | [Examples](../examples/README.md) |
+| Progressive scenarios | [Examples](../examples/README.md) |
 | Remote server deploy | [SSH](../guides/ssh.md) |
 | Compiled binary + PATH | [Binary and PATH](../guides/binary-and-path.md) |
 | Docker Compose | [Docker](../guides/docker.md) |
-| Deploy strategies in depth | [Deploy strategies](../guides/deploy-strategies.md) |
+| Strategies in depth | [Deploy strategies](../guides/deploy-strategies.md) |

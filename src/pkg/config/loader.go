@@ -50,6 +50,8 @@ func (l *Loader) ParseDocument(data []byte) (*yaml.Node, error) {
 	return root.Content[0], nil
 }
 
+// applyInheritance merges profile variables, env_file, and build into each environment.
+// Nothing else cascades (deploy.source is always explicit).
 func applyInheritance(cfg *domain.Config) {
 	for name, profile := range cfg.Profiles {
 		for envName, env := range profile.Environments {
@@ -75,6 +77,9 @@ func applyInheritance(cfg *domain.Config) {
 					if env.Build.Path == "" {
 						env.Build.Path = profile.Build.Path
 					}
+					if env.Build.Command == "" {
+						env.Build.Command = profile.Build.Command
+					}
 					if env.Build.EnvFile == "" {
 						env.Build.EnvFile = profile.Build.EnvFile
 					}
@@ -91,60 +96,9 @@ func applyInheritance(cfg *domain.Config) {
 				}
 			}
 
-			if profile.OutputDir.Dir != "" || len(profile.OutputDir.Include) > 0 {
-				if env.Deploy.Source == nil {
-					src := profile.OutputDir
-					env.Deploy.Source = &src
-				}
-			}
-
-			if env.EnvConfig.Variables != nil {
-				if env.Deploy.EnvConfig.Variables == nil {
-					env.Deploy.EnvConfig.Variables = make(map[string]string)
-				}
-				for k, v := range env.EnvConfig.Variables {
-					if _, exists := env.Deploy.EnvConfig.Variables[k]; !exists {
-						env.Deploy.EnvConfig.Variables[k] = v
-					}
-				}
-			}
-			if env.Deploy.EnvConfig.EnvFile == "" && env.EnvConfig.EnvFile != "" {
-				env.Deploy.EnvConfig.EnvFile = env.EnvConfig.EnvFile
-			}
-
 			profile.Environments[envName] = env
 		}
 
 		cfg.Profiles[name] = profile
-	}
-
-	if len(cfg.Profiles) == 0 && cfg.Type != "" {
-		legacyEnvs := make(map[string]domain.Environment)
-		for envName, env := range cfg.Environments {
-			newEnv := domain.Environment{
-				Deploy: domain.DeployConfig{
-					TargetPath: env.TargetPath,
-					Strategy:   env.Strategy,
-				},
-				EnvConfig: domain.EnvConfig{
-					Variables: env.Variables,
-				},
-				RegisterPath: env.RegisterPath,
-			}
-			legacyEnvs[envName] = newEnv
-		}
-
-		cfg.Profiles = map[string]domain.Profile{
-			"default": {
-				Type: cfg.Type,
-				OutputDir: domain.ArtifactsConfig{
-					Include: cfg.Source.Include,
-					Exclude: cfg.Source.Exclude,
-				},
-				Environments: legacyEnvs,
-				Pipeline:     cfg.Pipeline,
-				Hooks:        cfg.Hooks,
-			},
-		}
 	}
 }

@@ -1,6 +1,6 @@
 # Pablo one-liner installer (Windows)
-# Usage: $s="$env:TEMP\pablo-install.ps1"; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; irm 'https://raw.githubusercontent.com/septillioner/pablo/master/install.ps1' -OutFile $s; powershell -NoProfile -ExecutionPolicy Bypass -File $s
-# Usage (cmd): install.cmd
+# Usage: $s="$env:TEMP\pablo-install.ps1"; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; irm 'https://raw.githubusercontent.com/septillioner/pablo/master/scripts/install.ps1' -OutFile $s; powershell -NoProfile -ExecutionPolicy Bypass -File $s
+# Usage (cmd): scripts/install.cmd
 # Pin version: $env:PABLO_VERSION = "v1.4.0"; then run the command above
 
 $ErrorActionPreference = "Stop"

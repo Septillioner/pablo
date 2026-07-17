@@ -37,7 +37,7 @@ go test ./...
 
 ```bash
 cd tests/e2e
-go test -tags=integration -v -timeout 10m ./...
+go test -tags=integration -v -timeout 15m ./...
 ```
 
 ### Manuel fixture
@@ -61,15 +61,20 @@ go run ../../../src/main.go run -e production
 | Artifact filter | x | | |
 | Remote path (pathutil) | x | | |
 | Template `{{VAR}}` | x | | |
-| Deployer / stratejiler | x | | |
+| Deployer / stratejiler | x | x (overwrite, backup, recreate, rename-replace) | |
 | Health check HTTP | x | | |
-| Hooks | x | | |
+| Hooks / post_commands | x | x (Go service post_commands) | |
 | PATH (system adapter) | x | | x (windows) |
 | SSH adapter | x | x | |
 | Pipeline helpers | x | | |
-| SCM (git) | x | x | x |
-| Docker adapter | x | x | x |
+| SCM (git) | x | x (compose + php git-sync) | x |
+| Docker adapter | x | x (compose-api + redeploy) | x |
+| Types: static / binary / docker / git-sync | | x | x |
+| Sequences | | x | x |
+| `transfer: legacy` / `verify_checksum` | | x | |
 | Tam pipeline `Run` | | x | x |
+
+E2E story index: [e2e/README.md](e2e/README.md).
 
 ---
 

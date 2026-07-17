@@ -1,6 +1,6 @@
 # Pablo Documentation
 
-Pablo is a CLI deployment helper that automates building, filtering, and deploying artifacts across local and remote (SSH) environments from a single YAML manifest.
+Pablo is a CLI that builds, filters, and deploys artifacts from a single `pablo.yaml` manifest — locally or over SSH.
 
 **Version:** see `pablo version` · **Manifest:** `pablo.yaml` · **Defaults:** profile `default`, environment `production`
 
@@ -10,11 +10,11 @@ Pablo is a CLI deployment helper that automates building, filtering, and deployi
 
 | Page | Description |
 |------|-------------|
-| [Installation](getting-started/installation.md) | Download binary, build from source, self-deploy, VS Code extension |
-| [Quick start](getting-started/quick-start.md) | Create a manifest, validate, and run your first deploy |
-| [First deployment](getting-started/first-deployment.md) | Step-by-step local static deploy walkthrough |
-| [Project structure](getting-started/project-structure.md) | Manifest concepts, profiles, environments, sequences, multiple files |
-| [Examples](examples/README.md) | Progressive samples — local copy → build → SSH → Docker → multi-profile → sequences |
+| [Installation](getting-started/installation.md) | Download the binary, build from source, or install the editor extension |
+| [Quick start](getting-started/quick-start.md) | Create a manifest, validate it, and run your first deploy |
+| [First deployment](getting-started/first-deployment.md) | Step-by-step local static walkthrough |
+| [Project structure](getting-started/project-structure.md) | Profiles, environments, sequences, and multi-file layouts |
+| [Examples](examples/README.md) | Sixteen scenarios from local copy through SSH, Docker, git-sync, sequences, and Windows |
 
 ---
 
@@ -26,11 +26,11 @@ Pablo is a CLI deployment helper that automates building, filtering, and deployi
 | [SSH remote deploy](guides/ssh.md) | Credentials, tar vs legacy transfer, remote Docker |
 | [Docker](guides/docker.md) | Local and remote Docker Compose deployments |
 | [Credentials](guides/credentials.md) | SSH, token, and basic auth references |
-| [Deploy strategies](guides/deploy-strategies.md) | Overwrite, backup, recreate, protected paths |
-| [Git sync](guides/git-sync.md) | Pull-based deployments for interpreted apps |
-| [Binary and PATH](guides/binary-and-path.md) | Binary type, PATH registration, uninstall cleanup |
-| [VS Code extension](guides/vscode.md) | Editor setup, LSP, Run command, troubleshooting |
-| [Visual Studio extension](guides/visual-studio.md) | VS 2022/2026 VSIX, LSP, tool window, toolbar, troubleshooting |
+| [Deploy strategies](guides/deploy-strategies.md) | Overwrite, backup, recreate, rename-replace |
+| [Git sync](guides/git-sync.md) | Pull-based deploys for interpreted apps |
+| [Binary and PATH](guides/binary-and-path.md) | Binary type, PATH registration, uninstall |
+| [VS Code extension](guides/vscode.md) | Editor setup, LSP, Run command |
+| [Visual Studio extension](guides/visual-studio.md) | VS 2022/2026 VSIX, LSP, tool window |
 
 ---
 
@@ -38,11 +38,11 @@ Pablo is a CLI deployment helper that automates building, filtering, and deployi
 
 | Page | Description |
 |------|-------------|
-| [CLI](reference/cli.md) | All commands and flags |
+| [CLI](reference/cli.md) | Commands and flags |
 | [Configuration](reference/configuration.md) | Complete `pablo.yaml` field reference |
-| [Capabilities](reference/capabilities.md) | Deployment types, strategies, pipeline, limitations |
+| [Capabilities](reference/capabilities.md) | Types, strategies, pipeline phases, limitations |
 | [Exit codes](reference/exit-codes.md) | Process exit behavior |
-| [API](reference/api.md) | `inspect --json` and LSP protocol surface |
+| [API](reference/api.md) | `inspect --json` and LSP surface |
 
 ---
 

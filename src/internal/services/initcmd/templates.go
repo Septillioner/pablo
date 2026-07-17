@@ -24,12 +24,12 @@ profiles:
     build:
       command: npm run build
       path: .
-    output_dir:
-      dir: ./dist
-      include: ["**/*"]
     environments:
       production:
         deploy:
+          source:
+            dir: ./dist
+            include: ["**/*"]
           target_path: ./deploy-output
           strategy: overwrite
 `, version)
@@ -44,18 +44,16 @@ profiles:
     build:
       command: go build -o my-app .
       path: .
-    output_dir:
-      dir: .
-      include: ["my-app"]
     environments:
       production:
         deploy:
+          source:
+            dir: .
+            include: ["my-app"]
           target_path: ./deploy-output
           strategy: backup
-          service:
-            type: systemd
-            name: my-app
-            restart: true
+          post_commands:
+            - systemctl restart my-app
 `, version)
 }
 
@@ -76,7 +74,6 @@ profiles:
           docker:
             compose_file: docker-compose.yml
             build: true
-            command: up -d
 `, version)
 }
 

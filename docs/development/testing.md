@@ -1,8 +1,8 @@
 # Testing
 
-How Pablo is tested — unit, integration, and manual fixtures.
+How Pablo is tested — unit, E2E, and manual fixtures.
 
-Detailed catalog: [tests/TEST_SPEC.md](../../tests/TEST_SPEC.md) · Strategy (Turkish): [tests/TEST_PLAN.md](../../tests/TEST_PLAN.md)
+Detailed catalog: [tests/TEST_SPEC.md](../../tests/TEST_SPEC.md) · Strategy: [tests/TEST_PLAN.md](../../tests/TEST_PLAN.md)
 
 ---
 
@@ -21,9 +21,9 @@ Detailed catalog: [tests/TEST_SPEC.md](../../tests/TEST_SPEC.md) · Strategy (Tu
 ### All layers (recommended)
 
 ```bash
-./test.sh all          # macOS / Linux
-./test.ps1 all         # Windows PowerShell
-test.bat all           # Windows cmd
+./scripts/test.sh all          # macOS / Linux
+./scripts/test.ps1 all         # Windows PowerShell
+scripts\test.bat all           # Windows cmd
 ```
 
 Modes: `unit`, `integration`, `e2e`, `all` (default).
@@ -35,16 +35,14 @@ Example output:
   PASS  pablo/internal/services/deployer           1.28s
   PASS  pablo/pkg/config                           1.03s
   ...
-  12 packages passed, 0 failed
 
 ======== E2E ========
-  Scenarios: ssh-docker-remote, ssh-rename-replace, ssh-static
+  Stories: static-site, go-service, compose-api, php-app, ...
 
-  PASS  TestSSH_StaticDeploy             (ssh-static            ) 0.33s
-  PASS  TestSSH_RenameReplace            (ssh-rename-replace    ) 0.59s
-  PASS  TestSSH_DockerRemoteDeploy       (ssh-docker-remote     ) 1.41s
-
-  3 scenarios passed, 0 failed
+  PASS  TestSSH_StaticSite
+  PASS  TestSSH_GoService
+  PASS  TestSSH_ComposeAPI
+  ...
 
 ======== SUMMARY ========
   unit:          PASS
@@ -52,29 +50,27 @@ Example output:
   e2e:           PASS
 ```
 
-Packages without tests and `[no test files]` noise are hidden. E2E results show the scenario folder name next to each test.
-
 ### Unit tests (run after every change)
 
 ```bash
-./test.sh unit
+./scripts/test.sh unit
 # or:
 cd src
 go test ./...
 ```
 
-Twelve packages currently have tests: `filter`, `pathutil`, `config`, `validate`, `inspect`, `template`, `deployer`, `health`, `hooks`, `system`, `ssh`, `pipeline`, `scm`, `docker`.
+Packages with tests today include `filter`, `pathutil`, `config`, `validate`, `inspect`, `template`, `deployer`, `health`, `hooks` (pre/post shell runner), `system`, `ssh`, `pipeline`, `scm`, and `docker`.
 
 ### E2E integration tests
 
 ```bash
-./test.sh e2e
+./scripts/test.sh e2e
 # or:
 cd tests/e2e
-go test -tags=integration -v -timeout 10m ./...
+go test -tags=integration -v -timeout 15m ./...
 ```
 
-Scenarios: SSH static deploy, SSH remote Docker deploy.
+Ten real-world SSH stories (all types + all strategies). See [tests/e2e/README.md](../../tests/e2e/README.md).
 
 ### Manual fixture validation
 
@@ -97,16 +93,16 @@ go run ../../../src/main.go run -p local-test -e dev
 | Artifact filter | x | | |
 | Remote paths | x | | |
 | Template `{{VAR}}` | x | | |
-| Deployer / strategies | x | | |
+| Deployer / strategies | x | x | |
 | Health check | x | | |
-| Hooks | x | | |
+| Pre/post commands (`services/hooks`) | x | x | |
 | PATH (system adapter) | x | | x |
 | SSH adapter | x | x | |
 | Pipeline | x | | |
 | SCM (git) | x | x | x |
 | Docker adapter | x | x | x |
 | Full pipeline `Run` | | x | x |
-| `RunSequence` (ordered multi-target) | x | | |
+| `RunSequence` (ordered multi-target) | x | x | |
 
 ---
 
@@ -116,12 +112,23 @@ go run ../../../src/main.go run -p local-test -e dev
 tests/
 ├── agnostic/          # Cross-platform YAML scenarios
 │   ├── local-deploy/
+│   ├── inheritance-test/
 │   ├── multi-profile/
 │   ├── separate-apps/
 │   └── self-deploy/
-├── windows/           # Windows-specific PATH scenarios
-└── e2e/               # Docker + SSH integration
+├── windows/           # Windows-specific scenarios
+│   ├── nssm-service/
+│   └── rename-replace/
+└── e2e/               # Docker + SSH integration (story-named scenarios)
+    └── scenarios/
+        ├── static-site/
+        ├── go-service/
+        ├── compose-api/
+        ├── php-app/
+        └── ...
 ```
+
+Public docs mirror these scenarios in [Examples](../examples/README.md).
 
 ---
 

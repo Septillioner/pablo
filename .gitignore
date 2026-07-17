@@ -54,6 +54,7 @@ node_modules/
 PABLO-CS.md
 .cursor/
 PMAP.md
+CONTRIBUTING-RULES.md
 pablo-sepy.yaml
 release-new-version.bat
 release-bump-versions.ps1
@@ -61,4 +62,6 @@ release-force.bat
 release-hotfix.bat
 release-hotfix-docs.ps1
 release-generate-checksums.ps1
+scripts/publish-release.*
+scripts/publish-extensions.*
 RELEASING.md

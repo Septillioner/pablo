@@ -10,19 +10,12 @@ credentials:
 profiles:
   default:
     type: git-sync
-    
-    # Global Defaults (Will be inherited)
     variables:
       GLOBAL_TAG: laravel-project
     env_file: .env
-
     git:
       repo: git@github.com:company/laravel-app.git
       branch: master
-    
-    hooks:
-      pre: echo "Starting deploy for $GLOBAL_TAG..."
-    
     environments:
       staging:
         variables:
@@ -30,19 +23,16 @@ profiles:
           APP_DEBUG: "true"
         deploy:
           target_path: /var/www/laravel-staging
-          # Inherits: GLOBAL_TAG, env_file: .env
           post_commands:
             - composer install
-      
       production:
         variables:
           APP_ENV: production
+        env_file: .env.production
         remote:
-          method: ssh
           host: 192.168.1.103
           credential: prod_server
         deploy:
           target_path: /var/www/laravel-prod
-          env_file: .env.production # Overrides global .env
           post_commands:
             - composer install --no-dev

@@ -4,15 +4,11 @@ version: 0.0.1
 profiles:
   local-test:
     type: static
-    
-    # Modern approach: Define artifacts at profile level
-    output_dir:
-      dir: ./src
-      include: ["*.html"]
-    
     environments:
       dev:
         deploy:
-          # Inherits source from output_dir
+          source:
+            dir: ./src
+            include: ["*.html"]
           target_path: ./dist
           strategy: overwrite

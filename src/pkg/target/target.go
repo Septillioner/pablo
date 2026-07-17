@@ -11,18 +11,9 @@ func Parse(s string) (profile, env string, err error) {
 		return "", "", fmt.Errorf("target is required")
 	}
 
-	sep := -1
-	sepChar := '/'
-	if idx := strings.Index(s, "/"); idx >= 0 {
-		sep = idx
-		sepChar = '/'
-	} else if idx := strings.Index(s, "."); idx >= 0 {
-		sep = idx
-		sepChar = '.'
-	}
-
+	sep := strings.Index(s, "/")
 	if sep < 0 {
-		return "", "", fmt.Errorf("target must be profile%cevironment (e.g. default/windows-local)", sepChar)
+		return "", "", fmt.Errorf("target must be profile/environment (e.g. default/windows-local)")
 	}
 
 	profile = strings.TrimSpace(s[:sep])
@@ -30,8 +21,8 @@ func Parse(s string) (profile, env string, err error) {
 	if profile == "" || env == "" {
 		return "", "", fmt.Errorf("target must include both profile and environment")
 	}
-	if strings.ContainsAny(env, "/.") {
-		return "", "", fmt.Errorf("environment name cannot contain '/' or '.'")
+	if strings.Contains(env, "/") {
+		return "", "", fmt.Errorf("environment name cannot contain '/'")
 	}
 
 	return profile, env, nil

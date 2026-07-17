@@ -1,50 +1,60 @@
 # Pablo E2E Tests
 
-Docker tabanli integration testleri: Ubuntu SSH hedefi uzerinde remote deploy senaryolarini dogrular.
+Docker-based integration tests: real deploy stories against an Ubuntu SSH target.
 
-## Gereksinimler
+## Requirements
 
-- Docker Desktop / Docker Engine (WSL2 backend onerilir — Windows)
+- Docker Desktop / Docker Engine
 - Go 1.25.5+
-- OpenSSH `ssh-keygen` (PATH uzerinde)
+- OpenSSH `ssh-keygen` on PATH
 
-## Calistirma
+## Run
 
-```powershell
+```bash
 cd tests/e2e
-go test -tags=integration -v -timeout 10m ./...
+go test -tags=integration -v -timeout 15m ./...
 ```
 
-Ilk calistirmada Docker image build edilir (~1-2 dk). Testler sirasinda `127.0.0.1:2222` uzerinde SSH hedefi ayaga kalkar.
+First run builds the target image (~1–2 min). SSH listens on `127.0.0.1:2222`.
 
-## Senaryolar
+## Scenarios (stories)
 
-| Test | Aciklama |
-|------|----------|
-| `TestSSH_StaticDeploy` | SSH ile static artifact deploy (`/tmp/pablo-e2e-static`) |
-| `TestSSH_RenameReplace` | SSH `rename-replace` strategy |
-| `TestSSH_DockerRemoteDeploy` | SSH uzerinden git clone + uzak `docker compose up`; ikinci run ile redeploy (`stop_before_sync`) |
+| Test | Dir | Story |
+|------|-----|-------|
+| `TestSSH_StaticSite` | `scenarios/static-site/` | Marketing site → `/var/www/static-site` (`overwrite`) |
+| `TestSSH_StaticSiteHotfix` | `scenarios/static-site-hotfix/` | Live HTML/CSS swap (`rename-replace`) |
+| `TestSSH_GoService` | `scenarios/go-service/` | Go binary → `/opt/go-service` + `post_commands` |
+| `TestSSH_ComposeAPI` | `scenarios/compose-api/` | Git + Compose stack; redeploy while up |
+| `TestSSH_PHPApp` | `scenarios/php-app/` | PHP app via `git-sync` → `/var/www/php-app` |
+| `TestSSH_ReleaseSequence` | `scenarios/release-sequence/` | Staging then prod (`pablo run sequence`) |
+| `TestSSH_SiteWithBackup` | `scenarios/site-with-backup/` | Prod deploy keeps previous tree (`backup`) |
+| `TestSSH_CleanRedeploy` | `scenarios/clean-redeploy/` | Wipe stale files (`recreate`) |
+| `TestSSH_LegacyTransfer` | `scenarios/legacy-transfer/` | Multi-file site over SCP (`transfer: legacy`) |
+| `TestSSH_VerifiedTransfer` | `scenarios/verified-transfer/` | Post-transfer SHA-256 (`verify_checksum`) |
 
-## Mimari
+All manifests are Schema v2. Strategies covered: `overwrite`, `rename-replace`, `backup`, `recreate`.
 
-- **Hedef:** `docker/docker-compose.yml` — Ubuntu 24.04, OpenSSH, git, docker CLI
-- **Docker socket:** Host `/var/run/docker.sock` mount — uzak `docker compose` host daemon uzerinde calisir
-- **Anahtarlar:** `keys/` dizini test basinda uretilir (gitignore)
+## Architecture
 
-## Bilinen kisitlar
+- **Target:** `docker/docker-compose.yml` — Ubuntu 24.04, OpenSSH, git, docker CLI
+- **Docker socket:** Host `/var/run/docker.sock` mount for remote Compose
+- **Fixtures:** `fixtures/sample-docker-app`, `fixtures/sample-php-app` (bare repos created in entrypoint)
+- **Keys:** `keys/` generated at test start (gitignored)
 
-- Socket mount nedeniyle compose icindeki bind-mount yollari **host** dosya sistemine gore cozulur; fixture'larda bind-mount kullanmayin.
-- E2E container'daki docker CLI, host API surumu ile uyum icin `DOCKER_API_VERSION=1.43` wrapper kullanir.
-- `PABLO_E2E_SKIP_DOCKER=1` ortam degiskeni ile container baslatmadan test calistirilabilir (yalnizca gelistirme).
+## Limits
 
-## Dizin yapisi
+- No bind-mounts inside Compose fixtures (socket mount resolves host paths).
+- Container docker CLI uses `DOCKER_API_VERSION=1.43` wrapper.
+- `PABLO_E2E_SKIP_DOCKER=1` skips container bring-up (dev only).
+
+## Layout
 
 ```
 tests/e2e/
-├── docker/           # Ubuntu SSH hedef image + compose
-├── fixtures/         # Ornek docker uygulamasi (bare repo kaynagi)
-├── scenarios/        # pablo.yaml senaryolari
-├── keys/             # Uretilen SSH anahtarlari (gitignore)
+├── docker/           # SSH target image + compose
+├── fixtures/         # Bare-repo sources (docker, php)
+├── scenarios/        # One story per directory
+├── keys/             # Generated SSH keys
 ├── helpers.go
 └── e2e_test.go
 ```

@@ -1,67 +1,3 @@
-# Pablo 🚀
-
-**Pablo** is a production-ready CLI deployment automation tool designed to simplify and standardize the deployment process across multiple environments and application types.
-
-## What is Pablo?
-
-Pablo automates the entire deployment pipeline from build to health check, supporting multiple deployment strategies and application types. Whether you're deploying a React frontend, a Dockerized backend, a Go binary, or a PHP application, Pablo provides a unified, declarative approach to deployment.
-
-### Key Features
-
-✨ **Type-Based Deployments**
-- `static`: Frontend SPAs (React, Vue, Angular)
-- `docker`: Containerized applications
-- `binary`: Compiled executables (Go, Rust)
-- `git-sync`: Interpreted languages (PHP, Python)
-
-🔐 **Centralized Credentials**
-- SSH keys, passwords, tokens
-- Reference credentials across profiles
-- Secure credential management
-
-🎯 **Multi-Environment Support**
-- Development, staging, production
-- Environment-specific variables
-- Different deployment strategies per environment
-
-🔄 **Complete Pipeline**
-- Pre/post deployment hooks
-- Build automation
-- Artifact filtering
-- Template variable injection
-- Health checks
-- Service management (systemd, PM2)
-
-📦 **Flexible Configuration**
-- Multi-profile: All apps in one file
-- Separate configs: One file per app
-- Backward compatible with legacy configs
-
-### Quick Example
-
-```yaml
-name: my-app
-version: 1.0.0
-
-profiles:
-  frontend:
-    type: static
-    build:
-      command: npm run build
-      output_dir: ./dist
-    environments:
-      production:
-        deploy:
-          target_path: /var/www/html
-          strategy: backup
-```
-
-```bash
-pablo run -p frontend -e production
-```
-
----
-
 # Pablo Test Scenarios
 
 This directory contains test scenarios organized by their target operating system and compatibility.
@@ -74,12 +10,18 @@ This directory contains test scenarios organized by their target operating syste
 - **`linux/`**: Tests for Linux systems, involving absolute Unix paths, systemd services, etc.
 - **`macos/`**: Tests for macOS environments.
 
+## Schema v2 manifests
+
+Fixtures use Schema v2: all deploy config under `profiles`, artifacts via `deploy.source` on each environment, SSH via `remote` (no `remote.method`), remote transfer via `deploy.transfer`.
+
 ## Scenarios (Agnostic)
 
 ### 1. Multi-Profile (`agnostic/multi-profile/`)
+
 **One file, multiple profiles**
 
 All applications in a single `pablo.yaml`:
+
 ```bash
 pablo run -p frontend -e production -f agnostic/multi-profile/pablo.yaml
 pablo run -p backend-api -e staging -f agnostic/multi-profile/pablo.yaml
@@ -93,9 +35,11 @@ pablo run -p backend-api -e staging -f agnostic/multi-profile/pablo.yaml
 ---
 
 ### 2. Separate Apps (`agnostic/separate-apps/`)
+
 **One app per directory**
 
 Each application has its own `pablo.yaml`:
+
 ```bash
 cd agnostic/separate-apps/frontend && pablo run -e production
 cd agnostic/separate-apps/backend && pablo run -e staging

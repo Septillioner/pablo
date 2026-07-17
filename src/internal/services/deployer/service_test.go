@@ -302,21 +302,6 @@ func TestDeployProtectedPathSafety(t *testing.T) {
 	}
 }
 
-func TestDeployBlueGreen(t *testing.T) {
-	svc := New()
-	source := t.TempDir()
-	target := t.TempDir()
-	mustWrite(t, filepath.Join(source, "app.txt"), "data")
-
-	err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, target, "blue-green", false)
-	if err == nil {
-		t.Fatal("expected blue-green strategy error")
-	}
-	if !strings.Contains(err.Error(), "blue-green strategy not yet fully implemented") {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
 func TestCopyFilePreservesMode(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("file mode semantics differ on Windows")

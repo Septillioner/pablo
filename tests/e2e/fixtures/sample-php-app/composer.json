@@ -1,0 +1,7 @@
+{
+  "name": "pablo/sample-php-app",
+  "description": "E2E fixture for git-sync PHP deploy",
+  "require": {
+    "php": ">=8.1"
+  }
+}

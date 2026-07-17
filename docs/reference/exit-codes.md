@@ -1,6 +1,6 @@
 # Exit Codes
 
-Pablo uses a simple exit code scheme today.
+Pablo uses a simple exit code scheme.
 
 | Code | Meaning |
 |------|---------|
@@ -9,7 +9,7 @@ Pablo uses a simple exit code scheme today.
 
 All error paths in the CLI call `os.Exit(1)`. There is no separate validation exit code.
 
-**Examples of exit code `1`:**
+Typical reasons for exit code `1`:
 
 - `pablo check` finds schema violations
 - `pablo run` references a profile or environment that does not exist
@@ -17,6 +17,6 @@ All error paths in the CLI call `os.Exit(1)`. There is no separate validation ex
 - SSH connection or remote command fails
 - Deploy to a protected system path without `--force`
 
-**Scripting tip:** rely on exit code only; parse stderr/stdout for error details. For structured manifest data, use `pablo inspect --json` (exits `0` on success).
+For scripting, rely on the exit code and parse stderr/stdout for details. For structured manifest data, use `pablo inspect --json` (exits `0` on success).
 
-`pablo update --check` exits `1` when a newer release is available (even though the check itself succeeded).
+`pablo update --check` exits `1` when a newer release is available, even though the check itself succeeded.

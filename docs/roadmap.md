@@ -13,7 +13,7 @@ Public view of what Pablo **ships today** and what is **planned next**. For curr
 | Status | Count (approx.) |
 |--------|-----------------|
 | Shipped | 31 |
-| Planned | 14 |
+| Planned | 12 |
 
 ---
 
@@ -23,7 +23,8 @@ Public view of what Pablo **ships today** and what is **planned next**. For curr
 Pablo
 ├── Manifest & CLI
 │   ├── [x] Multi-profile pablo.yaml manifests
-│   ├── [x] Profile-to-environment inheritance
+│   ├── [x] Profile-to-environment inheritance (variables, env_file, build)
+│   ├── [x] Schema v2 — profiles-only, deploy.source, deploy.transfer
 │   ├── [x] check, run, init (--template), uninstall, version, inspect, update
 │   ├── [x] Manifest sequences (`pablo run sequence <name>`)
 │   ├── [x] lsp (language server, stdio)
@@ -41,15 +42,14 @@ Pablo
 │   ├── [x] Schema checks in CLI (path:line:col errors)
 │   ├── [x] Same rules in the editor (pablo lsp)
 │   ├── [x] Run blocked when manifest is invalid
-│   └── [ ] Richer validation (cross-field rules, unknown keys)
+│   ├── [x] Unknown YAML keys rejected
+│   └── [ ] Richer validation (cross-field rules, richer positions)
 ├── Deployment
 │   ├── [x] Types: static, binary, docker, git-sync
 │   ├── [x] Strategies: overwrite, backup, recreate, rename-replace
 │   ├── [x] Local deploy pipeline
 │   ├── [x] Remote SSH deploy (tar streaming)
-│   ├── [x] Remote Docker Compose over SSH
-│   ├── [ ] Service management (systemd / PM2)
-│   └── [ ] Blue-green deployments
+│   └── [x] Remote Docker Compose over SSH
 ├── Platform integration
 │   ├── [x] PATH registration (Windows, macOS, Linux user)
 │   ├── [x] Linux system-scope PATH
@@ -61,7 +61,8 @@ Pablo
 │   ├── [ ] CI on every pull request
 │   └── [ ] Broader automated test coverage
 ├── Documentation
-│   ├── [x] Public docs (getting-started, guides, reference)
+│   ├── [x] Public docs (getting-started, guides, reference, examples)
+│   ├── [x] Schema v2 docs rewrite + scenario catalog
 │   ├── [x] Test strategy and catalog
 │   └── [ ] Docs kept in sync with each release
 └── Security
@@ -75,6 +76,7 @@ Pablo
 ### Manifest & CLI
 
 - [x] Multi-profile `pablo.yaml` with environment-specific deploy settings
+- [x] Schema v2 — three nouns (Profile, Environment, Deploy); `deploy.source`, `deploy.transfer`, named credentials
 - [x] `pablo check` — validate manifests before deploy
 - [x] `pablo run` — full deployment pipeline
 - [x] `pablo run sequence <name>` — run named manifest sequences in list order
@@ -103,7 +105,7 @@ Pablo
 - [x] Strategies: `overwrite`, `backup`, `recreate`, `rename-replace`
 - [x] Artifact filtering (include / exclude globs)
 - [x] Template variable substitution (`{{VAR}}`)
-- [x] Hooks, health checks, pre/post deploy commands
+- [x] Pre/post deploy commands (`deploy.pre_commands`, `deploy.post_commands`)
 - [x] Local and remote SSH deploy
 - [x] Remote Docker Compose orchestration
 - [x] SSH host key verification (`known_hosts`, optional TOFU / opt-out)
@@ -119,27 +121,24 @@ Pablo
 
 - [x] Unit tests across twelve core packages (`cd src && go test ./...`)
 - [x] Integration tests: Ubuntu SSH target in Docker ([tests/e2e](../tests/e2e/))
-  - SSH static deploy scenario
-  - SSH remote docker deploy scenario
-  - Run: `cd tests/e2e && go test -tags=integration -v -timeout 10m ./...`
+  - Real-world stories: static site, hotfix (`rename-replace`), Go binary, Compose API, PHP git-sync
+  - Strategies: overwrite, backup, recreate, rename-replace; plus sequence, legacy transfer, checksum
+  - Run: `cd tests/e2e && go test -tags=integration -v -timeout 15m ./...`
 
 ### Documentation
 
-- [x] [docs/](README.md) — getting-started, guides, reference, development
+- [x] [docs/](README.md) — getting-started, guides, reference, development (schema v2 rewrite)
+- [x] [Examples](examples/README.md) — sixteen scenarios aligned with test fixtures
 - [x] [tests/TEST_PLAN.md](../tests/TEST_PLAN.md) and [tests/TEST_SPEC.md](../tests/TEST_SPEC.md)
 
 ---
 
 ## Planned
 
-### Deployment (P1 — missing features)
-
-- [ ] **Service management** — `deploy.service` for systemd and PM2 (schema exists; runtime not implemented)
-- [ ] **Blue-green strategy** — declared in schema; returns error at runtime
-
 ### Validation (P2 — quality)
 
-- [ ] **Expanded schema rules** — cross-field checks, unknown YAML keys, richer error positions
+- [x] **Unknown YAML keys** — rejected by shared validate (CLI + LSP)
+- [ ] **Expanded schema rules** — more cross-field checks, richer error positions
 - [ ] **Schema automation (phase 2)** — generate editor metadata and rules from a single source
 
 ### Quality & testing (P2)
@@ -184,7 +183,7 @@ Catalog: [tests/TEST_SPEC.md](../tests/TEST_SPEC.md)
 | Priority | Focus | Examples |
 |----------|-------|----------|
 | P0 | Security | SSH host key pinning |
-| P1 | Missing features | systemd/PM2, blue-green |
+| P1 | Missing features | — |
 | P2 | Quality | Validation depth, tests, CI |
 | P3 | Platform & DX | Snippets, docs sync |
 | P4 | Automation | GitHub Actions, release pipeline |

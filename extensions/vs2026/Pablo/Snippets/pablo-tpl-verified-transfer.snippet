@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>Pablo: Verified Transfer</Title>
+      <Shortcut>pablo-tpl-verified-transfer</Shortcut>
+      <Description>Static site deploy with verify_checksum enabled</Description>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Code Language="yaml"><![CDATA[name: "$1"
+version: "2.0.0"
+
+credentials:
+  $2:
+    type: ssh
+    username: deploy
+    key: "~/.ssh/id_rsa"
+
+profiles:
+  web:
+    type: static
+    environments:
+      production:
+        remote:
+          host: "$3"
+          credential: "$2"
+        deploy:
+          source:
+            dir: "$4"
+            include: ["**/*"]
+            exclude: ["*.map"]
+          target_path: "$5"
+          strategy: overwrite
+          verify_checksum: true]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

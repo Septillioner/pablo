@@ -2,19 +2,21 @@
 <CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
   <CodeSnippet Format="1.0.0">
     <Header>
-      <Title>Pablo: Node.js + PM2 Template</Title>
+      <Title>Pablo: Node.js + PM2</Title>
       <Shortcut>pablo-tpl-node-pm2</Shortcut>
-      <Description>Ready-to-use template for Node.js apps managed by PM2</Description>
+      <Description>Binary-style Node deploy with PM2 restart post_commands</Description>
       <SnippetTypes>
         <SnippetType>Expansion</SnippetType>
       </SnippetTypes>
     </Header>
     <Snippet>
       <Code Language="yaml"><![CDATA[name: "$1"
-version: "1.4.0"
+version: "2.0.0"
+
 credentials:
   $2:
     type: ssh
+    username: deploy
     key: "~/.ssh/id_rsa"
 
 profiles:
@@ -22,21 +24,18 @@ profiles:
     type: binary
     build:
       command: "npm install && npm run build"
-    output_dir:
-      dir: "dist"
     environments:
-      prod:
-        target_path: "$3"
-        strategy: backup
+      production:
         remote:
-          method: ssh
-          host: "$4"
+          host: "$3"
           credential: "$2"
         deploy:
-          service:
-            type: pm2
-            name: "$1"
-            restart: true]]></Code>
+          source:
+            dir: "dist"
+          target_path: "$4"
+          strategy: backup
+          post_commands:
+            - "pm2 restart $1"]]></Code>
     </Snippet>
   </CodeSnippet>
 </CodeSnippets>

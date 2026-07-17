@@ -1,45 +1,46 @@
 # Docker Deployments
 
-Run Docker Compose workloads locally or on a remote host over SSH.
+Run Docker Compose workloads locally or on a remote host over SSH. A `docker` profile clones or pulls a Git repository into `deploy.target_path`, writes env files when configured, and runs `docker compose`.
 
-**See also:** [Configuration — Docker](../reference/configuration.md#docker) · [SSH guide](ssh.md)
+**See also:** [Configuration — Docker](../reference/configuration.md#docker) · [SSH](ssh.md) · [Examples #6](../examples/README.md#6-docker-compose-local) · [Examples #7](../examples/README.md#7-docker-compose-over-ssh)
 
 ---
 
-## Overview
+## How it works
 
-The `docker` profile type:
-
-1. If a Compose stack is already running and `stop_before_sync` is enabled (default), runs `docker compose down`
-2. Clones or pulls a Git repository
-3. Writes environment variables to an `.env` file (if configured)
-4. Runs `docker compose` with your compose file
+1. If a Compose stack is already running and `stop_before_sync` is enabled (default), Pablo runs `docker compose down` (without `-v`).
+2. It clones or pulls the Git repository into `deploy.target_path`.
+3. It writes environment variables to an env file when `env_file` / `variables` are configured.
+4. It runs `docker compose up` with your compose file.
 
 ```yaml
+name: stack
+version: 0.1.0
+
 profiles:
-  stack:
+  default:
     type: docker
     git:
       repo: https://github.com/user/my-stack.git
       branch: main
-      credential: github    # optional, for private repos
     environments:
       local:
         deploy:
-          target_path: /tmp/my-stack    # clone directory
+          target_path: ./runtime
           docker:
             compose_file: docker-compose.yml
             build: true
-            command: up -d --build
 ```
+
+Docker profiles require `git.repo`, `deploy.target_path`, and `deploy.docker.compose_file`. They forbid `deploy.source` and `register_path`.
 
 ---
 
 ## Requirements
 
 - Docker CLI and Docker Compose v2 on the target machine
-- Git (for clone/pull)
-- For remote deploy: SSH access (see [SSH guide](ssh.md))
+- Git for clone/pull
+- For remote deploy: SSH access ([SSH guide](ssh.md))
 
 ---
 
@@ -48,8 +49,8 @@ profiles:
 | | Local | Remote SSH |
 |---|-------|------------|
 | `remote` block | Omitted | Required |
-| Clone location | `deploy.target_path` on your machine | `deploy.target_path` on remote host |
-| Compose runs | Locally | Via SSH on remote |
+| Clone location | `deploy.target_path` on your machine | `deploy.target_path` on the remote host |
+| Compose runs | Locally | Via SSH on the remote |
 
 ---
 
@@ -59,37 +60,46 @@ profiles:
 |-------|---------|-------------|
 | `compose_file` | *(required)* | Path relative to repo root after clone |
 | `build` | `false` | Pass `--build` to compose |
-| `command` | `up -d` | Arguments after `docker compose` (schema only; runtime uses `up -d` + `build`) |
-| `stop_before_sync` | `true` | If the Compose stack is already running, stop it (`compose down`, no `-v`) before git sync |
-
-Example with build:
+| `stop_before_sync` | `true` | Stop a running stack before git sync |
 
 ```yaml
-docker:
-  compose_file: docker-compose.yml
-  build: true
-  command: up -d --build
+deploy:
+  target_path: /opt/my-stack
+  docker:
+    compose_file: docker-compose.yml
+    build: true
+    stop_before_sync: true
 ```
 
-On redeploy, Pablo detects running containers with `docker compose ps -q` and stops them before `git pull` so bind mounts and dirty trees do not break sync. Volumes are kept (`down` without `-v`). Default `true` means a short downtime on redeploy; set `stop_before_sync: false` to keep the old pull-while-running behavior.
+On redeploy, Pablo detects running containers with `docker compose ps -q` and stops them before `git pull` so bind mounts and dirty trees do not break sync. Volumes are kept. Default `true` means a short downtime on redeploy; set `stop_before_sync: false` to keep the old pull-while-running behavior.
 
 ---
 
 ## Environment variables
 
-Set variables at the environment or deploy level. Pablo generates an env file in the clone directory when `env_file` is configured:
+Set variables on the environment. Pablo writes an env file in the clone directory when `env_file` is configured:
 
 ```yaml
-environments:
-  production:
-    variables:
-      APP_PORT: "8080"
-      DB_URL: "postgres://..."
-    deploy:
-      env_file: .env
-      target_path: /opt/my-stack
-      docker:
-        compose_file: docker-compose.yml
+name: stack
+version: 0.1.0
+
+profiles:
+  default:
+    type: docker
+    git:
+      repo: https://github.com/user/my-stack.git
+      branch: main
+    environments:
+      production:
+        variables:
+          APP_PORT: "8080"
+          DB_URL: "postgres://db/app"
+        env_file: .env
+        deploy:
+          target_path: /opt/my-stack
+          docker:
+            compose_file: docker-compose.yml
+            build: true
 ```
 
 Template substitution (`{{VAR}}`) applies to config files in the deployed tree.
@@ -101,45 +111,59 @@ Template substitution (`{{VAR}}`) applies to config files in the deployed tree.
 Reference a token credential for HTTPS Git URLs:
 
 ```yaml
+name: stack
+version: 0.1.0
+
 credentials:
   github:
     type: token
     value: ghp_xxxxxxxx
 
 profiles:
-  stack:
+  default:
     type: docker
     git:
       repo: https://github.com/org/private-repo.git
+      branch: main
       credential: github
+    environments:
+      production:
+        deploy:
+          target_path: ./runtime
+          docker:
+            compose_file: docker-compose.yml
+            build: true
 ```
 
-Prefer environment-injected tokens in CI rather than committing secrets.
+Prefer environment-injected tokens in CI rather than committing secrets. See [Credentials](credentials.md).
 
 ---
 
 ## Post-deploy commands
 
-Use `deploy.post_commands` for tasks Compose does not handle (migrations, cache warm-up):
+Use `deploy.post_commands` for tasks Compose does not handle (migrations, cache warm-up). On remote hosts these run over SSH after compose up:
 
 ```yaml
 deploy:
+  target_path: /opt/my-stack
+  docker:
+    compose_file: docker-compose.yml
   post_commands:
     - docker compose exec -T api ./migrate up
 ```
-
-On remote hosts, these run over SSH after compose up.
 
 ---
 
 ## Limitations
 
 - Pablo wraps `docker compose`; it does not manage individual container lifecycle beyond compose.
-- `deploy.service` (systemd/PM2) is not implemented — use compose `restart` policies or `post_commands`.
-- Remote host must have Docker daemon running and your SSH user must have permission to run Docker.
+- Use compose `restart` policies or `post_commands` for service restarts.
+- The remote host must have a Docker daemon, and your SSH user must be allowed to run Docker.
 
 ---
 
-## Example fixture
+## Example fixtures
 
-Repository E2E scenario: [tests/e2e/scenarios/](../../tests/e2e/).
+- Local-shaped sample: [Examples #6](../examples/README.md#6-docker-compose-local)
+- Remote E2E: [tests/e2e/scenarios/compose-api](../../tests/e2e/scenarios/compose-api/)
+- Separate-apps backend: [tests/agnostic/separate-apps/backend](../../tests/agnostic/separate-apps/backend/)

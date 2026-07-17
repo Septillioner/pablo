@@ -25,10 +25,10 @@ Summary of the contribution workflow. **Canonical document:** [CONTRIBUTING.md](
 | Visual Studio + VSSDK | VS2026 extension |
 
 ```bash
-./build.sh              # → build/pablo[.exe]
-./build.sh all          # all platforms
+./scripts/build.sh              # → build/pablo[.exe]
+./scripts/build.sh all          # all platforms
 
-./test.sh unit          # or: cd src && go test ./...
+./scripts/test.sh unit          # or: cd src && go test ./...
 ```
 
 Run from source:
@@ -48,7 +48,7 @@ go run main.go run sequence <name> -f ../pablo.yaml
 - Validation: `pkg/validate` (CLI `check` / `run` + LSP).
 - Logging via `pkg/ui`: `+` success, `-` error, `!` warn, `*` info, `>` action.
 - Build commands: `sh -c` on Unix, `cmd /C` on Windows.
-- Hooks: PowerShell on Windows, `sh` elsewhere.
+- Pre/post commands (`deploy.pre_commands` / `deploy.post_commands`): PowerShell on Windows, `sh` elsewhere (`services/hooks`).
 - Template variables: `{{KEY}}` in config-like file extensions only.
 - Remote paths: `pathutil.JoinRemote`; local: `filepath`.
 - No emojis in code, comments, or commit messages.
@@ -87,7 +87,8 @@ When changing behavior, update:
 - [Configuration reference](../reference/configuration.md) for schema changes
 - [CLI reference](../reference/cli.md) for new flags/commands
 - [Capabilities](../reference/capabilities.md) for feature status
-- [PMAP.md](../../PMAP.md) for architecture / maintainer notes
+- [Examples](../examples/README.md) when adding or changing a user-facing scenario
+- [PMAP.md](../../PMAP.md) for architecture / maintainer notes (do not commit)
 - [CHANGELOG.md](../../CHANGELOG.md) for user-facing releases
 - [roadmap](../roadmap.md) when completing planned items
 

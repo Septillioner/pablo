@@ -1,12 +1,12 @@
 # Pablo Capabilities
 
-Overview of supported deployment types, strategies, pipeline behavior, and current limitations.
+What Pablo supports today: deployment types, strategies, pipeline phases, and known limits.
 
-See also: [Configuration](configuration.md) · [Roadmap](../roadmap.md)
+See also: [Configuration](configuration.md) · [Examples](../examples/README.md) · [Roadmap](../roadmap.md)
 
 ---
 
-## Deployment Types
+## Deployment types
 
 | Type | Description | Local | Remote SSH | Status |
 |------|-------------|-------|------------|--------|
@@ -17,7 +17,7 @@ See also: [Configuration](configuration.md) · [Roadmap](../roadmap.md)
 
 ---
 
-## Deploy Strategies
+## Deploy strategies
 
 | Strategy | Description | Status |
 |----------|-------------|--------|
@@ -25,67 +25,50 @@ See also: [Configuration](configuration.md) · [Roadmap](../roadmap.md)
 | `backup` | Rename existing dir with timestamp, then deploy | Working |
 | `recreate` | Delete target dir, create fresh, deploy | Working |
 | `rename-replace` | Rename existing artifact files, replace, cleanup on success | Working |
-| `blue-green` | Zero-downtime swap | Not implemented |
 
 ---
 
-## Pipeline Phases
+## Pipeline phases
 
 Single-target `pablo run` (one profile + environment):
 
 1. Load and validate manifest
-2. Pre-deploy hooks (`hooks.pre`)
-3. Build (`build.command`) — skipped when `build` is omitted or empty
-4. Pre-deployment commands (`deploy.pre_commands`)
-5. Deployment (local copy or SSH tar stream)
-6. Post-deployment commands (`deploy.post_commands`)
-7. PATH registration (`register_path`, binary type)
-8. Post-deploy hooks (`hooks.post`)
-9. Health check (`pipeline.health_check`)
-10. `on_success` / `on_failure` hooks
+2. Build (`build.command`) — skipped when `build` is omitted or empty
+3. Pre-deployment commands (`deploy.pre_commands`)
+4. Deployment (local copy or SSH tar stream)
+5. Post-deployment commands (`deploy.post_commands`)
+6. PATH registration (`register_path`, binary type)
 
 ### Sequences
 
-Root-level `sequences` name ordered lists of `profile/env` targets. `pablo run sequence <name>` runs each step with the full pipeline above, **in list order**, and stops on the first failure. See [Sequences](../guides/sequences.md) · [Configuration — Sequences](configuration.md#sequences).
+Root-level `sequences` name ordered lists of `profile/env` targets. `pablo run sequence <name>` runs each step with the full pipeline above, in list order, and stops on the first failure. See [Sequences](../guides/sequences.md) · [Configuration — Sequences](configuration.md#sequences).
 
 ---
 
-## Schema vs Runtime
+## What works
 
-Some fields are validated in the manifest but not yet executed at runtime:
-
-| Field | Schema | Runtime |
-|-------|--------|---------|
-| `deploy.strategy: blue-green` | Allowed | Returns error |
-| `deploy.service` (systemd / PM2) | Allowed | Not implemented — use `post_commands` |
-
----
-
-## What Works
-
-- Full local deploy pipeline for `static` and `binary` types (`static` works without `build` — copy/filter only).
-- Remote SSH deploy with tar-streaming and SCP fallback (`deploy.remote: legacy`); optional `deploy.verify_checksum` for post-transfer SHA-256 checks.
+- Full local deploy pipeline for `static` and `binary` (`static` works without `build` — copy/filter only).
+- Remote SSH deploy with tar-streaming and SCP fallback (`deploy.transfer: legacy`); optional `deploy.verify_checksum` for post-transfer SHA-256 checks.
 - Gitignore-style glob artifact filtering (`*.ext` at any depth, `/*.ext` root-only, `**` globstar).
 - Template variable substitution (`{{VAR}}` in config files).
-- Config inheritance — profile settings cascade into environments.
+- Config inheritance — profile `variables`, `env_file`, and `build` cascade into environments.
 - Named `sequences` — ordered multi-target runs via `pablo run sequence <name>` (stops on first failure).
 - Automatic PATH registration (Windows, macOS, Linux user and system scope).
 - Backup, recreate, and rename-replace strategies with protected path detection (backup/recreate only).
 - `docker` type with local and remote (SSH) Docker Compose orchestration.
 - `git-sync` with local and remote (SSH) git clone/pull.
-- Environment variable injection via `.env` file generation.
-- LSP-powered VS Code extension with completion, hover, and YAML validation.
-- Go unit tests for core packages including `filter`, `pathutil`, `config`, `validate`, `inspect`, `template`, `deployer`, `health`, `hooks`, `system`, `ssh`, `pipeline`, `scm`, `docker` (`cd src && go test ./...`).
-- Docker-based E2E tests for remote SSH static and docker deploy (`cd tests/e2e && go test -tags=integration ./...`).
+- Environment variable injection via env file generation.
+- LSP-powered VS Code and Visual Studio extensions with completion, hover, and YAML validation.
+- Go unit tests for core packages (`cd src && go test ./...`).
+- Docker-based E2E tests for remote SSH static, rename-replace, and docker deploy (`cd tests/e2e && go test -tags=integration ./...`).
+- Windows fixtures for rename-replace and NSSM service install via `post_commands`.
 
 ---
 
-## Known Limitations
+## Known limitations
 
-- **Partial unit test coverage** — catalog in [tests/TEST_SPEC.md](../../tests/TEST_SPEC.md).
-- `blue-green` **strategy** — declared but not implemented (returns error).
-- **`deploy.service`** — schema exists; systemd/PM2 restart not implemented at runtime.
-- **SSH host key verification** — enabled by default via `known_hosts`; opt out with `remote.host_key_verification: off`; optional `remote.trust_on_first_use` — see [SECURITY.md](../../SECURITY.md).
-- **Schema validation coverage** — core rules in `pkg/validate`; advanced cross-field rules still expanding (see [roadmap](../roadmap.md)).
-- `builder.Service` — exists as a standalone service but is currently unused; builds run inline.
-- **Snippet versions** — hardcoded in the VS Code extension; not synced with the `VERSION` file.
+- Partial unit test coverage — catalog in [tests/TEST_SPEC.md](../../tests/TEST_SPEC.md).
+- SSH host key verification is enabled by default via `known_hosts`; opt out with `remote.host_key_verification: off`; optional `remote.trust_on_first_use` — see [SECURITY.md](../../SECURITY.md).
+- Schema validation coverage — core rules in `pkg/validate`; advanced cross-field rules still expanding (see [roadmap](../roadmap.md)).
+- `builder.Service` exists as a standalone service but is currently unused; builds run inline.
+- Snippet versions are hardcoded in the VS Code extension and not synced with the `VERSION` file.

@@ -1,6 +1,6 @@
 # Quick Start
 
-Get from zero to a validated deploy in a few minutes — starting with the simplest case.
+Get from zero to a validated deploy in a few minutes. This page stays with the simplest case — a local static copy — then points you at richer scenarios.
 
 **Prerequisites:** [Pablo installed](installation.md)
 
@@ -12,7 +12,7 @@ Get from zero to a validated deploy in a few minutes — starting with the simpl
 pablo init
 ```
 
-This creates `pablo_sample.yaml` in the current directory. Rename it to `pablo.yaml` or use `-f` to point at another file.
+This creates `pablo_sample.yaml` in the current directory. Rename it to `pablo.yaml` or pass `-f` when you run commands.
 
 To pick a deployment type interactively:
 
@@ -20,13 +20,13 @@ To pick a deployment type interactively:
 pablo init --template
 ```
 
-Choose from `static`, `binary`, `docker`, or `git-sync`. The wizard requires an interactive terminal.
+Choose from `static`, `binary`, `docker`, or `git-sync`. The wizard needs an interactive terminal.
 
 ---
 
 ## 2. Start simple: copy files (no build)
 
-The smallest useful `static` profile copies existing files. Omit `build` — Pablo skips that phase.
+The smallest useful `static` profile copies existing files. Omit `build` — Pablo skips that phase and deploys from `deploy.source`.
 
 ```yaml
 name: my-app
@@ -35,21 +35,17 @@ version: 0.1.0
 profiles:
   default:
     type: static
-    output_dir:
-      dir: ./src
-      include: ["**/*"]
     environments:
       production:
         deploy:
+          source:
+            dir: ./src
+            include: ["**/*"]
           target_path: ./deploy-output
           strategy: overwrite
 ```
 
-Key fields:
-
-- `output_dir` — which files to deploy (not under `build:`).
-- `deploy.target_path` — where files are copied.
-- `strategy` — `overwrite`, `backup`, `recreate`, or `rename-replace`.
+`deploy.source` selects files (`dir`, `include`, `exclude`). `deploy.target_path` is where they land. `strategy` may be `overwrite`, `backup`, `recreate`, or `rename-replace`.
 
 Put something in `./src` (for example `index.html`), then continue.
 
@@ -61,7 +57,7 @@ Put something in `./src` (for example `index.html`), then continue.
 pablo check
 ```
 
-On success, Pablo prints nothing and exits `0`. On failure, you get `path:line:col` diagnostics:
+On success Pablo prints nothing and exits `0`. On failure you get `path:line:col` diagnostics:
 
 ```
 pablo.yaml:12:5: environments.production.deploy.target_path is required
@@ -75,15 +71,13 @@ pablo.yaml:12:5: environments.production.deploy.target_path is required
 pablo run -p default -e production
 ```
 
-Defaults: profile `default`, environment `production`, manifest `pablo.yaml`.
-
-Watch for log markers: `+` success, `-` error, `>` action.
+Defaults when omitted: profile `default`, environment `production`, manifest `pablo.yaml`. Log markers are `+` success, `-` error, `>` action, `*` info, `!` warn.
 
 ---
 
-## 5. Next: add a build (optional)
+## 5. Optional: add a build
 
-When you need compile/bundle before copy:
+When you need compile or bundle before copy, add a profile-level `build` and point `deploy.source.dir` at the output:
 
 ```yaml
 profiles:
@@ -92,15 +86,17 @@ profiles:
     build:
       command: npm run build
       path: .
-    output_dir:
-      dir: ./dist
-      include: ["**/*"]
     environments:
       production:
         deploy:
+          source:
+            dir: ./dist
+            include: ["**/*"]
           target_path: ./deploy-output
           strategy: overwrite
 ```
+
+That is [Examples #2](../examples/README.md#2-local-static--build). For SSH, Docker, git-sync, sequences, and Windows scenarios, use the full [Examples](../examples/README.md) catalog.
 
 ---
 
@@ -111,7 +107,7 @@ pablo inspect
 pablo inspect --json
 ```
 
-Lists all profiles and environments — useful for scripting and the VS Code Run picker.
+Lists every profile and environment — useful for scripting and the editor Run picker.
 
 ---
 
@@ -120,7 +116,7 @@ Lists all profiles and environments — useful for scripting and the VS Code Run
 | Goal | Guide |
 |------|-------|
 | Step-by-step local walkthrough | [First deployment](first-deployment.md) |
-| More examples (easy → hard) | [Examples](../examples/README.md) |
+| All scenarios (easy → hard) | [Examples](../examples/README.md) |
 | Deploy over SSH | [SSH guide](../guides/ssh.md) |
 | Docker Compose | [Docker guide](../guides/docker.md) |
 | Manifest layout | [Project structure](project-structure.md) |
