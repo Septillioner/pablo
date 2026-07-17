@@ -624,6 +624,16 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 	}
 	ui.Log("+", "Remote deployment successful")
 
+	if env.Deploy.VerifyChecksum {
+		ui.Log(">", "Verifying remote artifact checksums...")
+		if err := s.deployer.VerifyRemoteChecksums(sshClient, files, artifactBase, targetPath); err != nil {
+			ui.Log("-", "Checksum verification failed")
+			ui.Result(false, time.Since(start))
+			return err
+		}
+		ui.Log("+", "Checksum verification passed")
+	}
+
 	if env.Deploy.EnvFile != "" && len(vars) > 0 {
 		ui.Log("*", fmt.Sprintf("Generating remote env file: %s", env.Deploy.EnvFile))
 		if err := s.writeRemoteEnvFile(sshClient, targetPath, env.Deploy.EnvFile, vars); err != nil {

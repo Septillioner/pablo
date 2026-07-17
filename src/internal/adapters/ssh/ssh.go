@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"pablo/pkg/domain"
+	"pablo/pkg/pathutil"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -107,7 +108,7 @@ func (a *Adapter) TransferFile(client *ssh.Client, localPath, remotePath string)
 		fmt.Fprint(w, "\x00")
 	}()
 
-	remoteDir := filepath.Dir(remotePath)
+	remoteDir := pathutil.DirRemote(remotePath)
 	if err := session.Run(fmt.Sprintf("mkdir -p %s && scp -t %s", remoteDir, remotePath)); err != nil {
 		return fmt.Errorf("failed to transfer file: %w", err)
 	}
@@ -177,7 +178,8 @@ func (a *Adapter) addToTar(tw *tar.Writer, filePath, sourceBase string) error {
 	if err != nil {
 		return err
 	}
-	header.Name = relPath
+	// POSIX paths in tar headers so Linux extract creates directories, not literal "dir\file" names.
+	header.Name = filepath.ToSlash(relPath)
 
 	if err := tw.WriteHeader(header); err != nil {
 		return err
@@ -205,6 +207,22 @@ func (a *Adapter) ExecuteCommand(client *ssh.Client, command string) (string, er
 		return string(output), fmt.Errorf("command failed: %w", err)
 	}
 
+	return string(output), nil
+}
+
+// ExecuteCommandWithStdin runs a remote command with data on stdin.
+func (a *Adapter) ExecuteCommandWithStdin(client *ssh.Client, command string, stdin io.Reader) (string, error) {
+	session, err := client.NewSession()
+	if err != nil {
+		return "", fmt.Errorf("failed to create session: %w", err)
+	}
+	defer session.Close()
+
+	session.Stdin = stdin
+	output, err := session.CombinedOutput(command)
+	if err != nil {
+		return string(output), fmt.Errorf("command failed: %w", err)
+	}
 	return string(output), nil
 }
 

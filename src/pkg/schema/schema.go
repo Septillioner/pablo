@@ -108,9 +108,10 @@ var Root = &Field{
 										"deploy": {
 											Description: "Physical deployment parameters.",
 											Children: map[string]*Field{
-												"target_path": {Description: "Absolute path on the target machine."},
-												"strategy":    {Description: "Deployment strategy.", Enum: []string{"overwrite", "backup", "recreate", "rename-replace"}},
-												"remote":      {Description: "Transfer method.", Enum: []string{"tar", "legacy"}},
+												"target_path":     {Description: "Absolute path on the target machine."},
+												"strategy":        {Description: "Deployment strategy.", Enum: []string{"overwrite", "backup", "recreate", "rename-replace"}},
+												"remote":          {Description: "Transfer method.", Enum: []string{"tar", "legacy"}},
+												"verify_checksum": {Description: "After remote static/binary deploy, verify SHA-256 of transferred files (default false)."},
 												"docker": {
 													Description: "Docker Compose specific settings.",
 													Children: map[string]*Field{

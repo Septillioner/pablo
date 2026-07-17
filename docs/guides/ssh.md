@@ -87,7 +87,10 @@ Paths like `~/.ssh/id_rsa` are expanded on the machine running Pablo (your lapto
 deploy:
   target_path: /var/www/html
   remote: tar    # default
+  verify_checksum: true   # optional; SHA-256 check after transfer (default false)
 ```
+
+Tar transfer streams over SSH stdin (no intermediate archive on disk). With `verify_checksum: true`, Pablo hashes local artifacts and runs `sha256sum -c` on the remote over stdin.
 
 ---
 

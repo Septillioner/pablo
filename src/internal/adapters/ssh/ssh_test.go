@@ -95,8 +95,9 @@ func TestAddToTar(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if hdr.Name != rel {
-		t.Fatalf("header name %q, want %q", hdr.Name, rel)
+	wantName := filepath.ToSlash(rel)
+	if hdr.Name != wantName {
+		t.Fatalf("header name %q, want %q", hdr.Name, wantName)
 	}
 	var content bytes.Buffer
 	if _, err := content.ReadFrom(tr); err != nil {

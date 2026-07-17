@@ -2,6 +2,7 @@ package deployer
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -361,6 +362,11 @@ func (m *mockSSH) ExecuteCommand(_ *ssh.Client, command string) (string, error) 
 	if m.remoteFileExists && strings.Contains(command, "__renamed__") {
 		return "__renamed__", nil
 	}
+	return "", nil
+}
+
+func (m *mockSSH) ExecuteCommandWithStdin(_ *ssh.Client, command string, _ io.Reader) (string, error) {
+	m.executeCalls = append(m.executeCalls, command)
 	return "", nil
 }
 

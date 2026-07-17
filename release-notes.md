@@ -1,8 +1,12 @@
-## Pablo v1.7.1
+## Pablo v1.7.2
 
 ### Added
 
-- Docker redeploy precheck: when a Compose stack is already running, Pablo stops it (`compose down`, no `-v`) before git sync, then brings it back up. Controlled by `deploy.docker.stop_before_sync` (default `true`).
+- `deploy.verify_checksum` — optional post-transfer SHA-256 verification for remote static/binary deploys (default `false`).
+
+### Fixed
+
+- Remote tar/SCP paths from a Windows host no longer embed backslashes in Linux filenames (nested directories extract correctly).
 
 ### Downloads
 
@@ -13,7 +17,7 @@
 | Linux (amd64) | pablo-linux-amd64 |
 | Windows (amd64) | pablo-windows-amd64.exe |
 | Windows (arm64) | pablo-windows-arm64.exe |
-| VS Code extension | pablo-1.7.1.vsix |
-| Visual Studio 2026 extension | pablo-vs2026-1.7.1.vsix |
+| VS Code extension | pablo-1.7.2.vsix |
+| Visual Studio 2026 extension | pablo-vs2026-1.7.2.vsix |
 
 Verify downloads with checksums.txt (SHA-256).

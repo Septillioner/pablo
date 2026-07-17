@@ -98,19 +98,20 @@ type RemoteConfig struct {
 }
 
 type DeployConfig struct {
-	Method       string           `yaml:"method,omitempty"`
-	Source       *ArtifactsConfig `yaml:"source,omitempty"`
-	SSH          *SSHConfig       `yaml:"ssh,omitempty"`
-	Credential   string           `yaml:"credential,omitempty"`
-	Host         string           `yaml:"host,omitempty"`
-	TargetPath   string           `yaml:"target_path"`
-	Strategy     string           `yaml:"strategy,omitempty"`
-	Docker       *DockerConfig    `yaml:"docker,omitempty"`
-	Service      *ServiceConfig   `yaml:"service,omitempty"`
-	PreCommands  []string         `yaml:"pre_commands,omitempty"`
-	PostCommands []string         `yaml:"post_commands,omitempty"`
-	Remote       string           `yaml:"remote,omitempty"`
-	EnvConfig    `yaml:",inline"`
+	Method         string           `yaml:"method,omitempty"`
+	Source         *ArtifactsConfig `yaml:"source,omitempty"`
+	SSH            *SSHConfig       `yaml:"ssh,omitempty"`
+	Credential     string           `yaml:"credential,omitempty"`
+	Host           string           `yaml:"host,omitempty"`
+	TargetPath     string           `yaml:"target_path"`
+	Strategy       string           `yaml:"strategy,omitempty"`
+	Docker         *DockerConfig    `yaml:"docker,omitempty"`
+	Service        *ServiceConfig   `yaml:"service,omitempty"`
+	PreCommands    []string         `yaml:"pre_commands,omitempty"`
+	PostCommands   []string         `yaml:"post_commands,omitempty"`
+	Remote         string           `yaml:"remote,omitempty"`
+	VerifyChecksum bool             `yaml:"verify_checksum,omitempty"`
+	EnvConfig      `yaml:",inline"`
 }
 
 type SSHConfig struct {

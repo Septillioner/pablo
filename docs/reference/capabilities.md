@@ -64,7 +64,7 @@ Some fields are validated in the manifest but not yet executed at runtime:
 ## What Works
 
 - Full local deploy pipeline for `static` and `binary` types (`static` works without `build` — copy/filter only).
-- Remote SSH deploy with tar-streaming and SCP fallback (`deploy.remote: legacy`).
+- Remote SSH deploy with tar-streaming and SCP fallback (`deploy.remote: legacy`); optional `deploy.verify_checksum` for post-transfer SHA-256 checks.
 - Gitignore-style glob artifact filtering (`*.ext` at any depth, `/*.ext` root-only, `**` globstar).
 - Template variable substitution (`{{VAR}}` in config files).
 - Config inheritance — profile settings cascade into environments.

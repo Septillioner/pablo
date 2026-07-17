@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.7.2] - 2026-07-17
+
+### Added
+
+- `deploy.verify_checksum` — optional post-transfer SHA-256 verification for remote static/binary deploys (default `false`; uses remote `sha256sum -c` over stdin).
+
+### Fixed
+
+- Remote tar/SCP paths from a Windows host no longer embed backslashes in Linux filenames (nested dirs like `assets/` extract correctly).
+
 ## [1.7.1] - 2026-07-17
 
 ### Added
@@ -204,11 +214,11 @@ Initial public release baseline tracked in `src/VERSION`.
 - Windows `RemovePath` returns "not yet implemented" during `pablo uninstall`.
 - `docker` deployment type has no remote SSH support.
 - LSP validator only catches YAML syntax errors, not schema-level issues.
-- `filepath.Join` may produce backslashes when a Windows host targets Linux.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.7.2...HEAD
+[1.7.2]: https://github.com/septillioner/pablo/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/septillioner/pablo/compare/v1.5.63...v1.7.1
 [1.5.63]: https://github.com/septillioner/pablo/compare/v1.5.62...v1.5.63
 [1.5.62]: https://github.com/septillioner/pablo/compare/v1.5.61...v1.5.62

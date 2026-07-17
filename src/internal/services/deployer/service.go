@@ -10,6 +10,7 @@ import (
 
 	sshAdapter "pablo/internal/adapters/ssh"
 	"pablo/pkg/domain"
+	"pablo/pkg/pathutil"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -17,6 +18,7 @@ import (
 type sshPort interface {
 	Connect(host string, cred *domain.CredentialConfig, opts sshAdapter.HostKeyOptions) (*ssh.Client, error)
 	ExecuteCommand(client *ssh.Client, command string) (string, error)
+	ExecuteCommandWithStdin(client *ssh.Client, command string, stdin io.Reader) (string, error)
 	CreateBackup(client *ssh.Client, targetPath string) error
 	TransferPipeline(client *ssh.Client, files []string, sourceBase, remotePath string) error
 	TransferFile(client *ssh.Client, localPath, remotePath string) error
@@ -137,7 +139,7 @@ func (s *Service) DeployRemote(files []string, sourceBase string, sshClient *ssh
 				return err
 			}
 
-			remoteDest := filepath.Join(targetPath, rel)
+			remoteDest := pathutil.JoinRemote(targetPath, rel)
 			if err := s.ssh.TransferFile(sshClient, file, remoteDest); err != nil {
 				return fmt.Errorf("failed to transfer %s: %w", file, err)
 			}

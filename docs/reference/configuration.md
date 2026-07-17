@@ -253,6 +253,7 @@ Deployment method and settings.
 | `post_commands` | List<String> | Commands to run after artifacts are deployed |
 | `variables` | Map<String, String> | Deploy-level variables (merged from environment) |
 | `env_file` | String | Generate an env file at this relative path inside `target_path` |
+| `verify_checksum` | Boolean | After remote static/binary deploy, verify SHA-256 of transferred files on the target (default: `false`) |
 
 ---
 
