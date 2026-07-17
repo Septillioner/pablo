@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.7.3] - 2026-07-17
+
+### Fixed
+
+- Remote `docker compose` failures now show the remote command stdout/stderr instead of only exit status 1.
+
 ## [1.7.2] - 2026-07-17
 
 ### Added
@@ -217,7 +223,8 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.7.2...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.7.3...HEAD
+[1.7.3]: https://github.com/septillioner/pablo/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/septillioner/pablo/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/septillioner/pablo/compare/v1.5.63...v1.7.1
 [1.5.63]: https://github.com/septillioner/pablo/compare/v1.5.62...v1.5.63

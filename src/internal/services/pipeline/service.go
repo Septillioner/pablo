@@ -756,10 +756,12 @@ func (s *Service) deployDockerRemote(profile *domain.Profile, env domain.Environ
 		}
 
 		composeCmd := fmt.Sprintf("cd %s && docker compose -f %s up -d%s", targetPath, composeFile, buildFlag)
-		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, composeCmd); err != nil {
+		out, err := s.deployer.ExecuteRemoteCommand(sshClient, composeCmd)
+		if err != nil {
 			ui.Log("-", "Remote docker compose failed")
+			logRemoteCommandOutput(out)
 			ui.Result(false, time.Since(start))
-			return fmt.Errorf("remote docker compose failed: %w", err)
+			return fmt.Errorf("remote docker compose failed: %w%s", err, formatRemoteCommandOutput(out))
 		}
 		ui.Log("+", "Docker compose started on remote")
 	}
@@ -827,11 +829,31 @@ func (s *Service) stopComposeBeforeSyncRemote(sshClient *ssh.Client, dockerCfg *
 
 	ui.Log(">", "Compose stack is running on remote; stopping before git sync...")
 	downCmd := fmt.Sprintf("cd %s && docker compose -f %s down", targetPath, composeFile)
-	if _, err := s.deployer.ExecuteRemoteCommand(sshClient, downCmd); err != nil {
-		return fmt.Errorf("remote compose down before sync failed: %w", err)
+	out, err := s.deployer.ExecuteRemoteCommand(sshClient, downCmd)
+	if err != nil {
+		logRemoteCommandOutput(out)
+		return fmt.Errorf("remote compose down before sync failed: %w%s", err, formatRemoteCommandOutput(out))
 	}
 	ui.Log("+", "Remote compose stack stopped")
 	return nil
+}
+
+func logRemoteCommandOutput(out string) {
+	trimmed := strings.TrimSpace(out)
+	if trimmed == "" {
+		return
+	}
+	for _, line := range strings.Split(trimmed, "\n") {
+		ui.Log("!", line)
+	}
+}
+
+func formatRemoteCommandOutput(out string) string {
+	trimmed := strings.TrimSpace(out)
+	if trimmed == "" {
+		return ""
+	}
+	return "\n" + trimmed
 }
 
 func resolveExistingComposeFile(resolvedComposeFile, targetPath, configuredComposeFile string) string {
