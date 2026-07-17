@@ -4,6 +4,16 @@ All notable changes to Pablo are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-07-17
+
+### Changed
+
+- **CLI theme + motion** — Compact cyan brand header (wordmark + version + accent rule), aligned status marks (`ok` / `fail` / `warn` / `info` / `run`), lighter section rules, and a single-line result footer. Long-running steps now use braille spinners and pulsing progress bars (SSH connect, file filter, local copy, remote tar/legacy transfer, checksum verify, remote git/compose). Animations stay off for non-TTY, `NO_COLOR`, `CI`, and `PABLO_PLAIN`.
+
+### Fixed
+
+- Include/exclude globs with Windows-style backslashes (e.g. `src\*.go`) now match on Linux/macOS hosts.
+
 ## [2.0.0]
 
 ### Changed

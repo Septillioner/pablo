@@ -247,13 +247,11 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 		}
 
-		ui.ProgressBar(50, "Building")
 		if err := cmd.Run(); err != nil {
 			ui.Log("-", "Build failed")
 			ui.Result(false, time.Since(start))
 			return err
 		}
-		ui.ProgressBar(100, "Building")
 		ui.Log("+", "Build completed")
 	}
 	return nil
@@ -366,8 +364,13 @@ func (s *Service) getSSHClient(env domain.Environment, cfg *domain.Config) (*ssh
 		ui.Log("!", "SSH host key verification is disabled for this environment (remote.host_key_verification: off)")
 	}
 
-	ui.Log("*", fmt.Sprintf("Connecting to %s as %s", sshHost, cred.Username))
-	return s.deployer.ConnectSSH(sshHost, cred, hostKeyOpts)
+	var client *ssh.Client
+	err := ui.WithSpinner(fmt.Sprintf("Connecting to %s as %s", sshHost, cred.Username), func() error {
+		var connectErr error
+		client, connectErr = s.deployer.ConnectSSH(sshHost, cred, hostKeyOpts)
+		return connectErr
+	})
+	return client, err
 }
 
 func logArtifacts(files []string, artifactBase string, verbose bool) {
@@ -392,8 +395,12 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 		ui.Result(false, time.Since(start))
 		return fmt.Errorf("failed to prepare artifact directory: %w", err)
 	}
-	files, err := filter.GetFiles(artifactBase, include, exclude)
-	if err != nil {
+	var files []string
+	if err := ui.WithSpinner("Filtering files", func() error {
+		var filterErr error
+		files, filterErr = filter.GetFiles(artifactBase, include, exclude)
+		return filterErr
+	}); err != nil {
 		ui.Log("-", "Filtering failed")
 		ui.Result(false, time.Since(start))
 		return err
@@ -412,7 +419,7 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 	}
 
 	ui.Log(">", fmt.Sprintf("Deploying to %s (Strategy: %s)", targetPath, strategy))
-	if err := s.deployer.Deploy(files, artifactBase, targetPath, strategy, allowProtected); err != nil {
+	if err := s.deployer.Deploy(files, artifactBase, targetPath, strategy, allowProtected, ui.FileProgress("Copying")); err != nil {
 		ui.Log("-", "Deployment failed")
 		ui.Result(false, time.Since(start))
 		return err
@@ -454,7 +461,6 @@ func (s *Service) resolveArtifacts(env domain.Environment, baseDir string) (stri
 		exclude = env.Deploy.Source.Exclude
 	}
 	ui.Log("*", fmt.Sprintf("Artifact base: %s", artifactBase))
-	ui.Log("*", "Filtering files...")
 	return artifactBase, include, exclude
 }
 
@@ -532,8 +538,12 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 	ui.Log("+", "SSH connection established")
 
 	artifactBase, include, exclude := s.resolveArtifacts(env, cfg.BaseDir)
-	files, err := filter.GetFiles(artifactBase, include, exclude)
-	if err != nil {
+	var files []string
+	if err := ui.WithSpinner("Filtering files", func() error {
+		var filterErr error
+		files, filterErr = filter.GetFiles(artifactBase, include, exclude)
+		return filterErr
+	}); err != nil {
 		ui.Log("-", "Filtering failed")
 		ui.Result(false, time.Since(start))
 		return err
@@ -546,17 +556,31 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 		strategy = "overwrite"
 	}
 
+	transfer := env.Deploy.Transfer
+	if transfer == "" {
+		transfer = "tar"
+	}
+
 	ui.Log(">", fmt.Sprintf("Deploying to %s:%s (Strategy: %s)", env.Remote.Host, targetPath, strategy))
-	if err := s.deployer.DeployRemote(files, artifactBase, sshClient, targetPath, strategy, allowProtected, env.Deploy.Transfer); err != nil {
+	var deployErr error
+	if transfer == "tar" {
+		deployErr = ui.WithSpinner("Transferring archive", func() error {
+			return s.deployer.DeployRemote(files, artifactBase, sshClient, targetPath, strategy, allowProtected, transfer, nil)
+		})
+	} else {
+		deployErr = s.deployer.DeployRemote(files, artifactBase, sshClient, targetPath, strategy, allowProtected, transfer, ui.FileProgress("Transferring"))
+	}
+	if deployErr != nil {
 		ui.Log("-", "Remote deployment failed")
 		ui.Result(false, time.Since(start))
-		return err
+		return deployErr
 	}
 	ui.Log("+", "Remote deployment successful")
 
 	if env.Deploy.VerifyChecksum {
-		ui.Log(">", "Verifying remote artifact checksums...")
-		if err := s.deployer.VerifyRemoteChecksums(sshClient, files, artifactBase, targetPath); err != nil {
+		if err := ui.WithSpinner("Verifying checksums", func() error {
+			return s.deployer.VerifyRemoteChecksums(sshClient, files, artifactBase, targetPath)
+		}); err != nil {
 			ui.Log("-", "Checksum verification failed")
 			ui.Result(false, time.Since(start))
 			return err
@@ -678,15 +702,18 @@ func (s *Service) deployDockerRemote(profile *domain.Profile, env domain.Environ
 	}
 
 	if env.Deploy.Docker != nil {
-		ui.Log(">", "Running Docker Compose on remote...")
-
 		buildFlag := ""
 		if env.Deploy.Docker.Build {
 			buildFlag = " --build"
 		}
 
 		composeCmd := fmt.Sprintf("cd %s && docker compose -f %s up -d%s", targetPath, composeFile, buildFlag)
-		out, err := s.deployer.ExecuteRemoteCommand(sshClient, composeCmd)
+		var out string
+		err := ui.WithSpinner("Running Docker Compose on remote", func() error {
+			var composeErr error
+			out, composeErr = s.deployer.ExecuteRemoteCommand(sshClient, composeCmd)
+			return composeErr
+		})
 		if err != nil {
 			ui.Log("-", "Remote docker compose failed")
 			logRemoteCommandOutput(out)
@@ -757,9 +784,14 @@ func (s *Service) stopComposeBeforeSyncRemote(sshClient *ssh.Client, dockerCfg *
 		return nil
 	}
 
-	ui.Log(">", "Compose stack is running on remote; stopping before git sync...")
+	ui.Log("*", "Compose stack is running on remote; stopping before git sync")
 	downCmd := fmt.Sprintf("cd %s && docker compose -f %s down", targetPath, composeFile)
-	out, err := s.deployer.ExecuteRemoteCommand(sshClient, downCmd)
+	var out string
+	err = ui.WithSpinner("Stopping remote Compose stack", func() error {
+		var downErr error
+		out, downErr = s.deployer.ExecuteRemoteCommand(sshClient, downCmd)
+		return downErr
+	})
 	if err != nil {
 		logRemoteCommandOutput(out)
 		return fmt.Errorf("remote compose down before sync failed: %w%s", err, formatRemoteCommandOutput(out))
@@ -814,19 +846,23 @@ func (s *Service) syncRepoRemote(sshClient *ssh.Client, git *domain.GitConfig, t
 	output, _ := s.deployer.ExecuteRemoteCommand(sshClient, checkCmd)
 
 	if strings.Contains(output, "exists") {
-		ui.Log(">", "Git Pulling...")
-		pullCmd := fmt.Sprintf("cd %s && git pull origin %s", targetPath, git.Branch)
-		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, pullCmd); err != nil {
+		if err := ui.WithSpinner("Git pull on remote", func() error {
+			pullCmd := fmt.Sprintf("cd %s && git pull origin %s", targetPath, git.Branch)
+			_, err := s.deployer.ExecuteRemoteCommand(sshClient, pullCmd)
+			return err
+		}); err != nil {
 			return fmt.Errorf("remote git pull failed: %w", err)
 		}
 	} else {
-		ui.Log(">", "Git Cloning...")
 		parentDir := pathutil.DirRemote(targetPath)
 		ensureDirCmd := fmt.Sprintf("mkdir -p %s", parentDir)
 		s.deployer.ExecuteRemoteCommand(sshClient, ensureDirCmd) // Ensure parent dir exists
 
-		cloneCmd := fmt.Sprintf("git clone -b %s %s %s", git.Branch, git.Repo, targetPath)
-		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, cloneCmd); err != nil {
+		if err := ui.WithSpinner("Git clone on remote", func() error {
+			cloneCmd := fmt.Sprintf("git clone -b %s %s %s", git.Branch, git.Repo, targetPath)
+			_, err := s.deployer.ExecuteRemoteCommand(sshClient, cloneCmd)
+			return err
+		}); err != nil {
 			return fmt.Errorf("remote git clone failed: %w", err)
 		}
 	}

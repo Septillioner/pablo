@@ -21,8 +21,10 @@ func Match(relPath string, patterns []string) (bool, error) {
 }
 
 func matchPattern(pattern, relPath string) (bool, error) {
-	pattern = filepath.ToSlash(pattern)
-	matchPath := filepath.ToSlash(relPath)
+	// Normalize separators for cross-platform YAML globs. filepath.ToSlash alone
+	// leaves '\' intact on Unix, so Windows-style patterns would never match.
+	pattern = toMatchSlash(pattern)
+	matchPath := toMatchSlash(relPath)
 
 	if strings.HasSuffix(pattern, "/") {
 		dir := strings.TrimSuffix(pattern, "/")
@@ -104,6 +106,10 @@ func matchGlobstar(pattern, matchPath string) (bool, error) {
 		return true, nil
 	}
 	return matchGlobstar("**/"+after, rest)
+}
+
+func toMatchSlash(p string) string {
+	return strings.ReplaceAll(filepath.ToSlash(p), `\`, "/")
 }
 
 func GetFiles(basePath string, includes, excludes []string) ([]string, error) {

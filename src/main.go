@@ -196,7 +196,7 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 		Use:   "version",
 		Short: "Displays Pablo version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			ui.Log("*", fmt.Sprintf("Pablo Version: %s", Version))
+			// Brand + version come from PersistentPreRun Header.
 		},
 	}
 

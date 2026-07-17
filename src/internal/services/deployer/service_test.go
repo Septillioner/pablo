@@ -81,7 +81,7 @@ func TestDeployRenameReplace(t *testing.T) {
 		target := filepath.Join(t.TempDir(), "deploy")
 		mustWrite(t, filepath.Join(source, "app.txt"), "v1")
 
-		if err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, target, "rename-replace", false); err != nil {
+		if err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, target, "rename-replace", false, nil); err != nil {
 			t.Fatalf("Deploy() error = %v", err)
 		}
 		assertFileContent(t, filepath.Join(target, "app.txt"), "v1")
@@ -93,7 +93,7 @@ func TestDeployRenameReplace(t *testing.T) {
 		mustWrite(t, filepath.Join(target, "app.txt"), "old")
 		mustWrite(t, filepath.Join(source, "app.txt"), "new")
 
-		if err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, target, "rename-replace", false); err != nil {
+		if err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, target, "rename-replace", false, nil); err != nil {
 			t.Fatalf("Deploy() error = %v", err)
 		}
 
@@ -121,7 +121,7 @@ func TestDeployRenameReplace(t *testing.T) {
 			filepath.Join(source, "missing.txt"),
 		}
 
-		err := svc.Deploy(files, source, target, "rename-replace", false)
+		err := svc.Deploy(files, source, target, "rename-replace", false, nil)
 		if err == nil {
 			t.Fatal("expected Deploy() to fail on missing source file")
 		}
@@ -140,7 +140,7 @@ func TestDeployRenameReplaceRemote(t *testing.T) {
 		mock := &mockSSH{remoteFileExists: true}
 		svc := &Service{ssh: mock}
 
-		if err := svc.DeployRemote(files, source, dummyClient, "/tmp/pablo-rename", "rename-replace", false, ""); err != nil {
+		if err := svc.DeployRemote(files, source, dummyClient, "/tmp/pablo-rename", "rename-replace", false, "", nil); err != nil {
 			t.Fatalf("DeployRemote() error = %v", err)
 		}
 		if !mock.usedTransferPipe {
@@ -169,7 +169,7 @@ func TestDeployRenameReplaceRemote(t *testing.T) {
 		mock := &mockSSH{remoteFileExists: true, transferPipeErr: fmt.Errorf("transfer failed")}
 		svc := &Service{ssh: mock}
 
-		err := svc.DeployRemote(files, source, dummyClient, "/tmp/pablo-rename", "rename-replace", false, "")
+		err := svc.DeployRemote(files, source, dummyClient, "/tmp/pablo-rename", "rename-replace", false, "", nil)
 		if err == nil {
 			t.Fatal("expected transfer error")
 		}
@@ -206,7 +206,7 @@ func TestDeployOverwrite(t *testing.T) {
 		filepath.Join(source, "sub", "b.txt"),
 	}
 
-	if err := svc.Deploy(files, source, target, "overwrite", false); err != nil {
+	if err := svc.Deploy(files, source, target, "overwrite", false, nil); err != nil {
 		t.Fatalf("Deploy() error = %v", err)
 	}
 
@@ -222,7 +222,7 @@ func TestDeployBackup(t *testing.T) {
 		target := filepath.Join(t.TempDir(), "deploy")
 		mustWrite(t, filepath.Join(source, "app.txt"), "v1")
 
-		if err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, target, "backup", false); err != nil {
+		if err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, target, "backup", false, nil); err != nil {
 			t.Fatalf("Deploy() error = %v", err)
 		}
 		assertFileContent(t, filepath.Join(target, "app.txt"), "v1")
@@ -235,7 +235,7 @@ func TestDeployBackup(t *testing.T) {
 		mustWrite(t, filepath.Join(target, "old.txt"), "old")
 		mustWrite(t, filepath.Join(source, "new.txt"), "new")
 
-		if err := svc.Deploy([]string{filepath.Join(source, "new.txt")}, source, target, "backup", false); err != nil {
+		if err := svc.Deploy([]string{filepath.Join(source, "new.txt")}, source, target, "backup", false, nil); err != nil {
 			t.Fatalf("Deploy() error = %v", err)
 		}
 
@@ -266,7 +266,7 @@ func TestDeployRecreate(t *testing.T) {
 	mustWrite(t, filepath.Join(target, "stale.txt"), "stale")
 	mustWrite(t, filepath.Join(source, "fresh.txt"), "fresh")
 
-	if err := svc.Deploy([]string{filepath.Join(source, "fresh.txt")}, source, target, "recreate", false); err != nil {
+	if err := svc.Deploy([]string{filepath.Join(source, "fresh.txt")}, source, target, "recreate", false, nil); err != nil {
 		t.Fatalf("Deploy() error = %v", err)
 	}
 
@@ -291,7 +291,7 @@ func TestDeployProtectedPathSafety(t *testing.T) {
 	strategies := []string{"backup", "recreate"}
 	for _, strategy := range strategies {
 		t.Run(strategy, func(t *testing.T) {
-			err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, protected, strategy, false)
+			err := svc.Deploy([]string{filepath.Join(source, "app.txt")}, source, protected, strategy, false, nil)
 			if err == nil {
 				t.Fatalf("expected safety error for %s on %s", strategy, protected)
 			}
@@ -383,7 +383,7 @@ func TestDeployRemote(t *testing.T) {
 		mock := &mockSSH{}
 		svc := &Service{ssh: mock}
 
-		if err := svc.DeployRemote(files, source, dummyClient, "/var/www/app", "overwrite", false, ""); err != nil {
+		if err := svc.DeployRemote(files, source, dummyClient, "/var/www/app", "overwrite", false, "", nil); err != nil {
 			t.Fatalf("DeployRemote() error = %v", err)
 		}
 		if !mock.usedTransferPipe {
@@ -398,7 +398,7 @@ func TestDeployRemote(t *testing.T) {
 		mock := &mockSSH{}
 		svc := &Service{ssh: mock}
 
-		if err := svc.DeployRemote(files, source, dummyClient, "/var/www/app", "overwrite", false, "scp"); err != nil {
+		if err := svc.DeployRemote(files, source, dummyClient, "/var/www/app", "overwrite", false, "scp", nil); err != nil {
 			t.Fatalf("DeployRemote() error = %v", err)
 		}
 		if mock.usedTransferPipe {
@@ -418,7 +418,7 @@ func TestDeployRemote(t *testing.T) {
 			protected = `C:\Windows`
 		}
 
-		err := svc.DeployRemote(files, source, dummyClient, protected, "recreate", false, "tar")
+		err := svc.DeployRemote(files, source, dummyClient, protected, "recreate", false, "tar", nil)
 		if err == nil {
 			t.Fatal("expected safety error for protected remote path")
 		}

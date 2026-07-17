@@ -34,7 +34,17 @@ func New() *Service {
 	}
 }
 
-func (s *Service) Deploy(files []string, sourceBase, targetPath string, strategy string, allowProtected bool) error {
+// ProgressFunc reports completed/total units for multi-file work. nil skips reporting.
+type ProgressFunc func(done, total int)
+
+func reportProgress(onProgress ProgressFunc, done, total int) {
+	if onProgress == nil || total <= 0 {
+		return
+	}
+	onProgress(done, total)
+}
+
+func (s *Service) Deploy(files []string, sourceBase, targetPath string, strategy string, allowProtected bool, onProgress ProgressFunc) error {
 	// Normalize target path
 	targetPath = filepath.Clean(targetPath)
 
@@ -49,7 +59,7 @@ func (s *Service) Deploy(files []string, sourceBase, targetPath string, strategy
 	}
 
 	if strategy == "rename-replace" {
-		return s.deployRenameReplaceLocal(files, sourceBase, targetPath)
+		return s.deployRenameReplaceLocal(files, sourceBase, targetPath, onProgress)
 	}
 
 	switch strategy {
@@ -68,7 +78,8 @@ func (s *Service) Deploy(files []string, sourceBase, targetPath string, strategy
 		}
 	}
 
-	for _, file := range files {
+	total := len(files)
+	for i, file := range files {
 		rel, err := filepath.Rel(sourceBase, file)
 		if err != nil {
 			return err
@@ -78,13 +89,14 @@ func (s *Service) Deploy(files []string, sourceBase, targetPath string, strategy
 		if err := s.copyFile(file, dest); err != nil {
 			return err
 		}
+		reportProgress(onProgress, i+1, total)
 	}
 
 	return nil
 }
 
 // DeployRemote deploys files to a remote server via SSH
-func (s *Service) DeployRemote(files []string, sourceBase string, sshClient *ssh.Client, targetPath string, strategy string, allowProtected bool, remoteTransfer string) error {
+func (s *Service) DeployRemote(files []string, sourceBase string, sshClient *ssh.Client, targetPath string, strategy string, allowProtected bool, remoteTransfer string, onProgress ProgressFunc) error {
 	// Default to tar if not specified or specified as tar
 	if remoteTransfer == "" {
 		remoteTransfer = "tar"
@@ -101,7 +113,7 @@ func (s *Service) DeployRemote(files []string, sourceBase string, sshClient *ssh
 		if _, err := s.ssh.ExecuteCommand(sshClient, fmt.Sprintf("mkdir -p %s", targetPath)); err != nil {
 			return fmt.Errorf("failed to create remote directory: %w", err)
 		}
-		return s.deployRenameReplaceRemote(files, sourceBase, sshClient, targetPath, remoteTransfer)
+		return s.deployRenameReplaceRemote(files, sourceBase, sshClient, targetPath, remoteTransfer, onProgress)
 	}
 
 	// Handle strategies that require preparation
@@ -125,13 +137,15 @@ func (s *Service) DeployRemote(files []string, sourceBase string, sshClient *ssh
 
 	// Transfer strategy
 	if remoteTransfer == "tar" {
-		// High performance bulk transfer
+		// High performance bulk transfer (indeterminate from caller's view)
 		if err := s.ssh.TransferPipeline(sshClient, files, sourceBase, targetPath); err != nil {
 			return fmt.Errorf("batch transfer failed: %w", err)
 		}
+		reportProgress(onProgress, len(files), len(files))
 	} else {
 		// Legacy one-by-one transfer
-		for _, file := range files {
+		total := len(files)
+		for i, file := range files {
 			rel, err := filepath.Rel(sourceBase, file)
 			if err != nil {
 				return err
@@ -147,6 +161,7 @@ func (s *Service) DeployRemote(files []string, sourceBase string, sshClient *ssh
 			if _, err := s.ssh.ExecuteCommand(sshClient, fmt.Sprintf("chmod +x %s", remoteDest)); err != nil {
 				return fmt.Errorf("failed to set permissions: %w", err)
 			}
+			reportProgress(onProgress, i+1, total)
 		}
 	}
 

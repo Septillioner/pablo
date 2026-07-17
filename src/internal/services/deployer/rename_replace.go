@@ -30,10 +30,11 @@ func renameReplaceSuffix() string {
 	return fmt.Sprintf("%s_%03d", now.Format(renameReplaceTimeLayout), now.Nanosecond()/1e6)
 }
 
-func (s *Service) deployRenameReplaceLocal(files []string, sourceBase, targetPath string) error {
+func (s *Service) deployRenameReplaceLocal(files []string, sourceBase, targetPath string, onProgress ProgressFunc) error {
 	state := &renameReplaceState{suffix: renameReplaceSuffix()}
+	total := len(files)
 
-	for _, file := range files {
+	for i, file := range files {
 		rel, err := filepath.Rel(sourceBase, file)
 		if err != nil {
 			s.rollbackRenameReplaceLocal(state)
@@ -51,6 +52,7 @@ func (s *Service) deployRenameReplaceLocal(files []string, sourceBase, targetPat
 			return err
 		}
 		state.written = append(state.written, dest)
+		reportProgress(onProgress, i+1, total)
 	}
 
 	s.cleanupRenameReplaceBackupsLocal(state)
@@ -95,6 +97,7 @@ func (s *Service) deployRenameReplaceRemote(
 	sshClient *ssh.Client,
 	targetPath string,
 	remoteTransfer string,
+	onProgress ProgressFunc,
 ) error {
 	state := &renameReplaceState{suffix: renameReplaceSuffix()}
 
@@ -113,7 +116,7 @@ func (s *Service) deployRenameReplaceRemote(
 		state.written = append(state.written, dest)
 	}
 
-	if err := s.transferRenameReplaceRemote(files, sourceBase, sshClient, targetPath, remoteTransfer); err != nil {
+	if err := s.transferRenameReplaceRemote(files, sourceBase, sshClient, targetPath, remoteTransfer, onProgress); err != nil {
 		s.rollbackRenameReplaceRemote(sshClient, state)
 		return err
 	}
@@ -141,15 +144,18 @@ func (s *Service) transferRenameReplaceRemote(
 	sshClient *ssh.Client,
 	targetPath string,
 	remoteTransfer string,
+	onProgress ProgressFunc,
 ) error {
 	if remoteTransfer == "tar" {
 		if err := s.ssh.TransferPipeline(sshClient, files, sourceBase, targetPath); err != nil {
 			return fmt.Errorf("batch transfer failed: %w", err)
 		}
+		reportProgress(onProgress, len(files), len(files))
 		return nil
 	}
 
-	for _, file := range files {
+	total := len(files)
+	for i, file := range files {
 		rel, err := filepath.Rel(sourceBase, file)
 		if err != nil {
 			return err
@@ -163,6 +169,7 @@ func (s *Service) transferRenameReplaceRemote(
 		if _, err := s.ssh.ExecuteCommand(sshClient, fmt.Sprintf("chmod +x %s", remoteDest)); err != nil {
 			return fmt.Errorf("failed to set permissions: %w", err)
 		}
+		reportProgress(onProgress, i+1, total)
 	}
 	return nil
 }
