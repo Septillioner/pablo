@@ -1,17 +1,28 @@
+# Canonical self-deploy manifest (Schema v2).
+# Install the CLI binary locally or over SSH.
+#
+#   pablo run -p default -e macos-local
+#   pablo run -p default -e windows-local
+#   pablo run -p default -e linux-local
+#   pablo run -p default -e linux-remote
+#
 name: pablo
-version: 2.0.0
+version: 2.0.1
+
 credentials:
   server-ssh:
     type: ssh
     username: root
     key: ~/.ssh/id_rsa
+
 profiles:
   default:
     type: binary
+    build:
+      path: ./src
     environments:
       macos-local:
         build:
-          path: ./src
           command: "go build -o ../build/pablo ."
         deploy:
           source:
@@ -22,9 +33,9 @@ profiles:
           strategy: overwrite
         register_path:
           scope: user
+
       windows-local:
         build:
-          path: ./src
           command: "go build -o ../build/pablo.exe ."
         deploy:
           source:
@@ -35,9 +46,9 @@ profiles:
           strategy: overwrite
         register_path:
           scope: system
+
       linux-local:
         build:
-          path: ./src
           command: "GOOS=linux GOARCH=amd64 go build -o ../build/pablo ."
         deploy:
           source:
@@ -48,9 +59,9 @@ profiles:
           strategy: overwrite
         register_path:
           scope: system
+
       linux-remote:
         build:
-          path: ./src
           command: "GOOS=linux GOARCH=amd64 go build -o ../build/pablo ."
         remote:
           host: lysep.com
@@ -62,5 +73,7 @@ profiles:
             exclude: ["*.tmp"]
           target_path: /opt/pablo
           strategy: overwrite
+          transfer: tar
+          verify_checksum: true
         register_path:
           scope: system

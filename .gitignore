@@ -56,6 +56,7 @@ PABLO-CS.md
 PMAP.md
 CONTRIBUTING-RULES.md
 pablo-sepy.yaml
+.pablo-staging/
 release-new-version.bat
 release-bump-versions.ps1
 release-force.bat
