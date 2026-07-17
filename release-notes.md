@@ -1,13 +1,8 @@
-## Pablo v1.5.63
+## Pablo v1.7.1
 
 ### Added
 
-- SSH host key verification against OpenSSH `known_hosts` (enabled by default); optional `remote.trust_on_first_use: on` to record unknown keys on first connect.
-- README "Why Pablo?" section and demo GIF at the top of the project README.
-
-### Changed
-
-- SSH connections no longer skip host key checks by default. Existing manifests keep working when the host is already in `known_hosts`; otherwise add the key or set `remote.host_key_verification: off` (emits a warning).
+- Docker redeploy precheck: when a Compose stack is already running, Pablo stops it (`compose down`, no `-v`) before git sync, then brings it back up. Controlled by `deploy.docker.stop_before_sync` (default `true`).
 
 ### Downloads
 
@@ -18,7 +13,7 @@
 | Linux (amd64) | pablo-linux-amd64 |
 | Windows (amd64) | pablo-windows-amd64.exe |
 | Windows (arm64) | pablo-windows-arm64.exe |
-| VS Code extension | pablo-1.5.63.vsix |
-| Visual Studio 2026 extension | pablo-vs2026-1.5.63.vsix |
+| VS Code extension | pablo-1.7.1.vsix |
+| Visual Studio 2026 extension | pablo-vs2026-1.7.1.vsix |
 
 Verify downloads with checksums.txt (SHA-256).

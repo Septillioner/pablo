@@ -80,7 +80,8 @@ flowchart TD
     preCmd --> typeSwitch{profile.type}
     typeSwitch -->|static/binary| filter[filter artifacts]
     filter --> deploy[deployer local/SSH]
-    typeSwitch -->|docker| gitClone[scm clone/pull]
+    typeSwitch -->|docker| composePrecheck[compose down if running]
+    composePrecheck --> gitClone[scm clone/pull]
     gitClone --> compose[docker compose up]
     typeSwitch -->|git-sync| gitPull[scm clone/pull]
     gitPull --> postCmdStart[post_commands]
@@ -101,7 +102,7 @@ flowchart TD
 |------|------|
 | `static` | Build → filter → deploy files |
 | `binary` | Build → deploy → PATH registration |
-| `docker` | Git clone/pull → env file → docker compose |
+| `docker` | Optional compose down if running → Git clone/pull → env file → docker compose |
 | `git-sync` | Git clone/pull → env file → post commands |
 
 ---
@@ -126,7 +127,7 @@ flowchart TD
 | Adapter | Role |
 |---------|------|
 | `ssh` | Connection, SCP, tar streaming, remote commands |
-| `docker` | `docker compose up/down` wrapper |
+| `docker` | `docker compose up/down`; running-stack probe for redeploy precheck |
 | `system` | Cross-platform PATH register/remove |
 
 ---

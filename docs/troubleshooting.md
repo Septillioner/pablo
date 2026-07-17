@@ -94,6 +94,7 @@ If too many files match, remember that `*.exe` matches at every depth; use `/*.e
 | `docker: command not found` | Install Docker on target host |
 | Compose file not found | `compose_file` path relative to cloned repo root |
 | Permission denied (docker) | Add SSH user to `docker` group on Linux |
+| Git pull fails while containers run | Default `stop_before_sync: true` stops the stack before sync; ensure it is not set to `false` |
 | Private repo clone fails | Set `git.credential` with valid token |
 
 ---

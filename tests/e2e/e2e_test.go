@@ -68,6 +68,15 @@ func TestSSH_DockerRemoteDeploy(t *testing.T) {
 	runPablo(t, dir, "check", "-f", manifest, "-p", "default", "-e", "e2e")
 	runPablo(t, dir, "run", "-f", manifest, "-p", "default", "-e", "e2e", "--force")
 
+	assertSampleContainerRunning(t)
+
+	// Redeploy while the stack is already up (stop_before_sync default).
+	runPablo(t, dir, "run", "-f", manifest, "-p", "default", "-e", "e2e", "--force")
+	assertSampleContainerRunning(t)
+}
+
+func assertSampleContainerRunning(t *testing.T) {
+	t.Helper()
 	out := sshExec(t, "docker ps --format '{{.Names}}'")
 	if !strings.Contains(out, "pablo-e2e-sample") {
 		t.Fatalf("expected container pablo-e2e-sample in docker ps, got: %q", out)

@@ -114,9 +114,10 @@ var Root = &Field{
 												"docker": {
 													Description: "Docker Compose specific settings.",
 													Children: map[string]*Field{
-														"compose_file": {Description: "Path to docker-compose file."},
-														"build":        {Description: "Whether to build images."},
-														"command":      {Description: "Custom docker-compose command."},
+														"compose_file":     {Description: "Path to docker-compose file."},
+														"build":            {Description: "Whether to build images."},
+														"command":          {Description: "Custom docker-compose command."},
+														"stop_before_sync": {Description: "If true (default), stop a running Compose stack before git sync on redeploy."},
 													},
 												},
 												"service": {

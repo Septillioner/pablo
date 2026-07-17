@@ -12,7 +12,7 @@ See also: [Configuration](configuration.md) · [Roadmap](../roadmap.md)
 |------|-------------|-------|------------|--------|
 | `static` | Filter and deploy files; `build` optional (omit to copy as-is) | Yes | Yes | Working |
 | `binary` | Compiled executables — build, deploy, PATH register | Yes | Yes | Working |
-| `docker` | Docker Compose — git clone/pull, compose up | Yes | Yes | Working |
+| `docker` | Docker Compose — stop if running (default), git clone/pull, compose up | Yes | Yes | Working |
 | `git-sync` | Interpreted languages — git pull, post commands | Yes | Yes | Working |
 
 ---

@@ -22,7 +22,8 @@ Ilk calistirmada Docker image build edilir (~1-2 dk). Testler sirasinda `127.0.0
 | Test | Aciklama |
 |------|----------|
 | `TestSSH_StaticDeploy` | SSH ile static artifact deploy (`/tmp/pablo-e2e-static`) |
-| `TestSSH_DockerRemoteDeploy` | SSH uzerinden git clone + uzak `docker compose up` |
+| `TestSSH_RenameReplace` | SSH `rename-replace` strategy |
+| `TestSSH_DockerRemoteDeploy` | SSH uzerinden git clone + uzak `docker compose up`; ikinci run ile redeploy (`stop_before_sync`) |
 
 ## Mimari
 

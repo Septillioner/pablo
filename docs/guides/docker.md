@@ -10,9 +10,10 @@ Run Docker Compose workloads locally or on a remote host over SSH.
 
 The `docker` profile type:
 
-1. Clones or pulls a Git repository
-2. Writes environment variables to an `.env` file (if configured)
-3. Runs `docker compose` with your compose file
+1. If a Compose stack is already running and `stop_before_sync` is enabled (default), runs `docker compose down`
+2. Clones or pulls a Git repository
+3. Writes environment variables to an `.env` file (if configured)
+4. Runs `docker compose` with your compose file
 
 ```yaml
 profiles:
@@ -58,7 +59,8 @@ profiles:
 |-------|---------|-------------|
 | `compose_file` | *(required)* | Path relative to repo root after clone |
 | `build` | `false` | Pass `--build` to compose |
-| `command` | `up -d` | Arguments after `docker compose` |
+| `command` | `up -d` | Arguments after `docker compose` (schema only; runtime uses `up -d` + `build`) |
+| `stop_before_sync` | `true` | If the Compose stack is already running, stop it (`compose down`, no `-v`) before git sync |
 
 Example with build:
 
@@ -68,6 +70,8 @@ docker:
   build: true
   command: up -d --build
 ```
+
+On redeploy, Pablo detects running containers with `docker compose ps -q` and stops them before `git pull` so bind mounts and dirty trees do not break sync. Volumes are kept (`down` without `-v`). Default `true` means a short downtime on redeploy; set `stop_before_sync: false` to keep the old pull-while-running behavior.
 
 ---
 

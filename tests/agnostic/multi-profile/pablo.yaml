@@ -108,6 +108,7 @@ profiles:
             compose_file: docker-compose.yml
             build: true
             command: up -d --build
+            stop_before_sync: true
       
       production:
         build:
@@ -128,6 +129,7 @@ profiles:
             compose_file: docker-compose.prod.yml
             build: true
             command: up -d --build
+            stop_before_sync: true
     
     pipeline:
       on_success: "echo 'Backend deployed and running!'"

@@ -286,7 +286,8 @@ Docker deployment configuration.
 |---|---|---|
 | `compose_file` | String | **Required.** Path to docker-compose file |
 | `build` | Boolean | Build images before up |
-| `command` | String | Docker compose command (default: `up -d`) |
+| `command` | String | Docker compose command (default: `up -d`; schema field — runtime uses `up -d` and optional `--build`) |
+| `stop_before_sync` | Boolean | Stop a running Compose stack before git sync on redeploy (default: `true`) |
 
 **Example:**
 ```yaml
@@ -294,7 +295,10 @@ docker:
   compose_file: docker-compose.yml
   build: true
   command: up -d --build
+  stop_before_sync: true
 ```
+
+When `stop_before_sync` is omitted or `true`, Pablo runs `docker compose ps -q` before git clone/pull. If containers are present, it runs `docker compose down` (without `-v`, so volumes stay) then syncs and brings the stack back up. Set `false` to skip that precheck.
 
 ---
 
@@ -360,6 +364,8 @@ Build → Deploy binary → Register PATH
 
 ### `docker` — Containerized Services
 Git clone/pull → Generate env file → Docker compose up
+
+On redeploy, when `stop_before_sync` is enabled (default), a running Compose stack is stopped before git sync.
 
 **Required:** `git`, `environments.deploy.docker`
 

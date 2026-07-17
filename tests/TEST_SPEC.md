@@ -77,7 +77,7 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 | U-SSH-03 | Tar stream | unit | `ssh/ssh_test.go` | addToTar goreli yol ve icerik | done |
 | U-SSH-04 | Remote komut | unit | — | ExecuteCommand / CreateBackup mock | planned |
 | E-SSH-01 | Static remote deploy | e2e | `TestSSH_StaticDeploy` | SSH tar deploy, dosya varligi | done |
-| E-SSH-02 | Docker remote deploy | e2e | `TestSSH_DockerRemoteDeploy` | git clone + compose, container ayakta | done |
+| E-SSH-02 | Docker remote deploy | e2e | `TestSSH_DockerRemoteDeploy` | git clone + compose; ikinci run redeploy | done |
 | E-SSH-03 | rename-replace remote | e2e | `TestSSH_RenameReplace` | Per-file rename, replace, cleanup | done |
 
 ---
@@ -110,6 +110,7 @@ Her satir: **hangi sistem**, **hangi katmanda**, **ne dogrulanir**. Strateji ici
 | U-DOCK-01 | Compose arg | unit | `docker/adapter_test.go` | composeUpArgs, composeDownArgs | done |
 | U-DOCK-02 | Gercek daemon | unit | — | integration tag ile docker calistirma | planned |
 | E-DOCK-01 | Remote compose | e2e | `TestSSH_DockerRemoteDeploy` | Uzak `docker compose up` | done |
+| E-DOCK-02 | Remote redeploy | e2e | `TestSSH_DockerRemoteDeploy` (2. run) | Stack ayaktayken `stop_before_sync` + sync + up | done |
 
 ---
 

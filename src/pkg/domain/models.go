@@ -119,9 +119,18 @@ type SSHConfig struct {
 }
 
 type DockerConfig struct {
-	ComposeFile string `yaml:"compose_file"`
-	Build       bool   `yaml:"build,omitempty"`
-	Command     string `yaml:"command,omitempty"`
+	ComposeFile    string `yaml:"compose_file"`
+	Build          bool   `yaml:"build,omitempty"`
+	Command        string `yaml:"command,omitempty"`
+	StopBeforeSync *bool  `yaml:"stop_before_sync,omitempty"`
+}
+
+// StopBeforeSyncEnabled is true when stop_before_sync is omitted or explicitly true.
+func (d *DockerConfig) StopBeforeSyncEnabled() bool {
+	if d == nil || d.StopBeforeSync == nil {
+		return true
+	}
+	return *d.StopBeforeSync
 }
 
 type ServiceConfig struct {

@@ -649,6 +649,16 @@ func (s *Service) deployDocker(profile *domain.Profile, env domain.Environment, 
 	targetPath := env.Deploy.TargetPath
 	ui.Log(">", fmt.Sprintf("Target: %s", targetPath))
 
+	var composeFile string
+	if env.Deploy.Docker != nil {
+		composeFile = s.resolvePath(baseDir, env.Deploy.Docker.ComposeFile)
+		if err := s.stopComposeBeforeSyncLocal(env.Deploy.Docker, composeFile, targetPath); err != nil {
+			ui.Log("-", "Compose precheck failed")
+			ui.Result(false, time.Since(start))
+			return err
+		}
+	}
+
 	if err := s.scm.CloneOrPull(profile.Git, targetPath); err != nil {
 		ui.Log("-", "SCM operation failed")
 		ui.Result(false, time.Since(start))
@@ -669,7 +679,6 @@ func (s *Service) deployDocker(profile *domain.Profile, env domain.Environment, 
 
 	if env.Deploy.Docker != nil {
 		ui.Log(">", "Running Docker Compose...")
-		composeFile := s.resolvePath(baseDir, env.Deploy.Docker.ComposeFile)
 		build := env.Deploy.Docker.Build
 
 		if err := s.docker.ComposeUp(composeFile, build, targetPath); err != nil {
@@ -701,6 +710,19 @@ func (s *Service) deployDockerRemote(profile *domain.Profile, env domain.Environ
 	targetPath := env.Deploy.TargetPath
 	ui.Log(">", fmt.Sprintf("Target: %s:%s", env.Remote.Host, targetPath))
 
+	var composeFile string
+	if env.Deploy.Docker != nil {
+		composeFile = env.Deploy.Docker.ComposeFile
+		if !strings.HasPrefix(composeFile, "/") {
+			composeFile = pathutil.JoinRemote(targetPath, composeFile)
+		}
+		if err := s.stopComposeBeforeSyncRemote(sshClient, env.Deploy.Docker, composeFile, targetPath); err != nil {
+			ui.Log("-", "Compose precheck failed")
+			ui.Result(false, time.Since(start))
+			return err
+		}
+	}
+
 	if err := s.syncRepoRemote(sshClient, profile.Git, targetPath); err != nil {
 		ui.Log("-", err.Error())
 		ui.Result(false, time.Since(start))
@@ -717,10 +739,6 @@ func (s *Service) deployDockerRemote(profile *domain.Profile, env domain.Environ
 
 	if env.Deploy.Docker != nil {
 		ui.Log(">", "Running Docker Compose on remote...")
-		composeFile := env.Deploy.Docker.ComposeFile
-		if !strings.HasPrefix(composeFile, "/") {
-			composeFile = pathutil.JoinRemote(targetPath, composeFile)
-		}
 
 		buildFlag := ""
 		if env.Deploy.Docker.Build {
@@ -737,6 +755,90 @@ func (s *Service) deployDockerRemote(profile *domain.Profile, env domain.Environ
 	}
 
 	return nil
+}
+
+// stopComposeBeforeSyncLocal stops a running local Compose stack before git sync when enabled.
+func (s *Service) stopComposeBeforeSyncLocal(dockerCfg *domain.DockerConfig, composeFile, targetPath string) error {
+	if dockerCfg == nil || !dockerCfg.StopBeforeSyncEnabled() {
+		return nil
+	}
+	if _, err := os.Stat(targetPath); err != nil {
+		return nil
+	}
+	effectiveComposeFile := resolveExistingComposeFile(composeFile, targetPath, dockerCfg.ComposeFile)
+	if effectiveComposeFile == "" {
+		return nil
+	}
+
+	running, err := s.docker.ComposePsRunning(effectiveComposeFile, targetPath)
+	if err != nil {
+		ui.Log("!", fmt.Sprintf("Compose precheck skipped: %v", err))
+		return nil
+	}
+	if !running {
+		return nil
+	}
+
+	ui.Log(">", "Compose stack is running; stopping before git sync...")
+	if err := s.docker.ComposeDown(effectiveComposeFile, targetPath); err != nil {
+		return fmt.Errorf("compose down before sync failed: %w", err)
+	}
+	ui.Log("+", "Compose stack stopped")
+	return nil
+}
+
+// stopComposeBeforeSyncRemote stops a running remote Compose stack before git sync when enabled.
+func (s *Service) stopComposeBeforeSyncRemote(sshClient *ssh.Client, dockerCfg *domain.DockerConfig, composeFile, targetPath string) error {
+	if dockerCfg == nil || !dockerCfg.StopBeforeSyncEnabled() {
+		return nil
+	}
+
+	checkDirCmd := fmt.Sprintf("test -d %s && echo exists || echo missing", targetPath)
+	dirOut, _ := s.deployer.ExecuteRemoteCommand(sshClient, checkDirCmd)
+	if !strings.Contains(dirOut, "exists") {
+		return nil
+	}
+
+	checkFileCmd := fmt.Sprintf("test -f %s && echo exists || echo missing", composeFile)
+	fileOut, _ := s.deployer.ExecuteRemoteCommand(sshClient, checkFileCmd)
+	if !strings.Contains(fileOut, "exists") {
+		return nil
+	}
+
+	psCmd := fmt.Sprintf("cd %s && docker compose -f %s ps -q", targetPath, composeFile)
+	psOut, err := s.deployer.ExecuteRemoteCommand(sshClient, psCmd)
+	if err != nil {
+		ui.Log("!", fmt.Sprintf("Compose precheck skipped: %v", err))
+		return nil
+	}
+	if strings.TrimSpace(psOut) == "" {
+		return nil
+	}
+
+	ui.Log(">", "Compose stack is running on remote; stopping before git sync...")
+	downCmd := fmt.Sprintf("cd %s && docker compose -f %s down", targetPath, composeFile)
+	if _, err := s.deployer.ExecuteRemoteCommand(sshClient, downCmd); err != nil {
+		return fmt.Errorf("remote compose down before sync failed: %w", err)
+	}
+	ui.Log("+", "Remote compose stack stopped")
+	return nil
+}
+
+func resolveExistingComposeFile(resolvedComposeFile, targetPath, configuredComposeFile string) string {
+	if _, err := os.Stat(resolvedComposeFile); err == nil {
+		return resolvedComposeFile
+	}
+	if configuredComposeFile == "" {
+		return ""
+	}
+	candidate := configuredComposeFile
+	if !filepath.IsAbs(candidate) {
+		candidate = filepath.Join(targetPath, configuredComposeFile)
+	}
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate
+	}
+	return ""
 }
 
 // syncRepoRemote clones or pulls the configured git repository into targetPath

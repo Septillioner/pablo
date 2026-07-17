@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-07-17
+
+### Added
+
+- Docker redeploy precheck: when a Compose stack is already running, Pablo stops it (`compose down`, no `-v`) before git sync, then brings it back up. Controlled by `deploy.docker.stop_before_sync` (default `true`).
+
 ## [1.5.63] - 2026-07-13
 
 ### Added
@@ -202,7 +208,8 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.5.63...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/septillioner/pablo/compare/v1.5.63...v1.7.1
 [1.5.63]: https://github.com/septillioner/pablo/compare/v1.5.62...v1.5.63
 [1.5.62]: https://github.com/septillioner/pablo/compare/v1.5.61...v1.5.62
 [1.5.61]: https://github.com/septillioner/pablo/compare/v1.5.60...v1.5.61
