@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="Pablo.VisualStudio.8f4e2a1b-3c5d-4e6f-9a0b-1c2d3e4f5a6b" Version="1.7.3" Language="en-US" Publisher="septillioner" />
+    <Identity Id="Pablo.VisualStudio.8f4e2a1b-3c5d-4e6f-9a0b-1c2d3e4f5a6b" Version="2.0.0" Language="en-US" Publisher="septillioner" />
     <DisplayName>Pablo</DisplayName>
     <Description xml:space="preserve">Pablo YAML manifest editor support: LSP validation, completion, CodeLens Run, profile decorations, and CLI integration.</Description>
     <Icon>Resources\logo.png</Icon>
