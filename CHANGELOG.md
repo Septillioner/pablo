@@ -4,6 +4,13 @@ All notable changes to Pablo are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0]
+
+### Added
+
+- **Pablo: Update** — VS Code (`pablo.update`) and Visual Studio (`Pablo.Update`) command to manually check for CLI updates and install when available (same stop-LSP → `pablo update` → restart flow as the activation check).
+- **CLI step rail** — Interactive TTY runs show a sticky progress rail (`Validate → Build → Deploy → Post`, skipping phases that do not apply; sequences use target/env labels). Animations stay off for non-TTY, `NO_COLOR`, `CI`, and `PABLO_PLAIN`.
+
 ## [2.0.2]
 
 ### Added

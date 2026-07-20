@@ -77,6 +77,10 @@
       {
         "command": "pablo.selectExecutable",
         "title": "Pablo: Select Executable"
+      },
+      {
+        "command": "pablo.update",
+        "title": "Pablo: Update"
       }
     ],
     "menus": {

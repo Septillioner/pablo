@@ -22,6 +22,13 @@ interface UpdateCheckJson {
 	update_available?: boolean;
 }
 
+export interface CliUpdateFlowOptions {
+	binaryPath: string;
+	outputChannel: vscode.OutputChannel;
+	onBeforeUpdate: () => Promise<void>;
+	onAfterUpdate: () => Promise<void>;
+}
+
 function runPablo(
 	binaryPath: string,
 	args: readonly string[],
@@ -91,13 +98,20 @@ export async function installCliUpdate(binaryPath: string): Promise<{ ok: boolea
 	return { ok: code === 0, output: stdout };
 }
 
-export async function notifyCliUpdateIfAvailable(options: {
-	binaryPath: string;
-	outputChannel: vscode.OutputChannel;
-	onBeforeUpdate: () => Promise<void>;
-	onAfterUpdate: () => Promise<void>;
-}): Promise<void> {
-	const { binaryPath, outputChannel, onBeforeUpdate, onAfterUpdate } = options;
+/** Activation path: silent when up to date; toast only when an update is available. */
+export async function notifyCliUpdateIfAvailable(options: CliUpdateFlowOptions): Promise<void> {
+	await runCliUpdateFlow({ ...options, interactive: false });
+}
+
+/** Manual "Pablo: Update" command: always report status to the user. */
+export async function runCliUpdateCommand(options: CliUpdateFlowOptions): Promise<void> {
+	await runCliUpdateFlow({ ...options, interactive: true });
+}
+
+async function runCliUpdateFlow(
+	options: CliUpdateFlowOptions & { interactive: boolean }
+): Promise<void> {
+	const { binaryPath, outputChannel, onBeforeUpdate, onAfterUpdate, interactive } = options;
 
 	let result: CliUpdateCheckResult | undefined;
 	try {
@@ -105,16 +119,32 @@ export async function notifyCliUpdateIfAvailable(options: {
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
 		outputChannel.appendLine(`CLI update check failed: ${message}`);
+		if (interactive) {
+			vscode.window.showWarningMessage(
+				`Could not check for Pablo CLI updates: ${message}`
+			);
+		}
 		return;
 	}
 
 	if (!result) {
-		outputChannel.appendLine('CLI update check skipped (offline, unsupported CLI, or parse error).');
+		const skipMessage =
+			'CLI update check skipped (offline, unsupported CLI, or parse error).';
+		outputChannel.appendLine(skipMessage);
+		if (interactive) {
+			vscode.window.showWarningMessage(
+				'Could not check for Pablo CLI updates. You may be offline, or this CLI does not support update check.'
+			);
+		}
 		return;
 	}
 
 	if (!result.updateAvailable) {
-		outputChannel.appendLine(`Pablo CLI is up to date (${result.currentVersion}).`);
+		const upToDate = `Pablo CLI is up to date (${result.currentVersion}).`;
+		outputChannel.appendLine(upToDate);
+		if (interactive) {
+			vscode.window.showInformationMessage(upToDate);
+		}
 		return;
 	}
 

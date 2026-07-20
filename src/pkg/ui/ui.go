@@ -81,6 +81,7 @@ func Log(mark string, message string) {
 	clearActiveSpinnerLine()
 	timestamp := GrayColor(time.Now().Format("15:04:05"))
 	fmt.Printf("%s  %s  %s\n", timestamp, formatMark(mark), message)
+	noteRailContentLines(1)
 }
 
 func formatMark(mark string) string {
@@ -120,6 +121,7 @@ func Section(title string) {
 	prefix := ThemeColor("─")
 	fmt.Printf("%s %s\n", prefix, BoldColor(label))
 	fmt.Println(GrayColor(strings.Repeat("─", sectionRuleWidth)))
+	noteRailContentLines(3)
 }
 
 // Result prints a single-line outcome without heavy separator bars.
@@ -129,9 +131,10 @@ func Result(success bool, duration time.Duration) {
 	elapsed := GrayColor(duration.Round(time.Millisecond).String())
 	if success {
 		fmt.Printf("%s  %s  %s\n", SuccessColor(padMark("ok")), BoldColor("done"), elapsed)
-		return
+	} else {
+		fmt.Printf("%s  %s  %s\n", ErrorColor(padMark("fail")), BoldColor("failed"), elapsed)
 	}
-	fmt.Printf("%s  %s  %s\n", ErrorColor(padMark("fail")), BoldColor("failed"), elapsed)
+	noteRailContentLines(2)
 }
 
 // ProgressBar prints a compact in-place progress bar with a pulsing tip while incomplete.
@@ -168,6 +171,7 @@ func ProgressBar(percent int, label string) {
 	fmt.Printf("\r%s  %s  %s %3d%%", GrayColor(label), bar, GrayColor("·"), percent)
 	if percent >= 100 {
 		fmt.Println()
+		noteRailContentLines(1)
 	}
 }
 

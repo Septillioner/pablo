@@ -27,11 +27,33 @@ namespace Pablo.VisualStudio.Services
             public bool? UpdateAvailable { get; set; }
         }
 
-        public static async Task CheckAndNotifyAsync(PabloExecutableService executableService)
+        /// <summary>Activation path: silent when up to date; prompt only when an update is available.</summary>
+        public static Task CheckAndNotifyAsync(PabloExecutableService executableService)
+        {
+            return RunUpdateFlowAsync(executableService, interactive: false);
+        }
+
+        /// <summary>Manual "Pablo: Update" command: always report status to the user.</summary>
+        public static Task RunUpdateCommandAsync(PabloExecutableService executableService)
+        {
+            return RunUpdateFlowAsync(executableService, interactive: true);
+        }
+
+        private static async Task RunUpdateFlowAsync(
+            PabloExecutableService executableService,
+            bool interactive)
         {
             var binary = await executableService.ResolveBinaryAsync();
             if (string.IsNullOrWhiteSpace(binary))
             {
+                if (interactive)
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    ShowMessage(
+                        "Pablo CLI not found. Use Pablo: Select Executable or set the Pablo path in Options.",
+                        OLEMSGICON.OLEMSGICON_WARNING);
+                }
+
                 return;
             }
 
@@ -46,6 +68,14 @@ namespace Pablo.VisualStudio.Services
             catch (Exception ex)
             {
                 PabloOutputWindow.WriteLine($"CLI update check failed: {ex.Message}");
+                if (interactive)
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    ShowMessage(
+                        $"Could not check for Pablo CLI updates: {ex.Message}",
+                        OLEMSGICON.OLEMSGICON_WARNING);
+                }
+
                 return;
             }
 
@@ -53,12 +83,27 @@ namespace Pablo.VisualStudio.Services
             if (result == null)
             {
                 PabloOutputWindow.WriteLine("CLI update check skipped (offline, unsupported CLI, or parse error).");
+                if (interactive)
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    ShowMessage(
+                        "Could not check for Pablo CLI updates. You may be offline, or this CLI does not support update check.",
+                        OLEMSGICON.OLEMSGICON_WARNING);
+                }
+
                 return;
             }
 
             if (!result.UpdateAvailable)
             {
-                PabloOutputWindow.WriteLine($"Pablo CLI is up to date ({result.CurrentVersion}).");
+                var upToDate = $"Pablo CLI is up to date ({result.CurrentVersion}).";
+                PabloOutputWindow.WriteLine(upToDate);
+                if (interactive)
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    ShowMessage(upToDate, OLEMSGICON.OLEMSGICON_INFO);
+                }
+
                 return;
             }
 
@@ -91,29 +136,33 @@ namespace Pablo.VisualStudio.Services
                 if (install.ExitCode != 0)
                 {
                     PabloOutputWindow.WriteLine($"CLI update failed:\n{install.Output}");
-                    VsShellUtilities.ShowMessageBox(
-                        ServiceProvider.GlobalProvider,
+                    ShowMessage(
                         "Pablo CLI update failed. Check Output > Pablo Language Server for details.",
-                        "Pablo",
-                        OLEMSGICON.OLEMSGICON_CRITICAL,
-                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                        OLEMSGICON.OLEMSGICON_CRITICAL);
                     return;
                 }
 
                 PabloOutputWindow.WriteLine($"CLI update succeeded:\n{install.Output}");
-                VsShellUtilities.ShowMessageBox(
-                    ServiceProvider.GlobalProvider,
+                ShowMessage(
                     $"Pablo CLI updated to {result.LatestVersion}.",
-                    "Pablo",
-                    OLEMSGICON.OLEMSGICON_INFO,
-                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                    OLEMSGICON.OLEMSGICON_INFO);
             }
             finally
             {
                 await PabloLanguageClientHost.RestartAsync();
             }
+        }
+
+        private static void ShowMessage(string message, OLEMSGICON icon)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            VsShellUtilities.ShowMessageBox(
+                ServiceProvider.GlobalProvider,
+                message,
+                "Pablo",
+                icon,
+                OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
         }
 
         private static UpdateCheckResult? ParseUpdateCheckJson(string raw)

@@ -168,6 +168,20 @@
 
       </Button>
 
+      <Button guid="guidPabloCmdSet" id="cmdidUpdate" priority="0x0104" type="Button">
+
+        <Parent guid="guidPabloCmdSet" id="grpPabloTools"/>
+
+        <Strings>
+
+          <ButtonText>Pablo: Update</ButtonText>
+
+          <CommandName>Pablo.Update</CommandName>
+
+        </Strings>
+
+      </Button>
+
       <Button guid="guidPabloCmdSet" id="cmdidToolbarRun" priority="0x0103" type="Button">
 
         <Parent guid="guidPabloCmdSet" id="grpPabloToolbar"/>
@@ -313,6 +327,8 @@
       <IDSymbol name="cmdidEnvComboGetList" value="0x010b" />
 
       <IDSymbol name="cmdidToolbarRun" value="0x010c" />
+
+      <IDSymbol name="cmdidUpdate" value="0x010d" />
 
     </GuidSymbol>
 

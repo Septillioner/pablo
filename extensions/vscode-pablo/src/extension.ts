@@ -24,7 +24,11 @@ import {
 import { buildTerminalCommand } from './shell';
 import { inspectManifest } from './inspect';
 import { registerProfileDecorations } from './profileDecorations';
-import { notifyCliUpdateIfAvailable } from './updateCheck';
+import {
+	CliUpdateFlowOptions,
+	notifyCliUpdateIfAvailable,
+	runCliUpdateCommand
+} from './updateCheck';
 
 let client: LanguageClient | undefined;
 let extensionContext: vscode.ExtensionContext;
@@ -299,6 +303,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
+		vscode.commands.registerCommand('pablo.update', () => {
+			void runManualCliUpdate(context);
+		})
+	);
+
+	context.subscriptions.push(
 		vscode.workspace.onDidChangeConfiguration(async (e) => {
 			if (e.affectsConfiguration('pablo.trace.server') && client) {
 				const level = vscode.workspace.getConfiguration('pablo').get<string>('trace.server', 'off');
@@ -319,18 +329,37 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const updateBinary = activeBinary ?? (await resolvePabloBinary(context, outputChannel));
 	if (updateBinary) {
-		void notifyCliUpdateIfAvailable({
-			binaryPath: normalizeExecutablePath(updateBinary),
-			outputChannel,
-			onBeforeUpdate: stopLanguageClientIfRunning,
-			onAfterUpdate: async () => {
-				const started = await tryResolveAndStart(context);
-				if (!started) {
-					await handlePabloMissing(context);
-				}
-			},
-		});
+		void notifyCliUpdateIfAvailable(buildCliUpdateFlowOptions(updateBinary, context));
 	}
+}
+
+async function runManualCliUpdate(context: vscode.ExtensionContext): Promise<void> {
+	const binary = activeBinary ?? (await resolvePabloBinary(context, outputChannel));
+	if (!binary) {
+		vscode.window.showWarningMessage(
+			'Pablo CLI not found. Use "Pablo: Select Executable" or set pablo.path.'
+		);
+		return;
+	}
+
+	await runCliUpdateCommand(buildCliUpdateFlowOptions(binary, context));
+}
+
+function buildCliUpdateFlowOptions(
+	binaryPath: string,
+	context: vscode.ExtensionContext
+): CliUpdateFlowOptions {
+	return {
+		binaryPath: normalizeExecutablePath(binaryPath),
+		outputChannel,
+		onBeforeUpdate: stopLanguageClientIfRunning,
+		onAfterUpdate: async () => {
+			const started = await tryResolveAndStart(context);
+			if (!started) {
+				await handlePabloMissing(context);
+			}
+		},
+	};
 }
 
 async function runPabloRun() {

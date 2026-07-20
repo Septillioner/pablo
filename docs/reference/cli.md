@@ -14,6 +14,15 @@ See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 |------|---------|-------------|
 | `--verbose` | `false` | During `run`, list each artifact path after the deploy count |
 
+### Terminal output
+
+On an interactive TTY, `pablo run` shows a sticky step rail above detail logs:
+
+- Single target: `Validate → Build → Deploy → Post` (Build/Post are marked skipped when unused)
+- Sequence: one step per sequence target (environment name when unique, otherwise `profile/env`)
+
+Spinners and progress bars continue to appear under the rail for long-running work. Animations are disabled when stdout is not a TTY, or when `NO_COLOR`, `CI`, or `PABLO_PLAIN` is set — then only normal `Section` / `Log` lines are used.
+
 ---
 
 ## Commands

@@ -29,5 +29,6 @@ namespace Pablo.VisualStudio
         EnvCombo = 0x010a,
         EnvComboGetList = 0x010b,
         ToolbarRun = 0x010c,
+        Update = 0x010d,
     }
 }

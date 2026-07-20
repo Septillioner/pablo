@@ -41,6 +41,7 @@ namespace Pablo.VisualStudio
             Register(PabloCommandIds.Run, ShowDeployToolWindowAsync);
             Register(PabloCommandIds.ShowDeploy, ShowDeployToolWindowAsync);
             Register(PabloCommandIds.SelectExecutable, SelectExecutableAsync);
+            Register(PabloCommandIds.Update, RunUpdateAsync);
             Register(PabloCommandIds.RunWithArgs, RunWithArgsFromMenuAsync);
             Register(PabloCommandIds.ToolbarRun, RunFromToolbarAsync);
 
@@ -219,6 +220,11 @@ namespace Pablo.VisualStudio
             }
 
             await PabloTerminalRunner.RunCliAsync(_package!.ExecutableService, args.ToArray());
+        }
+
+        private static async Task RunUpdateAsync()
+        {
+            await PabloUpdateService.RunUpdateCommandAsync(_package!.ExecutableService);
         }
 
         private static async Task RunWithArgsFromMenuAsync()
