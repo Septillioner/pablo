@@ -21,7 +21,7 @@ On an interactive TTY, `pablo run` shows a sticky step rail above detail logs:
 - Single target: `Validate → Build → Deploy → Post` (Build/Post are marked skipped when unused)
 - Sequence: one step per sequence target (environment name when unique, otherwise `profile/env`)
 
-Spinners and progress bars continue to appear under the rail for long-running work. Animations are disabled when stdout is not a TTY, or when `NO_COLOR`, `CI`, or `PABLO_PLAIN` is set — then only normal `Section` / `Log` lines are used.
+Spinners and progress bars continue to appear under the rail for long-running work. While a spinner or in-place progress bar is active, the rail stops pulsing so the two animations do not fight over the cursor (phase changes still update the rail). Animations are disabled when stdout is not a TTY, or when `NO_COLOR`, `CI`, or `PABLO_PLAIN` is set — then only normal `Section` / `Log` lines are used.
 
 ---
 

@@ -4,6 +4,12 @@ All notable changes to Pablo are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1]
+
+### Fixed
+
+- **Step rail vs spinner** — Sticky StepRail pulse no longer races Spinner/ProgressBar `\r` redraws (common garble in Windows PowerShell). Live-line chrome is serialized; rail pulse pauses while a spinner or incomplete progress bar owns the line, and phase updates repaint the spinner after the rail redraw.
+
 ## [2.1.0]
 
 ### Added

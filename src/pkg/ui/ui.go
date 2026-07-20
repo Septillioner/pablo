@@ -34,9 +34,16 @@ var (
 var spinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
 var (
+	// chromeMu serializes sticky rail, spinner, and progress-bar writes so
+	// cursor moves and \r redraws cannot interleave (especially on Windows).
+	chromeMu sync.Mutex
+
 	activeMu      sync.Mutex
 	activeSpinner *Spinner
 	progressPulse int
+	// progressLive is true while an incomplete ProgressBar owns the \r line.
+	// Guarded by chromeMu.
+	progressLive bool
 )
 
 // Interactive reports whether animated chrome should run.
@@ -78,7 +85,11 @@ func Header(version string) {
 
 // Log prints a structured status line: time, aligned mark, message.
 func Log(mark string, message string) {
-	clearActiveSpinnerLine()
+	chromeMu.Lock()
+	defer chromeMu.Unlock()
+
+	clearActiveSpinnerLineLocked()
+	progressLive = false
 	timestamp := GrayColor(time.Now().Format("15:04:05"))
 	fmt.Printf("%s  %s  %s\n", timestamp, formatMark(mark), message)
 	noteRailContentLines(1)
@@ -116,7 +127,12 @@ func Section(title string) {
 	if label == "" {
 		return
 	}
-	clearActiveSpinnerLine()
+
+	chromeMu.Lock()
+	defer chromeMu.Unlock()
+
+	clearActiveSpinnerLineLocked()
+	progressLive = false
 	fmt.Println()
 	prefix := ThemeColor("─")
 	fmt.Printf("%s %s\n", prefix, BoldColor(label))
@@ -126,7 +142,11 @@ func Section(title string) {
 
 // Result prints a single-line outcome without heavy separator bars.
 func Result(success bool, duration time.Duration) {
-	clearActiveSpinnerLine()
+	chromeMu.Lock()
+	defer chromeMu.Unlock()
+
+	clearActiveSpinnerLineLocked()
+	progressLive = false
 	fmt.Println()
 	elapsed := GrayColor(duration.Round(time.Millisecond).String())
 	if success {
@@ -150,7 +170,10 @@ func ProgressBar(percent int, label string) {
 		percent = 100
 	}
 
-	clearActiveSpinnerLine()
+	chromeMu.Lock()
+	defer chromeMu.Unlock()
+
+	clearActiveSpinnerLineLocked()
 
 	filled := percent * progressBarWidth / 100
 	var bar string
@@ -170,8 +193,11 @@ func ProgressBar(percent int, label string) {
 
 	fmt.Printf("\r%s  %s  %s %3d%%", GrayColor(label), bar, GrayColor("·"), percent)
 	if percent >= 100 {
+		progressLive = false
 		fmt.Println()
 		noteRailContentLines(1)
+	} else {
+		progressLive = true
 	}
 }
 
@@ -247,8 +273,11 @@ func (s *Spinner) Stop() {
 	s.mu.Unlock()
 
 	<-s.doneCh
+
+	chromeMu.Lock()
 	clearLine()
 	clearActiveSpinner(s)
+	chromeMu.Unlock()
 }
 
 // WithSpinner runs fn while a spinner is active. Stops the spinner before returning.
@@ -279,11 +308,24 @@ func (s *Spinner) loop() {
 }
 
 func (s *Spinner) render() {
+	chromeMu.Lock()
+	defer chromeMu.Unlock()
+	s.renderLocked()
+}
+
+// renderLocked writes the spinner live line. Caller must hold chromeMu.
+func (s *Spinner) renderLocked() {
+	if s == nil || s.inert {
+		return
+	}
 	s.mu.Lock()
+	stopped := s.stopped
 	frame := spinnerFrames[s.frameIdx%len(spinnerFrames)]
 	msg := s.message
 	s.mu.Unlock()
-
+	if stopped {
+		return
+	}
 	fmt.Printf("\r%s  %s  %s", ThemeColor(frame), ActionColor(padMark("run")), GrayColor(msg))
 }
 
@@ -305,7 +347,33 @@ func clearActiveSpinner(s *Spinner) {
 	}
 }
 
-func clearActiveSpinnerLine() {
+func spinnerIsActive() bool {
+	activeMu.Lock()
+	s := activeSpinner
+	activeMu.Unlock()
+	if s == nil || s.inert {
+		return false
+	}
+	s.mu.Lock()
+	stopped := s.stopped
+	s.mu.Unlock()
+	return !stopped
+}
+
+// liveLineBusy reports whether a spinner or incomplete progress bar currently
+// owns the in-place (\r) line. Rail pulse must not redraw while this is true.
+func liveLineBusy() bool {
+	if spinnerIsActive() {
+		return true
+	}
+	chromeMu.Lock()
+	live := progressLive
+	chromeMu.Unlock()
+	return live
+}
+
+// clearActiveSpinnerLineLocked clears the spinner live line. Caller must hold chromeMu.
+func clearActiveSpinnerLineLocked() {
 	activeMu.Lock()
 	s := activeSpinner
 	activeMu.Unlock()
@@ -313,6 +381,18 @@ func clearActiveSpinnerLine() {
 		return
 	}
 	clearLine()
+}
+
+// repaintActiveSpinnerLocked restores the spinner after a sticky rail redraw.
+// Caller must hold chromeMu.
+func repaintActiveSpinnerLocked() {
+	activeMu.Lock()
+	s := activeSpinner
+	activeMu.Unlock()
+	if s == nil {
+		return
+	}
+	s.renderLocked()
 }
 
 func clearLine() {

@@ -42,7 +42,6 @@ type StepRail struct {
 	fallback bool
 
 	mu           sync.Mutex
-	renderMu     sync.Mutex
 	stopCh       chan struct{}
 	doneCh       chan struct{}
 	stopped      bool
@@ -81,10 +80,13 @@ func StartStepRail(labels []string) *StepRail {
 		r.termHeight = height
 	}
 
-	clearActiveSpinnerLine()
+	chromeMu.Lock()
+	clearActiveSpinnerLineLocked()
 	fmt.Println()
 	fmt.Println(r.format(false))
 	r.contentLines = 0
+	chromeMu.Unlock()
+
 	setActiveRail(r)
 
 	r.stopCh = make(chan struct{})
@@ -207,7 +209,9 @@ func (r *StepRail) loop() {
 			r.frame++
 			active := r.current >= 0 && r.current < len(r.states) && r.states[r.current] == stepRailActive
 			r.mu.Unlock()
-			if active {
+			// Spinner/progress own the live \r line; pulsing the rail at the
+			// same time races cursor moves on Windows/PowerShell.
+			if active && !liveLineBusy() {
 				r.redraw()
 			}
 		}
@@ -219,10 +223,10 @@ func (r *StepRail) redraw() {
 		return
 	}
 
-	r.renderMu.Lock()
-	defer r.renderMu.Unlock()
+	chromeMu.Lock()
+	defer chromeMu.Unlock()
 
-	clearActiveSpinnerLine()
+	clearActiveSpinnerLineLocked()
 
 	r.mu.Lock()
 	line := r.format(true)
@@ -239,12 +243,14 @@ func (r *StepRail) redraw() {
 
 	if fallback {
 		fmt.Println(line)
+		repaintActiveSpinnerLocked()
 		return
 	}
 
 	up := contentLines + 1
 	fmt.Printf("\033[%dA\r\033[K%s", up, line)
 	fmt.Printf("\033[%dB\r", up)
+	repaintActiveSpinnerLocked()
 }
 
 func (r *StepRail) format(pulse bool) string {

@@ -13,7 +13,7 @@ Public view of what Pablo **ships today** and what is **planned next**. For curr
 | Status | Count (approx.) |
 |--------|-----------------|
 | Shipped | 31 |
-| Planned | 12 |
+| Planned | 13 |
 
 ---
 
@@ -37,6 +37,7 @@ Pablo
 │   ├── [x] inspect protocol (CLI + LSP listProfiles)
 │   ├── [x] Run command profile/environment picker
 │   ├── [x] CodeLens Run on environment lines
+│   ├── [ ] Completion detail with attribute usage examples
 │   └── [ ] Snippet versions synced with releases
 ├── Validation
 │   ├── [x] Schema checks in CLI (path:line:col errors)
@@ -164,6 +165,7 @@ Catalog: [tests/TEST_SPEC.md](../tests/TEST_SPEC.md)
 
 ### Platform & editor (P3)
 
+- [ ] **LSP completion examples** — when completing `pablo.yaml` attributes via `pablo lsp`, each completion item’s documentation/detail (suggestion summary) includes a short YAML usage snippet for that attribute, not only the bare field name; enrich shared `pkg/schema` metadata so VS Code and Visual Studio both surface the examples
 - [ ] **Snippet version sync** — align VS Code snippets with release version
 - [ ] **Build service cleanup** — integrate or remove unused builder abstraction
 - [ ] **Documentation sync** — keep reference docs current with each release
@@ -185,7 +187,7 @@ Catalog: [tests/TEST_SPEC.md](../tests/TEST_SPEC.md)
 | P0 | Security | SSH host key pinning |
 | P1 | Missing features | — |
 | P2 | Quality | Validation depth, tests, CI |
-| P3 | Platform & DX | Snippets, docs sync |
+| P3 | Platform & DX | Completion examples, snippets, docs sync |
 | P4 | Automation | GitHub Actions, release pipeline |
 | P5 | Future | Schema reflection, unknown-key diagnostics |
 
