@@ -42,6 +42,8 @@ namespace Pablo.VisualStudio.Services
 
         public async Task<InspectManifestOutcome> InspectManifestAsync(string filePath)
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             var uri = new Uri(filePath).AbsoluteUri;
             var lspResult = await PabloLanguageClientHost.TryListProfilesAsync(uri);
             if (lspResult?.Profiles != null && lspResult.Profiles.Length > 0)
@@ -58,6 +60,7 @@ namespace Pablo.VisualStudio.Services
             try
             {
                 var cliResult = await InspectViaCliAsync(binary, filePath);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 if (cliResult.Profiles.Length == 0)
                 {
                     return InspectManifestOutcome.NoProfiles();
@@ -67,6 +70,7 @@ namespace Pablo.VisualStudio.Services
             }
             catch (Exception ex)
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 _executableService.Log($"CLI inspect failed: {ex.Message}");
                 return InspectManifestOutcome.Failed(ex.Message);
             }

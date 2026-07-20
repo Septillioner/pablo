@@ -36,6 +36,7 @@ namespace Pablo.VisualStudio.Services
 
         public void SetSelectedExecutable(string path)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             _settings.SelectedExecutable = NormalizePath(path);
             _settings.Save();
         }
@@ -48,6 +49,7 @@ namespace Pablo.VisualStudio.Services
 
         public string NormalizePath(string binary)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             var normalized = Path.GetFullPath(binary);
             if (File.Exists(normalized))
             {
@@ -95,6 +97,7 @@ namespace Pablo.VisualStudio.Services
             }
 
             var onPath = await FindOnPathAsync();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             if (onPath.Count == 1)
             {
                 return NormalizePath(onPath[0]);
@@ -143,6 +146,7 @@ namespace Pablo.VisualStudio.Services
 
         public IReadOnlyList<string> DiscoverPickerCandidates()
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var candidates = new List<string>();
             var solutionDir = GetSolutionDirectory();
@@ -276,6 +280,7 @@ namespace Pablo.VisualStudio.Services
 
         private string ResolveSettingPath(string rawPath)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             var solutionDir = GetSolutionDirectory() ?? string.Empty;
             return rawPath
                 .Replace("${workspaceFolder}", solutionDir)

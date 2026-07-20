@@ -99,6 +99,7 @@ namespace Pablo.VisualStudio.Services
 
         private static string ExpandSettingPath(string rawPath)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             var solutionDir = TryGetSolutionDirectory() ?? string.Empty;
             return rawPath
                 .Replace("${workspaceFolder}", solutionDir)
