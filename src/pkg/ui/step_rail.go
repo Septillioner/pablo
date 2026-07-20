@@ -2,12 +2,9 @@ package ui
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
-
-	"golang.org/x/term"
 )
 
 // Step rail layout and motion.
@@ -19,6 +16,8 @@ const (
 	stepRailMarkDone       = "●"
 	stepRailMarkFailed     = "●"
 	stepRailMarkSkipped    = "·"
+	// Erase the footer line that is currently the last printed line.
+	stepRailEraseFooter = "\033[1A\r\033[K"
 )
 
 type stepRailState int
@@ -31,28 +30,29 @@ const (
 	stepRailSkipped
 )
 
-// StepRail is a TTY progress header showing pipeline or sequence phases.
+// StepRail is a TTY progress footer showing pipeline or sequence phases.
 // Non-interactive sessions get a static one-line snapshot (no animation).
 type StepRail struct {
 	labels  []string
 	states  []stepRailState
 	current int
 
-	inert    bool
-	fallback bool
+	inert bool
 
-	mu           sync.Mutex
-	stopCh       chan struct{}
-	doneCh       chan struct{}
-	stopped      bool
-	frame        int
-	contentLines int
-	termHeight   int
+	mu      sync.Mutex
+	stopCh  chan struct{}
+	doneCh  chan struct{}
+	stopped bool
+	frame   int
 }
 
 var (
 	activeRailMu sync.Mutex
 	activeRail   *StepRail
+
+	// footerPainted and externalHold are guarded by chromeMu.
+	footerPainted bool
+	externalHold  int
 )
 
 // StartStepRail begins a step rail with the first label active.
@@ -76,15 +76,12 @@ func StartStepRail(labels []string) *StepRail {
 		return r
 	}
 
-	if _, height, err := term.GetSize(int(os.Stdout.Fd())); err == nil {
-		r.termHeight = height
-	}
-
 	chromeMu.Lock()
 	clearActiveSpinnerLineLocked()
-	fmt.Println()
+	progressLive = false
+	eraseFooterLocked()
 	fmt.Println(r.format(false))
-	r.contentLines = 0
+	footerPainted = true
 	chromeMu.Unlock()
 
 	setActiveRail(r)
@@ -150,6 +147,7 @@ func (r *StepRail) Fail() {
 }
 
 // Close stops animation and unregisters the rail. Safe to call more than once.
+// The last footer line stays on screen as a final snapshot.
 func (r *StepRail) Close() {
 	if r == nil || r.inert {
 		return
@@ -166,6 +164,35 @@ func FailActiveStepRail() {
 	activeRailMu.Unlock()
 	if r != nil {
 		r.Fail()
+	}
+}
+
+// WithExternalOutput temporarily removes the sticky footer so subprocess
+// stdout/stderr can scroll freely without erasing the rail. The footer is
+// restored when fn returns. Nested calls are reference-counted.
+func WithExternalOutput(fn func() error) error {
+	suspendExternalOutput()
+	defer resumeExternalOutput()
+	return fn()
+}
+
+func suspendExternalOutput() {
+	chromeMu.Lock()
+	defer chromeMu.Unlock()
+	clearActiveSpinnerLineLocked()
+	progressLive = false
+	eraseFooterLocked()
+	externalHold++
+}
+
+func resumeExternalOutput() {
+	chromeMu.Lock()
+	defer chromeMu.Unlock()
+	if externalHold > 0 {
+		externalHold--
+	}
+	if externalHold == 0 {
+		paintFooterLocked()
 	}
 }
 
@@ -209,8 +236,9 @@ func (r *StepRail) loop() {
 			r.frame++
 			active := r.current >= 0 && r.current < len(r.states) && r.states[r.current] == stepRailActive
 			r.mu.Unlock()
-			// Spinner/progress own the live \r line; pulsing the rail at the
-			// same time races cursor moves on Windows/PowerShell.
+			// Spinner/progress own the live \r line; external output owns the
+			// scroll region. Pulsing the footer while either is active races
+			// the cursor on Windows/PowerShell.
 			if active && !liveLineBusy() {
 				r.redraw()
 			}
@@ -226,31 +254,13 @@ func (r *StepRail) redraw() {
 	chromeMu.Lock()
 	defer chromeMu.Unlock()
 
-	clearActiveSpinnerLineLocked()
-
-	r.mu.Lock()
-	line := r.format(true)
-	contentLines := r.contentLines
-	height := r.termHeight
-	fallback := r.fallback
-	if !fallback && height > 0 && contentLines+1 >= height {
-		r.fallback = true
-		r.contentLines = 0
-		fallback = true
-		contentLines = 0
-	}
-	r.mu.Unlock()
-
-	if fallback {
-		fmt.Println(line)
-		repaintActiveSpinnerLocked()
+	// Keep in-memory state; paint when the live line / external stream frees.
+	if externalHold > 0 || liveLineBusyLocked() {
 		return
 	}
 
-	up := contentLines + 1
-	fmt.Printf("\033[%dA\r\033[K%s", up, line)
-	fmt.Printf("\033[%dB\r", up)
-	repaintActiveSpinnerLocked()
+	eraseFooterLocked()
+	paintFooterLocked()
 }
 
 func (r *StepRail) format(pulse bool) string {
@@ -330,8 +340,21 @@ func clearActiveRail(r *StepRail) {
 	}
 }
 
-func noteRailContentLines(lines int) {
-	if lines <= 0 {
+// eraseFooterLocked removes the footer line when it is the last printed line.
+// Caller must hold chromeMu.
+func eraseFooterLocked() {
+	if !footerPainted {
+		return
+	}
+	fmt.Print(stepRailEraseFooter)
+	footerPainted = false
+}
+
+// paintFooterLocked prints the active rail as the last line. No-op while a
+// spinner/progress bar owns the live line or external output is suspended.
+// Caller must hold chromeMu.
+func paintFooterLocked() {
+	if footerPainted || externalHold > 0 || liveLineBusyLocked() {
 		return
 	}
 	activeRailMu.Lock()
@@ -341,6 +364,28 @@ func noteRailContentLines(lines int) {
 		return
 	}
 	r.mu.Lock()
-	r.contentLines += lines
+	line := r.format(true)
 	r.mu.Unlock()
+	if line == "" {
+		return
+	}
+	fmt.Println(line)
+	footerPainted = true
+}
+
+// prepareContentWriteLocked clears live chrome so a normal log line can print
+// above the footer. Caller must hold chromeMu.
+func prepareContentWriteLocked() {
+	clearActiveSpinnerLineLocked()
+	if progressLive {
+		clearLine()
+	}
+	progressLive = false
+	eraseFooterLocked()
+}
+
+// finishContentWriteLocked restores the footer after a normal log line.
+// Caller must hold chromeMu.
+func finishContentWriteLocked() {
+	paintFooterLocked()
 }

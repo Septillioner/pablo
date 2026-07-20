@@ -1,16 +1,10 @@
-## Pablo v2.1.1
+## Pablo v2.1.2
 
-Patch release: 
-fix: resolve StepRail and Spinner redraw conflict in Windows PowerShell
+Patch release: bottom-safe StepRail footer so build and other subprocess logs cannot erase the progress rail.
 
-- Updated the StepRail implementation to prevent racing conditions with Spinner/ProgressBar redraws, ensuring smoother output in Windows PowerShell.
-- Enhanced documentation to clarify the behavior of the sticky StepRail and its interaction with spinners and progress bars.
+### Changed
 
-
-### Fixed
-
-- **Step rail vs spinner** — Sticky StepRail pulse no longer races Spinner/ProgressBar `\r` redraws (common garble in Windows PowerShell). Live-line chrome is serialized; rail pulse pauses while a spinner or incomplete progress bar owns the line, and phase updates repaint the spinner after the rail redraw.
-
+- **Step rail footer** — Interactive StepRail is bottom-anchored: logs scroll above a single footer line (erase + reprint), instead of a sticky header that cursor-ups through build output. Spinner/ProgressBar still own the live line (footer hidden while they run). Build, hooks, git, and compose subprocesses use `ui.WithExternalOutput` so streaming stdout cannot wipe the rail.
 
 ### Downloads
 

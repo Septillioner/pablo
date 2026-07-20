@@ -4,6 +4,14 @@ All notable changes to Pablo are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [2.1.2] - 2026-07-20
+
+### Changed
+
+- **Step rail footer** — Interactive StepRail is bottom-anchored: logs scroll above a single footer line (erase + reprint), instead of a sticky header that cursor-ups through build output. Spinner/ProgressBar still own the live line (footer hidden while they run). Build, hooks, git, and compose subprocesses use `ui.WithExternalOutput` so streaming stdout cannot wipe the rail.
+
 ## [2.1.1]
 
 ### Fixed

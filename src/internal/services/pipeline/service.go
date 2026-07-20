@@ -316,7 +316,7 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	if err := cmd.Run(); err != nil {
+	if err := ui.WithExternalOutput(cmd.Run); err != nil {
 		ui.Log("-", "Build failed")
 		resultFail(start)
 		return err
