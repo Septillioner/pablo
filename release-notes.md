@@ -1,4 +1,4 @@
-## Pablo v2.0.1
+## Pablo v2.0.2
 
 Patch release: Adds `pablo update check` (standalone subcommand with optional `--json` output), deprecates `pablo update --check`, and enables CLI update checks in VS Code and Visual Studio extensions on activation with easy update actions.
 
