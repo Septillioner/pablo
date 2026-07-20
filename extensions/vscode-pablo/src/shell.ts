@@ -27,6 +27,7 @@ const PABLO_SUBCOMMANDS = new Set([
 	'uninstall',
 	'version',
 	'lsp',
+	'update',
 ]);
 
 export function quoteForShell(value: string, kind: ShellKind = detectShellKind()): string {

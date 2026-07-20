@@ -146,20 +146,25 @@ pablo version
 
 ## `update`
 
-Downloads the latest Pablo CLI binary for your OS/architecture from GitHub Releases, verifies `checksums.txt`, and replaces the running executable. Editor extensions (VSIX) are not updated.
+Downloads the latest Pablo CLI binary for your OS/architecture from [GitHub Releases](https://github.com/septillioner/pablo/releases), verifies `checksums.txt`, and replaces the running executable. Editor extensions (VSIX) are not updated.
 
-If other processes are running the same Pablo binary (for example `pablo lsp` from an editor), Pablo lists them and asks whether to close them before continuing. In a non-interactive terminal, close those processes manually if the replace step fails.
+If other processes are running the same Pablo binary (for example `pablo lsp` from an editor), Pablo lists them and asks whether to close them before continuing. In a non-interactive terminal, close those processes manually if the replace step fails. VS Code / Visual Studio extensions stop `pablo lsp` before invoking `pablo update`.
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--check` | `false` | Report whether a newer release exists; exit code `1` when an update is available |
+| Flag / subcommand | Default | Description |
+|-------------------|---------|-------------|
+| `check` | — | Report whether a newer release exists without downloading |
+| `--json` | `false` | With `check`: print machine-readable JSON (`current_version`, `latest_version`, `release_tag`, `update_available`) |
 | `--version` | *(empty)* | Pin a release tag (e.g. `v1.5.0`); also reads `PABLO_VERSION` |
+| `--check` | `false` | Deprecated alias for `pablo update check` |
 
 ```bash
 pablo update
-pablo update --check
+pablo update check
+pablo update check --json
 PABLO_VERSION=v1.5.0 pablo update
 ```
+
+**Exit codes for `update check`:** `0` when already up to date; `1` when a newer release is available (or on failure). Prefer `--json` for scripting and editor extensions.
 
 After a successful update, open a new terminal (or invoke `pablo version` again) so your shell picks up the new binary.
 

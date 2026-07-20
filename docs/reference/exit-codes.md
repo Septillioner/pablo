@@ -19,4 +19,4 @@ Typical reasons for exit code `1`:
 
 For scripting, rely on the exit code and parse stderr/stdout for details. For structured manifest data, use `pablo inspect --json` (exits `0` on success).
 
-`pablo update --check` exits `1` when a newer release is available, even though the check itself succeeded.
+`pablo update check` (and the deprecated `pablo update --check`) exits `1` when a newer release is available, even though the check itself succeeded. Use `pablo update check --json` for structured output.

@@ -29,6 +29,7 @@ Editor support for `pablo.yaml` in Visual Studio 2026 Insiders and Visual Studio
 | CodeLens **Run profile/env** | LSP + extension → `pablo run` |
 | Profile/env gutter stripes | Extension adornments |
 | Profile/env picker | `pablo/listProfiles` or `inspect --json` |
+| CLI update check on activate | `pablo update check --json` → Yes/No prompt |
 
 ---
 
@@ -53,6 +54,8 @@ Workspace `build/pablo.exe` appears in the executable picker but is not auto-sel
 | **Tools → Pablo: Run Deployment** | Opens **Pablo Run Deployment** tool window |
 | **Pablo** toolbar (**View → Toolbars → Pablo**) | Manifest / Profile / Environment + Run |
 | **Tools → Pablo: Select Executable** | Choose CLI binary |
+
+On package load the extension runs `pablo update check --json` once (no polling). If a newer CLI release exists, a Yes/No dialog offers to update: the language server is stopped, `pablo update` runs, then LSP restarts. Check failures (offline, missing binary) are logged quietly to **Pablo Language Server** output.
 
 CodeLens needs a working LSP connection and **Select Executable** (Pablo 1.3+). Click **Run** on an environment line to deploy without the toolbar. Sequences still require the CLI — see [Sequences](sequences.md).
 

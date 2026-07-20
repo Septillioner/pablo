@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Added
+
+- On activation, check once for a newer Pablo CLI via `pablo update check --json` and offer an **Update** action.
+
 ## [1.3.0] - 2026-07-09
 
 ### Added

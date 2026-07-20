@@ -34,6 +34,11 @@ namespace Pablo.VisualStudio
             await PabloCommandHandler.InitializeAsync(this);
             PabloToolbarController.Instance.RefreshManifests();
             await Lsp.PabloLanguageClientHost.RestartAsync();
+
+            _ = JoinableTaskFactory.RunAsync(async () =>
+            {
+                await PabloUpdateService.CheckAndNotifyAsync(ExecutableService);
+            });
         }
 
         internal void OnOptionsChanged()

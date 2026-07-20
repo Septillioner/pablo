@@ -58,7 +58,7 @@ func main() {
 It supports multiple profiles, environment-based configurations, and automatic 
 artifact filtering, path registration, and health checks.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			if cmd.Name() == "lsp" || cmd.Name() == "inspect" || cmd.Name() == "update" {
+			if shouldSkipBrandHeader(cmd) {
 				return
 			}
 			ui.Header(Version)
@@ -86,7 +86,8 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
   pablo check --file my-pipeline.yaml
   pablo init
   pablo lsp
-  pablo update`
+  pablo update
+  pablo update check`
 
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "List each artifact path during deployment")
 
@@ -221,20 +222,34 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 		},
 	}
 
-	var updateCheck bool
+	var updateCheckFlag bool
 	var updateVersion string
+	var updateJSON bool
 	var updateCmd = &cobra.Command{
 		Use:   "update",
 		Short: "Update the Pablo CLI binary from GitHub Releases",
 		Example: `  pablo update
-  pablo update --check
+  pablo update check
+  pablo update check --json
   pablo update --version v1.5.0`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runUpdate(updateCheck, updateVersion)
+			return runUpdate(updateCheckFlag, updateVersion, updateJSON)
 		},
 	}
-	updateCmd.Flags().BoolVar(&updateCheck, "check", false, "Check for updates without downloading")
-	updateCmd.Flags().StringVar(&updateVersion, "version", "", "Pin a release tag (e.g. v1.5.0); also reads PABLO_VERSION")
+	updateCmd.Flags().BoolVar(&updateCheckFlag, "check", false, "Deprecated: use 'pablo update check'")
+	updateCmd.PersistentFlags().StringVar(&updateVersion, "version", "", "Pin a release tag (e.g. v1.5.0); also reads PABLO_VERSION")
+	updateCmd.PersistentFlags().BoolVar(&updateJSON, "json", false, "Machine-readable JSON output (check only)")
+
+	var updateCheckCmd = &cobra.Command{
+		Use:   "check",
+		Short: "Check whether a newer CLI release is available",
+		Example: `  pablo update check
+  pablo update check --json`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runUpdate(true, updateVersion, updateJSON)
+		},
+	}
+	updateCmd.AddCommand(updateCheckCmd)
 
 	rootCmd.AddCommand(runCmd, initCmd, checkCmd, uninstallCmd, versionCmd, inspectCmd, lspCmd, updateCmd)
 
@@ -340,7 +355,24 @@ func runInspect(manifestPath string, asJSON bool) error {
 	return nil
 }
 
-func runUpdate(checkOnly bool, pinnedVersion string) error {
+func shouldSkipBrandHeader(cmd *cobra.Command) bool {
+	for current := cmd; current != nil; current = current.Parent() {
+		switch current.Name() {
+		case "lsp", "inspect", "update":
+			return true
+		}
+	}
+	return false
+}
+
+type updateCheckJSON struct {
+	CurrentVersion  string `json:"current_version"`
+	LatestVersion   string `json:"latest_version"`
+	ReleaseTag      string `json:"release_tag"`
+	UpdateAvailable bool   `json:"update_available"`
+}
+
+func runUpdate(checkOnly bool, pinnedVersion string, asJSON bool) error {
 	if pinnedVersion == "" {
 		pinnedVersion = selfupdate.PinnedVersionFromEnv()
 	}
@@ -354,9 +386,30 @@ func runUpdate(checkOnly bool, pinnedVersion string) error {
 	if checkOnly {
 		result, err := svc.Check(opts)
 		if err != nil {
-			ui.Log("-", fmt.Sprintf("Update check failed: %v", err))
+			if !asJSON {
+				ui.Log("-", fmt.Sprintf("Update check failed: %v", err))
+			}
 			return err
 		}
+
+		if asJSON {
+			payload := updateCheckJSON{
+				CurrentVersion:  result.CurrentVersion,
+				LatestVersion:   result.LatestVersion,
+				ReleaseTag:      result.ReleaseTag,
+				UpdateAvailable: !result.UpToDate,
+			}
+			encoded, err := json.Marshal(payload)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(encoded))
+			if !result.UpToDate {
+				os.Exit(1)
+			}
+			return nil
+		}
+
 		if result.UpToDate {
 			ui.Log("+", fmt.Sprintf("Pablo is up to date (%s)", result.CurrentVersion))
 			return nil

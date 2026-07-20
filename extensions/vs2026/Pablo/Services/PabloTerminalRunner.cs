@@ -30,7 +30,7 @@ namespace Pablo.VisualStudio
 
         public static async Task<bool> RunDeploymentAsync(PabloExecutableService executableService, string filePath, string runTarget)
         {
-            return await RunCliAsync(executableService, new[] { "run", "-f", filePath, runTarget });
+            return await RunCliAsync(executableService, new[] { "run", "--verbose", "-f", filePath, runTarget });
         }
     }
 }

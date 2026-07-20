@@ -5,6 +5,7 @@ Pablo is a powerful deployment helper for managing multi-environment builds and 
 ## Features
 
 - **LSP Powered Intelligence**: Real-time validation, diagnostics, and autocompletion via `pablo lsp` (same binary as the CLI).
+- **CLI update check**: On activation, runs `pablo update check --json` once and offers an **Update** action when a newer CLI release is available.
 - **Smart Autocompletion**: Context-aware suggestions for all Pablo configuration fields and enum values.
 - **Hover Documentation**: Quick access to documentation and field descriptions directly within the editor.
 - **Scaffold Templates**: Ready-to-use Schema v2 templates (type `pablo-` to browse):

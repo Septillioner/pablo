@@ -158,12 +158,17 @@ namespace Pablo.VisualStudio.Lsp
             return Task.CompletedTask;
         }
 
-        internal async Task RestartLanguageServerAsync()
+        internal async Task StopLanguageServerAsync()
         {
             if (StopAsync != null)
             {
                 await StopAsync.InvokeAsync(this, EventArgs.Empty);
             }
+        }
+
+        internal async Task RestartLanguageServerAsync()
+        {
+            await StopLanguageServerAsync();
 
             if (StartAsync != null)
             {

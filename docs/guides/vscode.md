@@ -26,6 +26,7 @@ Editor support for `pablo.yaml` through the Pablo language server: completion, v
 | Check YAML / Init / Run commands | Extension → CLI |
 | CodeLens **Run profile/env** | Extension → `pablo run` |
 | Profile/env picker on Run | `pablo/listProfiles` or `inspect --json` |
+| CLI update check on activate | `pablo update check --json` → toast with **Update** |
 
 ---
 
@@ -58,6 +59,8 @@ Copy from `.vscode/settings.example.json` in the repo.
 | **Pablo: Init Config** | `pablo init` |
 | **Pablo: Run Deployment** | QuickPick profile + env → `pablo run` |
 | **Pablo: Select Executable** | Choose CLI binary |
+
+On activation the extension runs `pablo update check --json` once (no polling). If a newer CLI release exists, an info toast offers **Update**, which stops the language server, runs `pablo update`, then restarts LSP. Check failures (offline, missing binary) are logged quietly to **Pablo Language Server** output.
 
 CodeLens: click **Run default/production** on an environment line to skip the picker. Sequences still require the CLI — see [Sequences](sequences.md).
 

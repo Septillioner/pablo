@@ -296,7 +296,7 @@ namespace Pablo.VisualStudio.Services
             return string.IsNullOrWhiteSpace(solutionDirectory) ? null : solutionDirectory.TrimEnd('\\');
         }
 
-        private async Task<CommandResult> RunCommandAsync(string binary, IReadOnlyList<string> args)
+        public async Task<CommandResult> RunCommandAsync(string binary, IReadOnlyList<string> args, int timeoutMs = PabloConstants.ProbeTimeoutMs)
         {
             return await Task.Run(() =>
             {
@@ -323,7 +323,7 @@ namespace Pablo.VisualStudio.Services
                 }
 
                 var output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
-                if (!process.WaitForExit(PabloConstants.ProbeTimeoutMs))
+                if (!process.WaitForExit(timeoutMs))
                 {
                     process.Kill();
                     return new CommandResult(-1, output);
@@ -333,7 +333,7 @@ namespace Pablo.VisualStudio.Services
             });
         }
 
-        private readonly struct CommandResult
+        public readonly struct CommandResult
         {
             public CommandResult(int exitCode, string output)
             {

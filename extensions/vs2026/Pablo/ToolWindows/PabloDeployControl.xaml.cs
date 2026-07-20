@@ -175,7 +175,7 @@ namespace Pablo.VisualStudio.ToolWindows
                 runTarget);
 
             StatusText.Text = started
-                ? $"Started: pablo run -f {_manifestPath} {runTarget}"
+                ? $"Started: pablo run --verbose -f {_manifestPath} {runTarget}"
                 : NoBinaryMessage;
         }
     }

@@ -24,6 +24,7 @@ import {
 import { buildTerminalCommand } from './shell';
 import { inspectManifest } from './inspect';
 import { registerProfileDecorations } from './profileDecorations';
+import { notifyCliUpdateIfAvailable } from './updateCheck';
 
 let client: LanguageClient | undefined;
 let extensionContext: vscode.ExtensionContext;
@@ -315,6 +316,21 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 
 	await ensureLanguageClientStarted(context);
+
+	const updateBinary = activeBinary ?? (await resolvePabloBinary(context, outputChannel));
+	if (updateBinary) {
+		void notifyCliUpdateIfAvailable({
+			binaryPath: normalizeExecutablePath(updateBinary),
+			outputChannel,
+			onBeforeUpdate: stopLanguageClientIfRunning,
+			onAfterUpdate: async () => {
+				const started = await tryResolveAndStart(context);
+				if (!started) {
+					await handlePabloMissing(context);
+				}
+			},
+		});
+	}
 }
 
 async function runPabloRun() {
@@ -368,7 +384,7 @@ async function executeRun(filePath: string, runTarget: string): Promise<void> {
 	}
 
 	const resolved = normalizeExecutablePath(binary);
-	const args = ['run', '-f', filePath, runTarget];
+	const args = ['run', '--verbose', '-f', filePath, runTarget];
 	const line = buildTerminalCommand(resolved, args);
 	const terminal = vscode.window.terminals.find((t) => t.name === 'Pablo CLI')
 		|| vscode.window.createTerminal('Pablo CLI');

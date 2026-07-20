@@ -44,6 +44,7 @@ Double-click `Pablo\bin\Release\net472\Pablo.VisualStudio.vsix`, restart VS.
 - CodeLens **Run** on environment lines (via LSP + `PabloMiddleLayer`)
 - Profile/environment gutter stripes
 - Commands: Check YAML, Init Config, Run Deployment, Select Executable
+- On activation: one-shot CLI update check (`pablo update check --json`) with Yes/No update prompt
 - **Pablo Run Deployment** tool window — profile + environment combos, **Run Deployment**, **Refresh**; opened from **Tools → Pablo: Run Deployment**
 - **Pablo** toolbar (**View → Toolbars → Pablo**) — **Manifest** / **Profile** / **Environment** combos + **Run**; discovers manifests in the solution
 - Snippets: `pablo-tpl-*`, `pablo-config`

@@ -61,7 +61,7 @@ PABLO_VERSION=v1.4.0 curl -fsSL https://raw.githubusercontent.com/septillioner/p
 | Windows | `C:\Program Files\Pablo\pablo.exe` | `%LOCALAPPDATA%\Pablo\pablo.exe` |
 | macOS / Linux | `/usr/local/bin/pablo` | `~/.local/bin/pablo` |
 
-Verify with `pablo version`. To refresh an existing install later, run `pablo update` (or `pablo update --check` to only report a newer release). If another process holds the binary — for example `pablo lsp` from an editor — Pablo lists it and asks whether to close it before replacing the file.
+Verify with `pablo version`. To refresh an existing install later, run `pablo update` (or `pablo update check` to only report a newer release). If another process holds the binary — for example `pablo lsp` from an editor — Pablo lists it and asks whether to close it before replacing the file. The VS Code and Visual Studio extensions also check for CLI updates on activation and can run `pablo update` for you.
 
 ---
 

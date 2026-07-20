@@ -17,6 +17,16 @@ namespace Pablo.VisualStudio.Lsp
 
         public static bool IsRunning => _client?.Rpc != null;
 
+        public static async Task StopAsync()
+        {
+            if (_client == null)
+            {
+                return;
+            }
+
+            await _client.StopLanguageServerAsync();
+        }
+
         public static async Task RestartAsync()
         {
             if (_client == null)
