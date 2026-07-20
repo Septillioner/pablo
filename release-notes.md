@@ -1,15 +1,13 @@
 ## Pablo v2.0.1
 
-Patch release: richer CLI motion on top of the v2.0.0 theme refresh.
+Patch release: Adds `pablo update check` (standalone subcommand with optional `--json` output), deprecates `pablo update --check`, and enables CLI update checks in VS Code and Visual Studio extensions on activation with easy update actions.
 
-### Changed
 
-- **CLI theme + motion** — Compact cyan brand header (wordmark + version + accent rule), aligned status marks (`ok` / `fail` / `warn` / `info` / `run`), lighter section rules, and a single-line result footer.
-- **Spinners & progress bars** — Long-running steps use braille spinners and pulsing progress bars (SSH connect, file filter, local copy, remote tar/legacy transfer, checksum verify, remote git/compose). Animations stay off for non-TTY, `NO_COLOR`, `CI`, and `PABLO_PLAIN`.
+### Added
 
-### Fixed
+- `pablo update check` — check-only subcommand with optional `--json` (`current_version`, `latest_version`, `release_tag`, `update_available`); `pablo update --check` remains as a deprecated alias.
+- VS Code and Visual Studio extensions check for CLI updates once on activation (`pablo update check --json`) and offer an Update action that runs `pablo update` after stopping the language server.
 
-- Include/exclude globs with Windows-style backslashes (e.g. `src\*.go`) now match on Linux/macOS hosts.
 
 ### Downloads
 
