@@ -34,7 +34,7 @@ func (s *Service) CloneOrPull(config *domain.GitConfig, targetPath string) error
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
-		if err := ui.WithExternalOutput(cmd.Run); err != nil {
+		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("git pull failed: %w", err)
 		}
 	} else {
@@ -50,7 +50,7 @@ func (s *Service) CloneOrPull(config *domain.GitConfig, targetPath string) error
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
-		if err := ui.WithExternalOutput(cmd.Run); err != nil {
+		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("git clone failed: %w", err)
 		}
 	}

@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.1.3] - 2026-07-22
+
+### Removed
+
+- **StepRail** — Sticky/footer step rail (`Validate → Build → Deploy → Post` and sequence labels), pulse animation, cursor-up footer erase/reprint, and `ui.WithExternalOutput` scaffolding are gone.
+
+### Changed
+
+- **CLI UX** — Interactive runs use the prior standard chrome only: `Header` / `Section`, marked `Log` lines, `Spinner`, `ProgressBar` / `FileProgress`, and `Result`. Build, hooks, git, and compose subprocesses stream stdout/stderr directly again.
+
 ## [2.1.2] - 2026-07-20
 
 ### Changed

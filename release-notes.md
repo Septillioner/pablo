@@ -1,10 +1,14 @@
-## Pablo v2.1.2
+## Pablo v2.1.3
 
-Patch release: bottom-safe StepRail footer so build and other subprocess logs cannot erase the progress rail.
+Patch release: remove StepRail and restore the standard Section/Log/Spinner/ProgressBar CLI UX.
+
+### Removed
+
+- **StepRail** — Sticky/footer step rail (`Validate → Build → Deploy → Post` and sequence labels), pulse animation, cursor-up footer erase/reprint, and `ui.WithExternalOutput` scaffolding are gone.
 
 ### Changed
 
-- **Step rail footer** — Interactive StepRail is bottom-anchored: logs scroll above a single footer line (erase + reprint), instead of a sticky header that cursor-ups through build output. Spinner/ProgressBar still own the live line (footer hidden while they run). Build, hooks, git, and compose subprocesses use `ui.WithExternalOutput` so streaming stdout cannot wipe the rail.
+- **CLI UX** — Interactive runs use the prior standard chrome only: `Header` / `Section`, marked `Log` lines, `Spinner`, `ProgressBar` / `FileProgress`, and `Result`. Build, hooks, git, and compose subprocesses stream stdout/stderr directly again.
 
 ### Downloads
 

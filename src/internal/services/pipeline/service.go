@@ -52,30 +52,16 @@ func (s *Service) resolvePath(baseDir, path string) string {
 	return filepath.Join(baseDir, path)
 }
 
-const (
-	phaseValidate = "Validate"
-	phaseBuild    = "Build"
-	phaseDeploy   = "Deploy"
-	phasePost     = "Post"
-)
-
 func resultFail(start time.Time) {
-	ui.FailActiveStepRail()
 	ui.Result(false, time.Since(start))
 }
 
 func (s *Service) Run(manifestPath, profileName, envName string, allowProtected, verbose bool) error {
-	return s.run(manifestPath, profileName, envName, allowProtected, verbose, true)
+	return s.run(manifestPath, profileName, envName, allowProtected, verbose)
 }
 
-func (s *Service) run(manifestPath, profileName, envName string, allowProtected, verbose, withRail bool) error {
+func (s *Service) run(manifestPath, profileName, envName string, allowProtected, verbose bool) error {
 	start := time.Now()
-
-	var rail *ui.StepRail
-	if withRail {
-		rail = ui.StartStepRail([]string{phaseValidate, phaseBuild, phaseDeploy, phasePost})
-		defer rail.Close()
-	}
 
 	ui.Log("*", fmt.Sprintf("Loading manifest: %s", manifestPath))
 	absManifest, err := filepath.Abs(manifestPath)
@@ -129,10 +115,6 @@ func (s *Service) run(manifestPath, profileName, envName string, allowProtected,
 		return fmt.Errorf("environment not found")
 	}
 
-	if rail != nil {
-		rail.Succeed()
-	}
-
 	ui.Section("Deployment Info")
 	ui.Log("*", fmt.Sprintf("Project: %s", cfg.Name))
 	ui.Log("*", fmt.Sprintf("Version: %s", cfg.Version))
@@ -141,11 +123,11 @@ func (s *Service) run(manifestPath, profileName, envName string, allowProtected,
 
 	vars := s.resolveVariables(env)
 
-	if err := s.handleBuild(profile, env, cfg.BaseDir, vars, start, rail); err != nil {
+	if err := s.handleBuild(profile, env, cfg.BaseDir, vars, start); err != nil {
 		return err
 	}
 
-	if err := s.handleDeployment(profile, env, cfg, vars, allowProtected, verbose, start, rail); err != nil {
+	if err := s.handleDeployment(profile, env, cfg, vars, allowProtected, verbose, start); err != nil {
 		return err
 	}
 
@@ -206,9 +188,6 @@ func (s *Service) RunSequence(manifestPath, sequenceName string, allowProtected,
 	ui.Log("*", fmt.Sprintf("Project: %s", cfg.Name))
 	ui.Log("*", fmt.Sprintf("Sequence: %s (%d steps)", sequenceName, total))
 
-	rail := ui.StartStepRail(sequenceRailLabels(steps))
-	defer rail.Close()
-
 	for i, step := range steps {
 		profileName, envName, err := target.Parse(step)
 		if err != nil {
@@ -218,41 +197,15 @@ func (s *Service) RunSequence(manifestPath, sequenceName string, allowProtected,
 		}
 
 		ui.Log("*", fmt.Sprintf("Sequence step %d/%d: %s", i+1, total, step))
-		if err := s.run(manifestPath, profileName, envName, allowProtected, verbose, false); err != nil {
+		if err := s.run(manifestPath, profileName, envName, allowProtected, verbose); err != nil {
 			ui.Log("-", fmt.Sprintf("Sequence aborted at step %d/%d", i+1, total))
 			resultFail(start)
 			return err
 		}
-		rail.Succeed()
 	}
 
 	ui.Result(true, time.Since(start))
 	return nil
-}
-
-func sequenceRailLabels(steps []string) []string {
-	envs := make([]string, len(steps))
-	seen := make(map[string]int, len(steps))
-	for i, step := range steps {
-		_, envName, err := target.Parse(step)
-		if err != nil {
-			envs[i] = strings.TrimSpace(step)
-			seen[envs[i]]++
-			continue
-		}
-		envs[i] = envName
-		seen[envName]++
-	}
-
-	labels := make([]string, len(steps))
-	for i, step := range steps {
-		if seen[envs[i]] > 1 {
-			labels[i] = strings.TrimSpace(step)
-			continue
-		}
-		labels[i] = envs[i]
-	}
-	return labels
 }
 
 func hasBuildCommand(profile *domain.Profile, env domain.Environment) bool {
@@ -271,11 +224,8 @@ func (s *Service) resolveVariables(env domain.Environment) map[string]string {
 	return vars
 }
 
-func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, baseDir string, vars map[string]string, start time.Time, rail *ui.StepRail) error {
+func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, baseDir string, vars map[string]string, start time.Time) error {
 	if !hasBuildCommand(profile, env) {
-		if rail != nil {
-			rail.Skip()
-		}
 		return nil
 	}
 
@@ -316,19 +266,16 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	if err := ui.WithExternalOutput(cmd.Run); err != nil {
+	if err := cmd.Run(); err != nil {
 		ui.Log("-", "Build failed")
 		resultFail(start)
 		return err
 	}
 	ui.Log("+", "Build completed")
-	if rail != nil {
-		rail.Succeed()
-	}
 	return nil
 }
 
-func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environment, cfg *domain.Config, vars map[string]string, allowProtected, verbose bool, start time.Time, rail *ui.StepRail) error {
+func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environment, cfg *domain.Config, vars map[string]string, allowProtected, verbose bool, start time.Time) error {
 	isRemote := env.Remote != nil
 
 	// 1. Pre-deployment Commands
@@ -371,24 +318,13 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 		}
 	}
 
-	hasPost := len(env.Deploy.PostCommands) > 0
-	if rail != nil {
-		rail.Succeed()
-		if !hasPost {
-			rail.Skip()
-		}
-	}
-
 	// 4. Post-deployment Commands
-	if hasPost {
+	if len(env.Deploy.PostCommands) > 0 {
 		ui.Section("Phase 5: Post-Deployment Commands")
 		if err := s.runCommands(env.Deploy.PostCommands, env, isRemote, cfg, vars); err != nil {
 			ui.Log("-", "Post-deployment commands failed")
 			resultFail(start)
 			return err
-		}
-		if rail != nil {
-			rail.Succeed()
 		}
 	}
 

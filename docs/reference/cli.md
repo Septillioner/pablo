@@ -16,12 +16,7 @@ See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 
 ### Terminal output
 
-On an interactive TTY, `pablo run` shows a step rail pinned to the bottom of the terminal (detail logs scroll above it):
-
-- Single target: `Validate → Build → Deploy → Post` (Build/Post are marked skipped when unused)
-- Sequence: one step per sequence target (environment name when unique, otherwise `profile/env`)
-
-Spinners and progress bars temporarily own the bottom line; the footer rail hides while they run and returns when they stop. Build, hook, git, and compose subprocess output suspends the footer for the same reason so scrolling command logs cannot erase it. Animations are disabled when stdout is not a TTY, or when `NO_COLOR`, `CI`, or `PABLO_PLAIN` is set — then only normal `Section` / `Log` lines are used.
+On an interactive TTY, `pablo run` uses the standard CLI chrome: `Header` / `Section` phase dividers, marked `Log` lines (`ok` / `fail` / `warn` / `info` / `run`), `Spinner` for indeterminate work, `ProgressBar` / `FileProgress` for file copy/transfer, and `Result` for the final outcome. Build and other subprocesses stream stdout/stderr normally. Animations are disabled when stdout is not a TTY, or when `NO_COLOR`, `CI`, or `PABLO_PLAIN` is set — then only plain `Section` / `Log` lines are used.
 
 ---
 

@@ -5,8 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
-	"pablo/pkg/ui"
 )
 
 type Adapter struct{}
@@ -37,7 +35,7 @@ func (a *Adapter) ComposeUp(composeFile string, build bool, targetPath string) e
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return ui.WithExternalOutput(cmd.Run)
+	return cmd.Run()
 }
 
 func (a *Adapter) ComposeDown(composeFile string, targetPath string) error {
@@ -45,7 +43,7 @@ func (a *Adapter) ComposeDown(composeFile string, targetPath string) error {
 	cmd.Dir = targetPath
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return ui.WithExternalOutput(cmd.Run)
+	return cmd.Run()
 }
 
 // ComposePsRunning reports whether any containers for the Compose project are present.
