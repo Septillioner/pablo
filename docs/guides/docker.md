@@ -77,7 +77,7 @@ On redeploy, Pablo detects running containers with `docker compose ps -q` and st
 
 ## Environment variables
 
-Set variables on the environment. Pablo writes an env file in the clone directory when `env_file` is configured:
+Pablo **writes** an env file in the clone directory from environment `variables` when `env_file` is set and the map is non-empty. It does not read an existing `.env` as input. For compile-time files under a local `build.path` (e.g. Vite `.env.production` on a `static` profile), put values in environment `variables` and set `build.env_file` — see [Configuration — Variables and env files](../reference/configuration.md#variables-and-env-files).
 
 ```yaml
 name: stack

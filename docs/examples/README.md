@@ -9,7 +9,7 @@ Hands-on walkthrough of example 1: [First deployment](../getting-started/first-d
 | # | Scenario | What you learn |
 |---|----------|----------------|
 | 1 | [Local static, no build](#1-local-static-no-build) | Copy files without a build step |
-| 2 | [Local static + build](#2-local-static--build) | Optional `build.command` for `static` |
+| 2 | [Local static + build](#2-local-static--build) | Optional `build.command`; Vite `VITE_*` + `build.env_file` |
 | 3 | [Local binary + PATH](#3-local-binary--path) | `binary` type and `register_path` |
 | 4 | [SSH static](#4-ssh-static) | `remote` + named SSH credential |
 | 5 | [SSH rename-replace](#5-ssh-rename-replace) | Per-file swap over SSH |
@@ -61,21 +61,28 @@ Fixture: [tests/agnostic/local-deploy](../../tests/agnostic/local-deploy/).
 
 Same copy flow, plus a build command. Artifacts come from the build output directory named in `deploy.source.dir`.
 
+For tools that read dotenv at compile time (Vite, etc.), put values under environment `variables` and set `build.env_file` relative to `build.path`. Pablo **writes** that file before `build.command` and injects the same keys into the build process environment. It does not load an existing `.env` as input. Details: [Variables and env files](../reference/configuration.md#variables-and-env-files).
+
 ```yaml
 name: frontend
 version: 0.1.0
 
 profiles:
-  default:
+  frontend:
     type: static
     build:
       command: npm run build
-      path: .
+      path: ./frontend
+      # Written under build.path before npm run build
+      env_file: .env.production
     environments:
       production:
+        variables:
+          VITE_API_BASE_URL: https://api.example.com
+          VITE_ENV: production
         deploy:
           source:
-            dir: ./dist
+            dir: ./frontend/dist
             include: ["**/*"]
             exclude: ["*.map"]
           target_path: ./deploy-output
@@ -84,10 +91,10 @@ profiles:
 
 ```bash
 pablo check
-pablo run
+pablo run -p frontend
 ```
 
-`build` is optional for `static`. Use it when you need compile or bundle; skip it for plain HTML/CSS/assets.
+`build` is optional for `static`. Use it when you need compile or bundle; skip it for plain HTML/CSS/assets. Keep secrets out of committed manifests — use a gitignored override file or CI-injected values for sensitive keys.
 
 ---
 

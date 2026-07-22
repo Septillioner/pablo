@@ -1,14 +1,11 @@
-## Pablo v2.1.3
+## Pablo v2.2.0
 
-Patch release: remove StepRail and restore the standard Section/Log/Spinner/ProgressBar CLI UX.
-
-### Removed
-
-- **StepRail** — Sticky/footer step rail (`Validate → Build → Deploy → Post` and sequence labels), pulse animation, cursor-up footer erase/reprint, and `ui.WithExternalOutput` scaffolding are gone.
+Environment-first variables and pre-build `build.env_file` for Schema v2 manifests.
 
 ### Changed
 
-- **CLI UX** — Interactive runs use the prior standard chrome only: `Header` / `Section`, marked `Log` lines, `Spinner`, `ProgressBar` / `FileProgress`, and `Result`. Build, hooks, git, and compose subprocesses stream stdout/stderr directly again.
+- **Env-first variables + pre-build `build.env_file`** — Environment `variables` (profile→env merge) are the canonical map. When `build.env_file` is set, Pablo writes that map under `build.path` before `build.command` and injects it into the build process env. Optional `build.variables` overlay build-only keys. Deploy `env_file` under `target_path` is unchanged.
+- **Docs — variables / env files** — Recommend Vite/`VITE_*` maps under environment `variables` with `build.env_file: .env.production`; clarified write-only dotenv generation, empty-map skip, relative vs absolute paths; Schema v2 examples in configuration.md and Examples #2.
 
 ### Downloads
 

@@ -33,9 +33,9 @@ See also: [Configuration](configuration.md) · [Examples](../examples/README.md)
 Single-target `pablo run` (one profile + environment):
 
 1. Load and validate manifest
-2. Build (`build.command`) — skipped when `build` is omitted or empty
+2. Build (`build.command`) — skipped when `build` is omitted or empty; when `build.env_file` is set and the resolved variable map is non-empty, write that file under `build.path` first and inject keys into the build process env
 3. Pre-deployment commands (`deploy.pre_commands`)
-4. Deployment (local copy or SSH tar stream)
+4. Deployment (local copy or SSH tar stream); when `env_file` is set and variables are non-empty, write the dotenv under `deploy.target_path`
 5. Post-deployment commands (`deploy.post_commands`)
 6. PATH registration (`register_path`, binary type)
 
@@ -57,7 +57,7 @@ Root-level `sequences` name ordered lists of `profile/env` targets. `pablo run s
 - Backup, recreate, and rename-replace strategies with protected path detection (backup/recreate only).
 - `docker` type with local and remote (SSH) Docker Compose orchestration.
 - `git-sync` with local and remote (SSH) git clone/pull.
-- Environment variable injection via env file generation.
+- Environment-first variables — canonical map is environment `variables` (profile→env merge); optional `build.variables` overlay for build-only keys. Pablo **writes** dotenv files from YAML (`build.env_file` under `build.path` before build; deploy `env_file` under `target_path`); it does not load an existing `.env` into the process. Empty maps skip the write.
 - LSP-powered VS Code and Visual Studio extensions with completion, hover, and YAML validation.
 - Go unit tests for core packages (`cd src && go test ./...`).
 - Docker-based E2E tests for remote SSH static, rename-replace, and docker deploy (`cd tests/e2e && go test -tags=integration ./...`).

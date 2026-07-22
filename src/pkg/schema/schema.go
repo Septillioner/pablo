@@ -49,15 +49,15 @@ var Root = &Field{
 							Description: "Profile type. Gates which fields are allowed.",
 							Enum:        []string{"static", "binary", "docker", "git-sync"},
 						},
-						"variables": {Description: "Variables inherited by every environment unless overridden."},
-						"env_file":  {Description: "Default env file name for environments."},
+						"variables": {Description: "Canonical variables inherited by every environment unless overridden."},
+						"env_file":  {Description: "Default deploy env file name for environments."},
 						"build": {
 							Description: "Build command. Required for binary; optional for static.",
 							Children: map[string]*Field{
 								"command":   {Description: "Shell command to build."},
 								"path":      {Description: "Working directory for the build command."},
-								"variables": {Description: "Environment variables for the build process only."},
-								"env_file":  {Description: "Write variables to this file before building."},
+								"variables": {Description: "Optional build-only overlay on environment variables (pre-build file + process env)."},
+								"env_file":  {Description: "Write environment variables (plus optional build.variables) to this file under build.path before building."},
 							},
 						},
 						"git": {
@@ -73,15 +73,15 @@ var Root = &Field{
 							Children: map[string]*Field{
 								"*": {
 									Children: map[string]*Field{
-										"variables": {Description: "Runtime variables for this environment."},
+										"variables": {Description: "Canonical variables for this environment (deploy env_file, and pre-build file when build.env_file is set)."},
 										"env_file":  {Description: "Env file name written into the deploy target."},
 										"build": {
 											Description: "Override profile build for this environment.",
 											Children: map[string]*Field{
 												"command":   {Description: "Shell command to build."},
 												"path":      {Description: "Working directory for the build command."},
-												"variables": {Description: "Environment variables for the build process only."},
-												"env_file":  {Description: "Write variables to this file before building."},
+												"variables": {Description: "Optional build-only overlay on environment variables (pre-build file + process env)."},
+												"env_file":  {Description: "Write environment variables (plus optional build.variables) to this file under build.path before building."},
 											},
 										},
 										"remote": {

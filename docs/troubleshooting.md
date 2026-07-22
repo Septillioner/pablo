@@ -49,7 +49,7 @@ Unknown YAML keys are rejected. Confirm the field against [Configuration](refere
 |---------|-------|
 | Command not found | Is the tool (npm, go, etc.) on PATH where Pablo runs? |
 | Wrong directory | Set `build.path` relative to the manifest location |
-| Env vars missing | Add `build.variables` or `build.env_file` |
+| Env vars missing at build | Set environment `variables` (and `build.env_file` if the tool reads a dotenv under `build.path`, e.g. Vite `.env.production`) |
 | Binary type missing build | Set `build.command` on the profile or environment |
 
 Build runs with your user privileges — no sandbox.

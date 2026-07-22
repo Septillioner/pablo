@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-07-22
+
+### Changed
+
+- **Env-first variables + pre-build `build.env_file`** — Environment `variables` (profile→env merge) are the canonical map. When `build.env_file` is set, Pablo writes that map under `build.path` before `build.command` and injects it into the build process env. Optional `build.variables` overlay build-only keys. Deploy `env_file` under `target_path` is unchanged.
+- **Docs — variables / env files** — Recommend Vite/`VITE_*` maps under environment `variables` with `build.env_file: .env.production`; clarified write-only dotenv generation, empty-map skip, relative vs absolute paths; Schema v2 examples in [configuration.md](docs/reference/configuration.md) and [Examples #2](docs/examples/README.md#2-local-static--build).
+
 ## [2.1.3] - 2026-07-22
 
 ### Removed

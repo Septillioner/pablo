@@ -9,7 +9,7 @@ Deploy interpreted applications by pulling source into `deploy.target_path` and 
 ## How it works
 
 1. Clone or pull a Git repository to `deploy.target_path`.
-2. Write environment variables (optional env file).
+2. Write a dotenv file from environment `variables` when `env_file` is set and the map is non-empty (Pablo does not load an existing `.env` as input).
 3. Run `deploy.post_commands` on the target (local shell or remote over SSH).
 
 ```yaml

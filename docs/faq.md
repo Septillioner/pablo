@@ -58,6 +58,10 @@ pablo run sequence release
 
 Steps run in list order; the first failure aborts the rest. See [Sequences](guides/sequences.md) · [Examples #11](examples/README.md#11-sequences).
 
+### Why is my `.env` / `env_file` empty or missing?
+
+Pablo **writes** dotenv files from YAML maps; it does not load an existing `.env` as input. Put values under environment `variables`. Use `build.env_file` for a pre-build file under `build.path`, and deploy `env_file` for a post-deploy file under `target_path`. Optional `build.variables` only overlay build-time keys. An empty resolved map skips writing. See [Variables and env files](reference/configuration.md#variables-and-env-files).
+
 ---
 
 ## Deployment

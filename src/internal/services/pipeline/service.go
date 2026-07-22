@@ -123,7 +123,7 @@ func (s *Service) run(manifestPath, profileName, envName string, allowProtected,
 
 	vars := s.resolveVariables(env)
 
-	if err := s.handleBuild(profile, env, cfg.BaseDir, vars, start); err != nil {
+	if err := s.handleBuild(profile, env, cfg.BaseDir, start); err != nil {
 		return err
 	}
 
@@ -224,7 +224,24 @@ func (s *Service) resolveVariables(env domain.Environment) map[string]string {
 	return vars
 }
 
-func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, baseDir string, vars map[string]string, start time.Time) error {
+// resolveBuildVariables prefers environment variables (profile→env merge) as the
+// source of truth. Optional build.variables overlay for build-only overrides.
+// When build.env_file is set, handleBuild writes this map under build.path before
+// build.command (e.g. Vite .env.production) — same values can also feed deploy env_file.
+func (s *Service) resolveBuildVariables(env domain.Environment, buildConfig *domain.BuildConfig) map[string]string {
+	vars := make(map[string]string)
+	for k, v := range env.Variables {
+		vars[k] = v
+	}
+	if buildConfig != nil {
+		for k, v := range buildConfig.Variables {
+			vars[k] = v
+		}
+	}
+	return vars
+}
+
+func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, baseDir string, start time.Time) error {
 	if !hasBuildCommand(profile, env) {
 		return nil
 	}
@@ -244,11 +261,13 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 		path = filepath.Join(baseDir, path)
 	}
 
-	if buildConfig.EnvFile != "" {
-		envFilePath := filepath.Join(path, buildConfig.EnvFile)
-		ui.Log("*", fmt.Sprintf("Writing variables to %s", buildConfig.EnvFile))
-		if err := s.writeEnvFile(envFilePath, vars); err != nil {
-			ui.Log("-", "Failed to write env file")
+	buildVars := s.resolveBuildVariables(env, buildConfig)
+
+	if buildConfig.EnvFile != "" && len(buildVars) > 0 {
+		envFilePath := s.resolvePath(path, buildConfig.EnvFile)
+		ui.Log("*", fmt.Sprintf("Writing build variables to %s", envFilePath))
+		if err := s.writeEnvFile(envFilePath, buildVars); err != nil {
+			ui.Log("-", "Failed to write build env file")
 			resultFail(start)
 			return err
 		}
@@ -262,7 +281,7 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
-	for k, v := range vars {
+	for k, v := range buildVars {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 

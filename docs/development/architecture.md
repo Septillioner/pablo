@@ -140,8 +140,10 @@ Config
 
 Rules in `src/pkg/config/loader.go`:
 
-- Profile `variables` / `env_file` / `build` → environment (partial merge for `build`)
+- Profile `variables` / `env_file` / `build` → environment (partial merge for `build`, including `build.variables` / `build.env_file`)
 - `deploy.source`, `deploy.target_path`, and `remote` are always explicit on the environment
+
+Env files are write-only from YAML maps (`pipeline.handleBuild` / deploy paths). Canonical values live in environment `variables`; `resolveBuildVariables` overlays optional `build.variables` for the pre-build file and build process env. See [Configuration — Variables and env files](../reference/configuration.md#variables-and-env-files).
 
 ---
 

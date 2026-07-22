@@ -34,9 +34,59 @@ Only these profile fields cascade into each environment:
 |---------------|--------------|
 | `variables` | Merged into environment `variables` (env wins on conflict) |
 | `env_file` | Default env file name when environment omits `env_file` |
-| `build` | Copied when env has no `build`; partial merge when env `build` exists |
+| `build` | Copied when env has no `build`; partial merge when env `build` exists (including `build.variables` / `build.env_file`) |
 
 `deploy.source`, `deploy.target_path`, and `remote` are always set on the environment — they do not inherit.
+
+---
+
+## Variables and env files
+
+Pablo **writes** dotenv-style files from YAML maps. It does **not** load a pre-existing `.env` from disk into the Pablo process.
+
+**Canonical place for values:** environment (and inherited profile) `variables`. Put Vite/`VITE_*` maps and other app config there — not under `build.variables` unless you need a build-only override.
+
+| Scope | Map field | File field | When written | Also injected into |
+|-------|-----------|------------|--------------|--------------------|
+| Build | Environment `variables` (optional `build.variables` overlay) | `build.env_file` | Before `build.command`, under `build.path` | Build command process environment |
+| Deploy | `variables` (profile → env merge) | `env_file` | Into the deploy `target_path` (local or remote) | Template `{{VAR}}` substitution (non-docker) |
+
+Rules:
+
+1. **Write-only** — `env_file` / `build.env_file` are output paths. Committing a hand-edited `.env` does not feed Pablo; put values in YAML `variables` (or a gitignored override manifest). Optional `build.variables` only overlay build-time keys.
+2. **Empty map skips write** — If the resolved variables map is empty, Pablo does not create or overwrite the file even when `env_file` / `build.env_file` is set.
+3. **Path** — Relative `build.env_file` resolves under `build.path`; relative deploy `env_file` under `deploy.target_path`. Absolute paths are used as-is. On Windows, a leading `/` (e.g. `/test/.env.production`) is absolute (drive-root), not under `build.path` — prefer `.env.production`.
+4. **Inheritance** — Profile `variables` / `env_file` merge into each environment; profile `build` (including its `variables` / `env_file`) merges as described above. Environment values win on key conflicts.
+5. **Pre-build write is intentional** — Writing `build.env_file` before `build.command` is required for tools that read dotenv at compile time (e.g. Vite). It does not replace the post-deploy `env_file` write.
+
+```yaml
+name: frontend-app
+version: 1.0.0
+
+profiles:
+  frontend:
+    type: static
+    build:
+      command: npm run build
+      path: ./frontend
+      # Pre-build output under build.path (from environment variables below)
+      env_file: .env.production
+    environments:
+      production:
+        variables:
+          VITE_API_BASE_URL: https://api.example.com
+          VITE_ENV: production
+        # Optional: also write the same map into the deploy target after deploy
+        # env_file: .env
+        deploy:
+          source:
+            dir: ./frontend/dist
+            include: ["**/*"]
+          target_path: /var/www/frontend
+          strategy: overwrite
+```
+
+With that manifest, Pablo writes `./frontend/.env.production` from environment `variables`, injects those keys into the `npm run build` process environment, then deploys artifacts. Optional `build.variables` keys override the same name for the build write and process env only. Full copy-paste: [Examples #2](../examples/README.md#2-local-static--build).
 
 ---
 
@@ -123,8 +173,8 @@ credentials:
 | Field | Type | Description |
 |---|---|---|
 | `type` | String | **Required.** `static`, `binary`, `docker`, or `git-sync` |
-| `variables` | Map<String, String> | Variables inherited by all environments |
-| `env_file` | String | Env file name inherited by all environments |
+| `variables` | Map<String, String> | Deploy/runtime variables inherited by all environments (see [Variables and env files](#variables-and-env-files)) |
+| `env_file` | String | Default deploy env file name inherited when an environment omits `env_file` |
 | `build` | [Build](#build) | Build config (required for `binary`; optional for `static`) |
 | `git` | [Git](#git) | Git repo config (`docker`, `git-sync` only) |
 | `environments` | Map<String, [Environment](#environment)> | **Required.** Deployment targets |
@@ -139,15 +189,19 @@ At profile level (inherited) or overridden per environment.
 |---|---|---|
 | `command` | String | **Required when `build` is set.** Shell command (e.g. `npm run build`, `go build -o app .`) |
 | `path` | String | Working directory for the build command (relative to manifest) |
-| `variables` | Map<String, String> | Environment variables for the build process only |
-| `env_file` | String | Write variables to this file before building |
+| `variables` | Map<String, String> | Optional build-only overlay — merged on top of environment `variables` for the pre-build file and build process env |
+| `env_file` | String | Dotenv file to **write** under `build.path` before building (from environment `variables`, plus optional `build.variables` overlay) |
+
+Prefer environment `variables` as the source of truth; use `build.env_file` only to name the pre-build output. See [Variables and env files](#variables-and-env-files).
 
 ```yaml
 build:
   command: npm run build
   path: ./frontend
-  variables:
-    NODE_ENV: production
+  env_file: .env.production
+  # Optional overlay only — put VITE_* under environments.<name>.variables
+  # variables:
+  #   NODE_ENV: production
 ```
 
 ---
@@ -178,8 +232,8 @@ git:
 | `deploy` | [Deploy](#deploy) | **Required.** Deployment settings |
 | `remote` | [Remote](#remote) | SSH connection — present means remote deploy |
 | `build` | [Build](#build) | Override profile-level build |
-| `variables` | Map<String, String> | Runtime variables (merged with profile) |
-| `env_file` | String | Env file written into the deploy target |
+| `variables` | Map<String, String> | Canonical variable map (merged with profile) — feeds deploy `env_file`, and when `build.env_file` is set also the pre-build file + build process env |
+| `env_file` | String | Dotenv file **written** into the deploy target from merged `variables` (skipped if the map is empty) |
 | `register_path` | [RegisterPath](#registerpath) | PATH registration (`binary` only) |
 
 ---

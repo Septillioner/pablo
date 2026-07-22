@@ -121,11 +121,13 @@ Only these profile fields cascade into each environment:
 
 | Profile field | Behavior |
 |---------------|----------|
-| `variables` | Merged into environment variables (env wins on conflict) |
-| `env_file` | Default env file name when the environment omits `env_file` |
-| `build` | Copied when the environment has no `build`; partial merge when it does |
+| `variables` | Merged into environment variables (env wins on conflict) — canonical map for dotenv writes |
+| `env_file` | Default deploy env file name when the environment omits `env_file` |
+| `build` | Copied when the environment has no `build`; partial merge when it does (includes `build.env_file` / `build.variables`) |
 
 `deploy.source`, `deploy.target_path`, and `remote` are always set on the environment — they do not inherit. See [Examples #12](../examples/README.md#12-inheritance) and [Configuration — Inheritance](../reference/configuration.md#inheritance).
+
+For Vite/`VITE_*` and other compile-time config, put values under environment `variables` and set `build.env_file` (relative to `build.path`). Pablo writes dotenv files from YAML; it does not load an existing `.env`. See [Variables and env files](../reference/configuration.md#variables-and-env-files) · [Examples #2](../examples/README.md#2-local-static--build).
 
 ---
 
