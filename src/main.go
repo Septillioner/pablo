@@ -99,6 +99,7 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
   pablo run default.windows-local -f pablo.yaml
   pablo run sequence extension
   pablo run -p api -e staging`,
+		ValidArgsFunction: completeRunArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 && args[0] == "sequence" {
 				if len(args) < 2 {
@@ -123,6 +124,7 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 	runCmd.Flags().StringVarP(&profileName, "profile", "p", "default", "Target profile")
 	runCmd.Flags().StringVarP(&manifest, "file", "f", "pablo.yaml", "Path to manifest")
 	runCmd.Flags().BoolVar(&allowProtected, "force", false, "Allow deployment to protected system directories")
+	registerManifestCompletions(runCmd)
 
 	var useTemplate bool
 	var initCmd = &cobra.Command{
@@ -175,6 +177,7 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 	checkCmd.Flags().StringVarP(&manifest, "file", "f", "pablo.yaml", "Path to manifest")
 	checkCmd.Flags().StringVarP(&profileName, "profile", "p", "", "Validate specific profile")
 	checkCmd.Flags().StringVarP(&envName, "env", "e", "", "Validate specific environment")
+	registerManifestCompletions(checkCmd)
 
 	var removeBackups bool
 	var uninstallCmd = &cobra.Command{
@@ -192,6 +195,7 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 	uninstallCmd.Flags().StringVarP(&profileName, "profile", "p", "default", "Profile to uninstall")
 	uninstallCmd.Flags().StringVarP(&envName, "env", "e", "", "Environment to uninstall (required)")
 	uninstallCmd.Flags().BoolVar(&removeBackups, "remove-backups", false, "Also remove backup directories")
+	registerManifestCompletions(uninstallCmd)
 
 	var versionCmd = &cobra.Command{
 		Use:   "version",
@@ -211,6 +215,7 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 	}
 	inspectCmd.Flags().StringVarP(&manifest, "file", "f", "pablo.yaml", "Path to manifest")
 	inspectCmd.Flags().BoolVar(&inspectJson, "json", false, "Output JSON")
+	registerManifestCompletions(inspectCmd)
 
 	var lspCmd = &cobra.Command{
 		Use:   "lsp",
@@ -356,13 +361,28 @@ func runInspect(manifestPath string, asJSON bool) error {
 }
 
 func shouldSkipBrandHeader(cmd *cobra.Command) bool {
+	if isShellCompletionInvocation() {
+		return true
+	}
 	for current := cmd; current != nil; current = current.Parent() {
 		switch current.Name() {
-		case "lsp", "inspect", "update":
+		case "lsp", "inspect", "update", "completion", cobra.ShellCompRequestCmd, cobra.ShellCompNoDescRequestCmd:
 			return true
 		}
 	}
 	return false
+}
+
+func isShellCompletionInvocation() bool {
+	if len(os.Args) < 2 {
+		return false
+	}
+	switch os.Args[1] {
+	case cobra.ShellCompRequestCmd, cobra.ShellCompNoDescRequestCmd, "completion":
+		return true
+	default:
+		return false
+	}
 }
 
 type updateCheckJSON struct {

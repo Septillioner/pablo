@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-07-23
+
+### Added
+
+- **Dynamic shell completion** — `pablo run` completes `profile/env` targets and `sequence <name>`; `-p` / `--profile`, `-e` / `--env`, and `-f` / `--file` complete from the selected (or default `pablo.yaml`) manifest on `run`, `check`, `uninstall`, and `inspect`. Enable via `pablo completion bash|zsh|fish|powershell` (see [CLI reference](docs/reference/cli.md#shell-completion)).
+
 ## [2.2.0] - 2026-07-22
 
 ### Changed

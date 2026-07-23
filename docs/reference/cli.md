@@ -18,6 +18,38 @@ See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 
 On an interactive TTY, `pablo run` uses the standard CLI chrome: `Header` / `Section` phase dividers, marked `Log` lines (`ok` / `fail` / `warn` / `info` / `run`), `Spinner` for indeterminate work, `ProgressBar` / `FileProgress` for file copy/transfer, and `Result` for the final outcome. Build and other subprocesses stream stdout/stderr normally. Animations are disabled when stdout is not a TTY, or when `NO_COLOR`, `CI`, or `PABLO_PLAIN` is set — then only plain `Section` / `Log` lines are used.
 
+### Shell completion
+
+Pablo ships Cobra’s `completion` subcommand and **dynamic** suggestions loaded from the manifest (default `pablo.yaml`, or the path given with `-f` / `--file`).
+
+| What | Where |
+|------|--------|
+| `profile/env` targets | `pablo run` positional args |
+| `sequence` + sequence names | `pablo run sequence <name>` |
+| Profile names | `-p` / `--profile` on `run`, `check`, `uninstall` |
+| Environment names | `-e` / `--env` (scoped to `-p` when that flag is set) |
+| Manifest path | `-f` / `--file` (filesystem completion) on `run`, `check`, `uninstall`, `inspect` |
+
+If the manifest cannot be loaded, completion returns no suggestions (the shell stays usable).
+
+Enable for your shell (examples):
+
+```bash
+# Bash
+source <(pablo completion bash)
+
+# Zsh
+source <(pablo completion zsh)
+
+# Fish
+pablo completion fish | source
+
+# PowerShell
+pablo completion powershell | Out-String | Invoke-Expression
+```
+
+To persist, add the appropriate line to your shell rc file, or write the script to the shell’s completions directory. Debug with `pablo __complete run ''` (or pass partial tokens / flags as Cobra expects).
+
 ---
 
 ## Commands

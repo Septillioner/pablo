@@ -1,11 +1,10 @@
-## Pablo v2.2.0
+## Pablo v2.2.1
 
-Environment-first variables and pre-build `build.env_file` for Schema v2 manifests.
+Dynamic shell completion for `run` targets and common manifest flags.
 
-### Changed
+### Added
 
-- **Env-first variables + pre-build `build.env_file`** — Environment `variables` (profile→env merge) are the canonical map. When `build.env_file` is set, Pablo writes that map under `build.path` before `build.command` and injects it into the build process env. Optional `build.variables` overlay build-only keys. Deploy `env_file` under `target_path` is unchanged.
-- **Docs — variables / env files** — Recommend Vite/`VITE_*` maps under environment `variables` with `build.env_file: .env.production`; clarified write-only dotenv generation, empty-map skip, relative vs absolute paths; Schema v2 examples in configuration.md and Examples #2.
+- **Dynamic shell completion** — `pablo run` completes `profile/env` targets and `sequence <name>`; `-p` / `--profile`, `-e` / `--env`, and `-f` / `--file` complete from the selected (or default `pablo.yaml`) manifest on `run`, `check`, `uninstall`, and `inspect`. Enable via `pablo completion bash|zsh|fish|powershell` (see CLI reference).
 
 ### Downloads
 
