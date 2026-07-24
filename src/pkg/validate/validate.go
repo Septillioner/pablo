@@ -39,6 +39,10 @@ var (
 )
 
 func ValidateYAML(content []byte, baseDir string) ([]Diagnostic, *domain.Config, error) {
+	if tabDiags := leadingTabDiagnostics(content); len(tabDiags) > 0 {
+		return tabDiags, nil, nil
+	}
+
 	loader := config.NewLoader()
 	doc, err := loader.ParseDocument(content)
 	if err != nil {
@@ -378,6 +382,34 @@ func syntaxDiagnostic(err error) Diagnostic {
 		Message:   msg,
 		Severity:  SeverityError,
 	}
+}
+
+// leadingTabDiagnostics reports lines whose indentation uses tab characters.
+// YAML forbids tabs as indentation; surfacing this early gives a clearer LSP
+// message than the generic "cannot start any token" parse error.
+func leadingTabDiagnostics(content []byte) []Diagnostic {
+	lines := strings.Split(string(content), "\n")
+	var diags []Diagnostic
+	for i, line := range lines {
+		for _, r := range line {
+			if r == ' ' {
+				continue
+			}
+			if r == '\t' {
+				col := strings.IndexByte(line, '\t') + 1
+				diags = append(diags, Diagnostic{
+					Line:      i + 1,
+					Column:    col,
+					EndLine:   i + 1,
+					EndColumn: col + 1,
+					Message:   "YAML indentation cannot use tab characters; use spaces",
+					Severity:  SeverityError,
+				})
+			}
+			break
+		}
+	}
+	return diags
 }
 
 func contains(values []string, target string) bool {

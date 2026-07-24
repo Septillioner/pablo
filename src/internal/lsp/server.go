@@ -12,11 +12,10 @@ import (
 const serverName = "pablo"
 
 var serverVersion string
-var handler protocol.Handler
 
 func RunStdio(version string) error {
 	serverVersion = version
-	handler = protocol.Handler{
+	h := &protocol.Handler{
 		Initialize:             initialize,
 		Initialized:            initialized,
 		Shutdown:               shutdown,
@@ -30,7 +29,7 @@ func RunStdio(version string) error {
 	}
 
 	s := server.NewServer(&serverHandler{
-		Handler: handler,
+		Handler: h,
 	}, serverName, false)
 	return s.RunStdio()
 }
@@ -39,7 +38,7 @@ func initialize(context *glsp.Context, params *protocol.InitializeParams) (any, 
 	capabilities := protocol.ServerCapabilities{
 		TextDocumentSync: protocol.TextDocumentSyncKindFull,
 		CompletionProvider: &protocol.CompletionOptions{
-			TriggerCharacters: []string{":", " "},
+			TriggerCharacters: []string{":", " ", "\t"},
 		},
 		HoverProvider:    true,
 		CodeLensProvider: &protocol.CodeLensOptions{},

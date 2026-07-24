@@ -44,8 +44,11 @@ func GetYAMLPath(lines []string, line int, char int) []string {
 	return path
 }
 
+// getIndent counts leading spaces and tabs. Each whitespace character is one
+// indent unit so nested tab-indented (or space-indented) keys resolve correctly.
+// Mixing tabs and spaces in one file remains fragile; YAML itself forbids tabs.
 func getIndent(line string) int {
-	return len(line) - len(strings.TrimLeft(line, " "))
+	return len(line) - len(strings.TrimLeft(line, " \t"))
 }
 
 func extractKey(line string) string {

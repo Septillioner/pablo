@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-07-24
+
+### Fixed
+
+- **LSP / validation — tab indentation** — Schema path resolution (`GetYAMLPath`) now treats leading tabs as indent (previously only spaces), so completion and hover work while editing tab-indented YAML. `pablo lsp` also triggers completion on Tab. Validation reports a clear error when indentation uses tabs (`YAML indentation cannot use tab characters; use spaces`) instead of only the generic YAML parse failure.
+
 ## [2.2.1] - 2026-07-23
 
 ### Added

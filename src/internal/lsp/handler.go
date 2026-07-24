@@ -6,7 +6,7 @@ import (
 )
 
 type serverHandler struct {
-	protocol.Handler
+	*protocol.Handler
 }
 
 func (h *serverHandler) Handle(context *glsp.Context) (r any, validMethod bool, validParams bool, err error) {

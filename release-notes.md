@@ -1,10 +1,10 @@
-## Pablo v2.2.1
+## Pablo v2.2.2
 
-Dynamic shell completion for `run` targets and common manifest flags.
+LSP and validation fixes for tab-indented YAML editing.
 
-### Added
+### Fixed
 
-- **Dynamic shell completion** — `pablo run` completes `profile/env` targets and `sequence <name>`; `-p` / `--profile`, `-e` / `--env`, and `-f` / `--file` complete from the selected (or default `pablo.yaml`) manifest on `run`, `check`, `uninstall`, and `inspect`. Enable via `pablo completion bash|zsh|fish|powershell` (see CLI reference).
+- **LSP / validation — tab indentation** — Schema path resolution now treats leading tabs as indent (previously only spaces), so completion and hover work while editing tab-indented YAML. `pablo lsp` also triggers completion on Tab. Validation reports a clear error when indentation uses tabs instead of only the generic YAML parse failure.
 
 ### Downloads
 
