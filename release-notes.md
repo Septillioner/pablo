@@ -1,10 +1,10 @@
-## Pablo v2.2.2
+## Pablo v2.2.3
 
-LSP and validation fixes for tab-indented YAML editing.
+VS Code Activity Bar Deploy view for picking a manifest, profile, and environment, then running deployment.
 
-### Fixed
+### Added
 
-- **LSP / validation — tab indentation** — Schema path resolution now treats leading tabs as indent (previously only spaces), so completion and hover work while editing tab-indented YAML. `pablo lsp` also triggers completion on Tab. Validation reports a clear error when indentation uses tabs instead of only the generic YAML parse failure.
+- **VS Code — Pablo Activity Bar** — Dedicated Pablo view container (not nested under Explorer) with Manifest / Profile / Environment pickers and **Run Deployment**. Discovers `pablo.yaml` and `pablo*.yaml` per workspace folder (exact `pablo.yaml` sorted first). **Pablo: Run Deployment** auto-selects the file when exactly one manifest exists; with multiple, uses the active editor (if a discovered manifest), then the Pablo view selection, then QuickPick.
 
 ### Downloads
 

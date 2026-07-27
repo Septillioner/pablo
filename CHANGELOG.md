@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.2.3] - 2026-07-27
+
+### Added
+
+- **VS Code — Pablo Activity Bar** — Dedicated Pablo view container (not nested under Explorer) with Manifest / Profile / Environment pickers and **Run Deployment**. Discovers `pablo.yaml` and `pablo*.yaml` per workspace folder (exact `pablo.yaml` sorted first). **Pablo: Run Deployment** auto-selects the file when exactly one manifest exists; with multiple, uses the active editor (if a discovered manifest), then the Pablo view selection, then QuickPick.
+
 ## [2.2.2] - 2026-07-24
 
 ### Fixed
@@ -308,7 +314,11 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v1.7.3...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v2.2.3...HEAD
+[2.2.3]: https://github.com/septillioner/pablo/compare/v2.2.2...v2.2.3
+[2.2.2]: https://github.com/septillioner/pablo/compare/v2.2.1...v2.2.2
+[2.2.1]: https://github.com/septillioner/pablo/compare/v2.2.0...v2.2.1
+[2.2.0]: https://github.com/septillioner/pablo/compare/v2.1.3...v2.2.0
 [1.7.3]: https://github.com/septillioner/pablo/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/septillioner/pablo/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/septillioner/pablo/compare/v1.5.63...v1.7.1

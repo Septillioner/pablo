@@ -5,6 +5,7 @@ Pablo is a powerful deployment helper for managing multi-environment builds and 
 ## Features
 
 - **LSP Powered Intelligence**: Real-time validation, diagnostics, and autocompletion via `pablo lsp` (same binary as the CLI).
+- **Pablo Activity Bar**: Dedicated Pablo view (not under Explorer) with Manifest / Profile / Environment pickers and **Run Deployment**. Discovers `pablo.yaml` and `pablo*.yaml` across workspace folders.
 - **CLI update check**: On activation, runs `pablo update check --json` once and offers an **Update** action when a newer CLI release is available.
 - **Smart Autocompletion**: Context-aware suggestions for all Pablo configuration fields and enum values.
 - **Hover Documentation**: Quick access to documentation and field descriptions directly within the editor.
@@ -21,16 +22,17 @@ Pablo is a powerful deployment helper for managing multi-environment builds and 
     - `pablo-tpl-legacy-transfer`: Legacy transfer mode
     - `pablo-tpl-verified-transfer`: Checksum-verified transfer
 - **Custom File Icon**: Beautiful logo integration for your `pablo.yaml` files.
-- **CLI Integration**: Run Pablo commands (`check`, `init`, `run`) directly from the command palette. **Run** prompts for profile and environment.
+- **CLI Integration**: Run Pablo commands (`check`, `init`, `run`) directly from the command palette. **Pablo: Run Deployment** auto-selects the manifest when only one exists; otherwise uses the active editor, Deploy view selection, or QuickPick, then prompts for profile and environment.
 - **CodeLens Run**: Each environment line shows **$(play) Run** (hover for `profile/env`); runs `pablo run -f ... profile/env` without QuickPick.
 - **Environment gutters**: Colored left borders at **profile indent** (one color per profile) and **environment indent** (separate hue-spread palette per env block, including nested lines).
 
 ## Usage
 
-1. Open any `pablo.yaml` or `pablo.yml` file.
-2. Start typing `pablo-` to see available templates.
-3. Use `Ctrl+Space` for smart completions.
-4. Hover over any key to see its description.
+1. Open the **Pablo** icon in the Activity Bar → pick Manifest / Profile / Environment → **Run Deployment**.
+2. Or open any `pablo.yaml` / `pablo*.yml` file and use Command Palette **Pablo: Run Deployment**, CodeLens, or the editor title Run action.
+3. Start typing `pablo-` to see available templates.
+4. Use `Ctrl+Space` for smart completions.
+5. Hover over any key to see its description.
 
 ## Requirements
 

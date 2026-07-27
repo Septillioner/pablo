@@ -23,6 +23,7 @@ Editor support for `pablo.yaml` through the Pablo language server: completion, v
 | Autocomplete (`Ctrl+Space`) | `pablo lsp` → `pkg/schema` |
 | Hover docs | `pablo lsp` |
 | Snippet templates (`pablo-tpl-*`) | Extension snippets |
+| **Pablo Activity Bar** (Deploy view) | Extension webview → inspect + `pablo run` |
 | Check YAML / Init / Run commands | Extension → CLI |
 | CodeLens **Run profile/env** | Extension → `pablo run` |
 | Profile/env picker on Run | `pablo/listProfiles` or `inspect --json` |
@@ -51,14 +52,23 @@ Copy from `.vscode/settings.example.json` in the repo.
 
 ---
 
+## Pablo Activity Bar
+
+Open the **Pablo** icon in the Activity Bar (separate from Explorer). The **Deploy** view lists manifests discovered in the workspace (`pablo.yaml` preferred in sort order; also `pablo*.yaml` / `.yml`), then profile and environment for the selected file. **Run Deployment** runs `pablo run --verbose -f <file> profile/env` in the Pablo CLI terminal.
+
+Multi-root workspaces show each folder’s manifests with a `folder/…` label. Use the view title **Refresh** (or the Refresh button) after adding or renaming manifests.
+
 ## Commands
 
 | Command palette | Action |
 |-----------------|--------|
 | **Pablo: Check YAML** | `pablo check -f <file>` |
 | **Pablo: Init Config** | `pablo init` |
-| **Pablo: Run Deployment** | QuickPick profile + env → `pablo run` |
+| **Pablo: Run Deployment** | Resolve manifest → QuickPick profile + env → `pablo run --verbose` |
 | **Pablo: Select Executable** | Choose CLI binary |
+| **Pablo: Refresh Deploy View** | Reload manifests in the Activity Bar Deploy view |
+
+**Pablo: Run Deployment** picks the manifest as follows: if the workspace has exactly one `pablo.yaml` / `pablo*.yaml`, that file is used; otherwise the active editor (when it is a discovered manifest), then the Deploy view selection, then a QuickPick. Profile and environment are still chosen via QuickPick (use the Activity Bar **Run Deployment** button to run the view’s current selection without QuickPick).
 
 On activation the extension runs `pablo update check --json` once (no polling). If a newer CLI release exists, an info toast offers **Update**, which stops the language server, runs `pablo update`, then restarts LSP. Check failures (offline, missing binary) are logged quietly to **Pablo Language Server** output.
 

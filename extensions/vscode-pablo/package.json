@@ -57,6 +57,25 @@
         "path": "./syntaxes/pablo.tmLanguage.json"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "pablo",
+          "title": "Pablo",
+          "icon": "media/pablo-activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "pablo": [
+        {
+          "type": "webview",
+          "id": "pablo.deployView",
+          "name": "Deploy",
+          "contextualTitle": "Pablo Deploy"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "pablo.check",
@@ -81,6 +100,11 @@
       {
         "command": "pablo.update",
         "title": "Pablo: Update"
+      },
+      {
+        "command": "pablo.refreshDeployView",
+        "title": "Pablo: Refresh Deploy View",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -89,6 +113,13 @@
           "command": "pablo.run",
           "group": "navigation",
           "when": "resourceFilename =~ /pablo.*\\.ya?ml/"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "pablo.refreshDeployView",
+          "when": "view == pablo.deployView",
+          "group": "navigation"
         }
       ]
     },

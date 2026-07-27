@@ -21,8 +21,13 @@ import {
 	setSelectedExecutable,
 	showExecutablePicker
 } from './executable';
+import { DeployViewProvider, registerDeployView } from './deployView';
 import { buildTerminalCommand } from './shell';
 import { inspectManifest } from './inspect';
+import {
+	discoverManifestUris,
+	formatManifestLabel,
+} from './manifestDiscovery';
 import { registerProfileDecorations } from './profileDecorations';
 import {
 	CliUpdateFlowOptions,
@@ -36,6 +41,7 @@ let outputChannel: vscode.OutputChannel;
 let traceOutputChannel: vscode.OutputChannel;
 let activeBinary: string | undefined;
 let isRestarting = false;
+let deployView: DeployViewProvider | undefined;
 
 function parseTraceLevel(value: string): Trace {
 	switch (value) {
@@ -254,6 +260,19 @@ export async function activate(context: vscode.ExtensionContext) {
 	outputChannel.appendLine('Pablo extension is now active!');
 	registerProfileDecorations(context);
 
+	deployView = registerDeployView({
+		context,
+		outputChannel,
+		getClient: () => client,
+		onRun: (filePath, runTarget) => executeRun(filePath, runTarget),
+	});
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('pablo.refreshDeployView', () => {
+			void deployView?.refresh();
+		})
+	);
+
 	context.subscriptions.push(
 		vscode.commands.registerCommand('pablo.selectExecutable', async () => {
 			outputChannel.appendLine('Opening Pablo executable picker...');
@@ -362,14 +381,45 @@ function buildCliUpdateFlowOptions(
 	};
 }
 
+async function resolveRunManifestFile(): Promise<string | undefined> {
+	const manifests = await discoverManifestUris();
+	if (manifests.length === 0) {
+		vscode.window.showErrorMessage('No pablo.yaml or pablo*.yaml found in the workspace.');
+		return undefined;
+	}
+
+	if (manifests.length === 1) {
+		return manifests[0].fsPath;
+	}
+
+	const activePath = vscode.window.activeTextEditor?.document.uri.fsPath;
+	if (activePath && manifests.some((uri) => uri.fsPath === activePath)) {
+		return activePath;
+	}
+
+	const viewFile = deployView?.getSelectedFilePath();
+	if (viewFile && manifests.some((uri) => uri.fsPath === viewFile)) {
+		return viewFile;
+	}
+
+	const pick = await vscode.window.showQuickPick(
+		manifests.map((uri) => ({
+			label: formatManifestLabel(uri),
+			description: uri.fsPath,
+			uri,
+		})),
+		{ title: 'Select manifest file' }
+	);
+	return pick?.uri.fsPath;
+}
+
 async function runPabloRun() {
-	const editor = vscode.window.activeTextEditor;
-	if (!editor || !editor.document.fileName.match(/pablo.*\.ya?ml/)) {
-		vscode.window.showErrorMessage('Open a pablo.yaml file to run deployment.');
+	const filePath = await resolveRunManifestFile();
+	if (!filePath) {
 		return;
 	}
 
-	const fileUri = editor.document.uri;
+	const fileUri = vscode.Uri.file(filePath);
 	const result = await inspectManifest(extensionContext, outputChannel, client, fileUri);
 	if (!result) {
 		return;
@@ -402,7 +452,7 @@ async function runPabloRun() {
 		return;
 	}
 
-	await executeRun(fileUri.fsPath, `${profilePick.profile.name}/${envPick}`);
+	await executeRun(filePath, `${profilePick.profile.name}/${envPick}`);
 }
 
 async function executeRun(filePath: string, runTarget: string): Promise<void> {
