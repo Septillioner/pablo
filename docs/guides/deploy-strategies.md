@@ -169,3 +169,5 @@ Manual rollback after a successful `backup` deploy: remove the new `target_path`
 | Production static site | `backup` |
 | Tree that must not keep stale files | `recreate` |
 | Single binary or per-file swap | `rename-replace` |
+
+For zero-downtime style cutover with two directories and a user-owned switch, see [Blue-green](blue-green.md) (`deploy.blue_green`) instead of a strategy value.

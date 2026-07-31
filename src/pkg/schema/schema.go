@@ -110,8 +110,8 @@ var Root = &Field{
 														"exclude": {Description: "Exclude patterns."},
 													},
 												},
-												"target_path":     {Description: "Absolute or relative path on the target machine."},
-												"strategy":        {Description: "Deployment strategy.", Enum: []string{"overwrite", "backup", "recreate", "rename-replace"}},
+												"target_path":     {Description: "Absolute or relative path on the target machine. With blue_green: stable live path (not written to)."},
+												"strategy":        {Description: "Deployment strategy. With blue_green, default is recreate (backup is rejected).", Enum: []string{"overwrite", "backup", "recreate", "rename-replace"}},
 												"transfer":        {Description: "Remote transfer method. Default: tar.", Enum: []string{"tar", "legacy"}},
 												"verify_checksum": {Description: "After remote static/binary deploy, verify SHA-256 (default false)."},
 												"pre_commands":    {Description: "Commands to run before artifacts are transferred."},
@@ -122,6 +122,20 @@ var Root = &Field{
 														"compose_file":     {Description: "Path to docker-compose file."},
 														"build":            {Description: "Whether to build images on up."},
 														"stop_before_sync": {Description: "If true (default), stop a running Compose stack before git sync."},
+													},
+												},
+												"blue_green": {
+													Description: "Blue-green slot deploy (static/binary). Detect active slot, write idle slot, run switch command.",
+													Children: map[string]*Field{
+														"slots": {
+															Description: "Exactly two slot objects (path required; optional per-slot switch_command).",
+															Children: map[string]*Field{
+																"path":           {Description: "Absolute or relative path of this slot."},
+																"switch_command": {Description: "Switch traffic to this slot. Overrides blue_green.switch_command."},
+															},
+														},
+														"detect_command": {Description: "Command whose stdout is the active slot path (exact match). Empty = first slot."},
+														"switch_command": {Description: "Default switch command when a slot omits switch_command."},
 													},
 												},
 											},

@@ -1,0 +1,20 @@
+name: blue-green-local
+version: 0.0.1
+
+profiles:
+  site:
+    type: static
+    environments:
+      local:
+        deploy:
+          source:
+            dir: ./src
+            include: ["**/*"]
+          target_path: ./live
+          strategy: recreate
+          blue_green:
+            slots:
+              - path: ./slots/blue
+              - path: ./slots/green
+            detect_command: if (Test-Path './live.active') { (Get-Content './live.active' -Raw).Trim() }
+            switch_command: Set-Content -Path './live.active' -Value $env:PABLO_TARGET_SLOT -NoNewline

@@ -1,10 +1,10 @@
-## Pablo v2.2.3
+## Pablo v2.3.0
 
-VS Code Activity Bar Deploy view for picking a manifest, profile, and environment, then running deployment.
+Blue-green slot deploy for static and binary profiles: detect the idle slot, write artifacts there, then run your switch command.
 
 ### Added
 
-- **VS Code — Pablo Activity Bar** — Dedicated Pablo view container (not nested under Explorer) with Manifest / Profile / Environment pickers and **Run Deployment**. Discovers `pablo.yaml` and `pablo*.yaml` per workspace folder (exact `pablo.yaml` sorted first). **Pablo: Run Deployment** auto-selects the file when exactly one manifest exists; with multiple, uses the active editor (if a discovered manifest), then the Pablo view selection, then QuickPick.
+- **`deploy.blue_green`** — Slot-based deploy for `static` / `binary` (local + SSH): `detect_command` selects the idle slot, artifacts write there, then `switch_command` (global or per-slot) cuts traffic. See [Blue-green guide](docs/guides/blue-green.md).
 
 ### Downloads
 

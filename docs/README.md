@@ -27,6 +27,7 @@ Pablo is a CLI that builds, filters, and deploys artifacts from a single `pablo.
 | [Docker](guides/docker.md) | Local and remote Docker Compose deployments |
 | [Credentials](guides/credentials.md) | SSH, token, and basic auth references |
 | [Deploy strategies](guides/deploy-strategies.md) | Overwrite, backup, recreate, rename-replace |
+| [Blue-green](guides/blue-green.md) | Slot detect, idle-slot write, user switch command |
 | [Git sync](guides/git-sync.md) | Pull-based deploys for interpreted apps |
 | [Binary and PATH](guides/binary-and-path.md) | Binary type, PATH registration, uninstall |
 | [VS Code extension](guides/vscode.md) | Editor setup, LSP, Run command |

@@ -210,6 +210,22 @@ func (a *Adapter) ExecuteCommand(client *ssh.Client, command string) (string, er
 	return string(output), nil
 }
 
+// ExecuteCommandStdout runs a remote command and returns stdout only.
+// Stderr is discarded so diagnostic noise cannot corrupt parsed output.
+func (a *Adapter) ExecuteCommandStdout(client *ssh.Client, command string) (string, error) {
+	session, err := client.NewSession()
+	if err != nil {
+		return "", fmt.Errorf("failed to create session: %w", err)
+	}
+	defer session.Close()
+
+	output, err := session.Output(command)
+	if err != nil {
+		return string(output), fmt.Errorf("command failed: %w", err)
+	}
+	return string(output), nil
+}
+
 // ExecuteCommandWithStdin runs a remote command with data on stdin.
 func (a *Adapter) ExecuteCommandWithStdin(client *ssh.Client, command string, stdin io.Reader) (string, error) {
 	session, err := client.NewSession()

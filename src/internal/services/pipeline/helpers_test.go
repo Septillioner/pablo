@@ -128,7 +128,7 @@ func TestWriteEnvFile(t *testing.T) {
 
 func TestRunCommandsEmpty(t *testing.T) {
 	s := newTestPipeline()
-	if err := s.runCommands(nil, domain.Environment{}, false, &domain.Config{}, nil); err != nil {
+	if err := s.runCommands(nil, domain.Environment{}, false, &domain.Config{}, nil, ""); err != nil {
 		t.Fatalf("empty commands: %v", err)
 	}
 }
@@ -139,7 +139,7 @@ func TestRunCommandsLocal(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		cmd = "Write-Output ok"
 	}
-	if err := s.runCommands([]string{cmd}, domain.Environment{}, false, &domain.Config{}, nil); err != nil {
+	if err := s.runCommands([]string{cmd}, domain.Environment{}, false, &domain.Config{}, nil, ""); err != nil {
 		t.Fatalf("local command: %v", err)
 	}
 }
@@ -155,7 +155,7 @@ func TestRunCommandsRemoteMissingHost(t *testing.T) {
 			TargetPath: "/tmp/target",
 		},
 	}
-	err := s.runCommands([]string{"echo fail"}, env, true, &domain.Config{}, nil)
+	err := s.runCommands([]string{"echo fail"}, env, true, &domain.Config{}, nil, "")
 	if err == nil {
 		t.Fatal("expected error for remote SSH without valid host")
 	}

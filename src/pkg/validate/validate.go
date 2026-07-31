@@ -38,6 +38,8 @@ var (
 	registerPathScopes       = []string{"user", "system"}
 )
 
+const blueGreenSlotCount = 2
+
 func ValidateYAML(content []byte, baseDir string) ([]Diagnostic, *domain.Config, error) {
 	if tabDiags := leadingTabDiagnostics(content); len(tabDiags) > 0 {
 		return tabDiags, nil, nil
@@ -219,6 +221,62 @@ func validateEnvironment(cfg *domain.Config, profile domain.Profile, env domain.
 		}
 	}
 
+	diags = append(diags, validateBlueGreen(profile, env, envBase, positions)...)
+
+	return diags
+}
+
+func validateBlueGreen(profile domain.Profile, env domain.Environment, envBase string, positions map[string]*yaml.Node) []Diagnostic {
+	bg := env.Deploy.BlueGreen
+	if bg == nil {
+		return nil
+	}
+
+	var diags []Diagnostic
+	bgBase := envBase + ".deploy.blue_green"
+	slotsBase := bgBase + ".slots"
+
+	if profile.Type != "static" && profile.Type != "binary" {
+		diags = append(diags, nodeDiagnostic(positions, bgBase, "deploy.blue_green is only allowed for static and binary profiles", SeverityError))
+		return diags
+	}
+
+	if env.Deploy.Strategy == "backup" {
+		diags = append(diags, nodeDiagnostic(positions, envBase+".deploy.strategy", "deploy.strategy backup is not allowed with deploy.blue_green", SeverityError))
+	}
+
+	if bg.DetectCommand == "" {
+		diags = append(diags, requiredDiagnostic(positions, bgBase+".detect_command", "deploy.blue_green.detect_command is required"))
+	}
+
+	if len(bg.Slots) != blueGreenSlotCount {
+		diags = append(diags, nodeDiagnostic(positions, slotsBase, fmt.Sprintf("deploy.blue_green.slots must contain exactly %d entries", blueGreenSlotCount), SeverityError))
+		return diags
+	}
+
+	seen := make(map[string]int, blueGreenSlotCount)
+	for i, slot := range bg.Slots {
+		if slot.Path == "" {
+			diags = append(diags, nodeDiagnostic(positions, slotsBase, fmt.Sprintf("slots[%d].path is required", i), SeverityError))
+			continue
+		}
+		if slot.Path == env.Deploy.TargetPath {
+			diags = append(diags, nodeDiagnostic(positions, slotsBase, fmt.Sprintf("slots[%d].path must differ from deploy.target_path", i), SeverityError))
+		}
+		if prev, ok := seen[slot.Path]; ok {
+			diags = append(diags, nodeDiagnostic(positions, slotsBase, fmt.Sprintf("slots[%d].path duplicates slots[%d].path", i, prev), SeverityError))
+		} else {
+			seen[slot.Path] = i
+		}
+		switchCmd := slot.SwitchCommand
+		if switchCmd == "" {
+			switchCmd = bg.SwitchCommand
+		}
+		if switchCmd == "" {
+			diags = append(diags, nodeDiagnostic(positions, slotsBase, fmt.Sprintf("slots[%d] needs switch_command (slot-level or blue_green.switch_command)", i), SeverityError))
+		}
+	}
+
 	return diags
 }
 
@@ -229,7 +287,19 @@ func checkUnknownKeys(node *yaml.Node, field *schema.Field, path string) []Diagn
 	if node.Kind == yaml.DocumentNode && len(node.Content) > 0 {
 		return checkUnknownKeys(node.Content[0], field, path)
 	}
-	if node.Kind != yaml.MappingNode {
+
+	switch node.Kind {
+	case yaml.SequenceNode:
+		var diags []Diagnostic
+		for _, item := range node.Content {
+			if item.Kind == yaml.MappingNode {
+				diags = append(diags, checkUnknownKeys(item, field, path)...)
+			}
+		}
+		return diags
+	case yaml.MappingNode:
+		// continue below
+	default:
 		return nil
 	}
 

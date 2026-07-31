@@ -273,14 +273,84 @@ By default Pablo verifies the remote host key using `~/.ssh/known_hosts` (Window
 
 | Field | Type | Description |
 |---|---|---|
-| `target_path` | String | **Required.** Path on the target machine (absolute for remote Linux) |
+| `target_path` | String | **Required.** Path on the target machine (absolute for remote Linux). With `blue_green`: stable live reference (not written to; Pablo does not create it) |
 | `source` | [Source](#source) | Artifact location (`static`, `binary` only) |
-| `strategy` | String | `overwrite` (default), `backup`, `recreate`, `rename-replace` |
+| `strategy` | String | `overwrite` (default), `backup`, `recreate`, `rename-replace`. With `blue_green`, default is `recreate` (`backup` is rejected) |
 | `transfer` | String | Remote transfer method: `tar` (default) or `legacy` (SCP one-by-one) |
 | `verify_checksum` | Boolean | After remote static/binary deploy, verify SHA-256 (default: `false`) |
 | `pre_commands` | List<String> | Commands before artifacts are transferred |
 | `post_commands` | List<String> | Commands after artifacts are transferred |
 | `docker` | [Docker](#docker) | Docker Compose settings (`docker` type only) |
+| `blue_green` | [Blue-Green](#blue-green) | Slot-based deploy (`static` / `binary` only) |
+
+---
+
+## Blue-Green
+
+Slot-based deploy for `static` and `binary`. Pablo detects the active slot, writes artifacts into the idle slot, then runs your switch command. Pablo does **not** own the traffic-switching mechanism (symlink, systemd, reverse proxy, etc.) — that stays in your commands.
+
+| Field | Type | Description |
+|---|---|---|
+| `slots` | List\<Object\> | **Required.** Exactly two entries. Each has `path` (required) and optional `switch_command` |
+| `detect_command` | String | **Required.** Command whose stdout is the active slot path |
+| `switch_command` | String | Default switch command when a slot omits `switch_command` |
+
+### Detect contract
+
+- Runs before `pre_commands` on the target machine (SSH when `remote` is set).
+- Local commands use the manifest directory as cwd so relative paths resolve against the project.
+- Remote: stdout only (stderr ignored). Exit code must be 0.
+- Trimmed stdout must **exactly** equal one slot `path`, or be empty.
+
+| `detect_command` stdout | Behavior |
+|---|---|
+| Empty / whitespace | No active slot — deploy to `slots[0]` |
+| Exact match of a slot `path` | Deploy to the other slot |
+| Unmatched value or multiple lines | Hard error |
+| Non-zero exit | Hard error |
+
+### Path roles when `blue_green` is set
+
+| Role | Path |
+|---|---|
+| Artifact write, `env_file`, templates, checksum | Selected (idle) slot |
+| `pre_commands` / `post_commands` cwd | Selected slot |
+| `switch_command` cwd | `target_path` if it exists as a directory; otherwise manifest dir (local) / no `cd` fallback (remote) |
+| `register_path` | `target_path` |
+| `uninstall` | Removes `target_path` and both slots |
+
+Pablo never creates `target_path` under blue-green (avoids turning a planned symlink path into a real directory).
+
+### Command environment
+
+Injected only into command execution (not into `vars` / `env_file` / `{{VAR}}`):
+
+| Variable | Value |
+|---|---|
+| `PABLO_TARGET_SLOT` | Slot path written this run |
+| `PABLO_PREVIOUS_SLOT` | Detected active slot path; empty on first deploy |
+
+Slot-level `switch_command` overrides `blue_green.switch_command`. Every slot must resolve a switch command (own or global).
+
+```yaml
+deploy:
+  source:
+    dir: ./dist
+    include: ["**/*"]
+  target_path: /var/www/app
+  strategy: recreate
+  blue_green:
+    slots:
+      - path: /var/www/app-blue
+      - path: /var/www/app-green
+    detect_command: cat /var/www/app/.active 2>/dev/null || true
+    switch_command: >
+      echo "$PABLO_TARGET_SLOT" > /var/www/app/.active &&
+      ln -sfn "$PABLO_TARGET_SLOT" /var/www/app/current &&
+      systemctl reload nginx
+```
+
+Guide: [Blue-green](../guides/blue-green.md).
 
 ---
 

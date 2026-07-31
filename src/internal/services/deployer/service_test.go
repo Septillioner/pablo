@@ -350,6 +350,10 @@ func (m *mockSSH) ExecuteCommand(_ *ssh.Client, command string) (string, error) 
 	return "", nil
 }
 
+func (m *mockSSH) ExecuteCommandStdout(_ *ssh.Client, command string) (string, error) {
+	return m.ExecuteCommand(nil, command)
+}
+
 func (m *mockSSH) ExecuteCommandWithStdin(_ *ssh.Client, command string, _ io.Reader) (string, error) {
 	m.executeCalls = append(m.executeCalls, command)
 	return "", nil

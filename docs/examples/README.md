@@ -681,6 +681,54 @@ Fixture: [tests/windows/rename-replace](../../tests/windows/rename-replace/).
 
 ---
 
+## 17. Blue-green slots (SSH)
+
+Detect the active slot, write the idle slot, then cut over with your switch command. Pablo does not create or manage the live symlink — that is your `switch_command`.
+
+```yaml
+name: site
+version: 1.0.0
+
+credentials:
+  prod-ssh:
+    type: ssh
+    username: deploy
+    key: ~/.ssh/id_ed25519
+
+profiles:
+  frontend:
+    type: static
+    environments:
+      production:
+        remote:
+          host: web.example.com
+          credential: prod-ssh
+        deploy:
+          source:
+            dir: ./dist
+            include: ["**/*"]
+          target_path: /var/www/app
+          strategy: recreate
+          blue_green:
+            slots:
+              - path: /var/www/app-blue
+              - path: /var/www/app-green
+            detect_command: cat /var/www/app/.active 2>/dev/null || true
+            switch_command: >
+              echo "$PABLO_TARGET_SLOT" > /var/www/app/.active &&
+              ln -sfn "$PABLO_TARGET_SLOT" /var/www/app/current &&
+              systemctl reload nginx
+```
+
+```bash
+pablo check
+pablo run -p frontend -e production
+```
+
+Guide: [Blue-green](../guides/blue-green.md). Local fixture (Windows PowerShell detect/switch): [tests/agnostic/blue-green](../../tests/agnostic/blue-green/).
+
+---
+
 ## Related
 
 | Topic | Page |
@@ -688,5 +736,6 @@ Fixture: [tests/windows/rename-replace](../../tests/windows/rename-replace/).
 | Field reference | [Configuration](../reference/configuration.md) |
 | What works today | [Capabilities](../reference/capabilities.md) |
 | Deploy strategies | [Deploy strategies](../guides/deploy-strategies.md) |
+| Blue-green slots | [Blue-green](../guides/blue-green.md) |
 | SSH remote deploy | [SSH](../guides/ssh.md) |
 | Git-based apps | [Git sync](../guides/git-sync.md) |

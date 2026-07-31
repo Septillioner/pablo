@@ -297,10 +297,34 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environment, cfg *domain.Config, vars map[string]string, allowProtected, verbose bool, start time.Time) error {
 	isRemote := env.Remote != nil
 
+	sel, err := s.detectSlot(env, cfg)
+	if err != nil {
+		ui.Log("-", fmt.Sprintf("Blue-green slot detection failed: %v", err))
+		resultFail(start)
+		return err
+	}
+
+	slotEnv := slotCommandEnv(sel)
+	commandVars := mergeCommandEnv(vars, slotEnv)
+
+	commandsCwd := ""
+	if sel.Active {
+		if isRemote {
+			commandsCwd = sel.Target
+		} else {
+			commandsCwd = s.resolvePath(cfg.BaseDir, sel.Target)
+			if err := os.MkdirAll(commandsCwd, 0o755); err != nil {
+				ui.Log("-", "Failed to prepare blue-green slot directory")
+				resultFail(start)
+				return fmt.Errorf("failed to prepare blue-green slot directory: %w", err)
+			}
+		}
+	}
+
 	// 1. Pre-deployment Commands
 	if len(env.Deploy.PreCommands) > 0 {
 		ui.Section("Phase 3: Pre-Deployment Commands")
-		if err := s.runCommands(env.Deploy.PreCommands, env, isRemote, cfg, vars); err != nil {
+		if err := s.runCommands(env.Deploy.PreCommands, env, isRemote, cfg, commandVars, commandsCwd); err != nil {
 			ui.Log("-", "Pre-deployment commands failed")
 			resultFail(start)
 			return err
@@ -312,11 +336,11 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 	switch profile.Type {
 	case "static", "binary":
 		if isRemote {
-			if err := s.deployRemoteSSH(profile, env, cfg, start, allowProtected, verbose, vars); err != nil {
+			if err := s.deployRemoteSSH(profile, env, cfg, start, allowProtected, verbose, vars, sel); err != nil {
 				return err
 			}
 		} else {
-			if err := s.deployLocal(profile, env, cfg.BaseDir, allowProtected, verbose, vars, start); err != nil {
+			if err := s.deployLocal(profile, env, cfg.BaseDir, allowProtected, verbose, vars, start, sel); err != nil {
 				return err
 			}
 		}
@@ -326,6 +350,15 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 		}
 	case "git-sync":
 		if err := s.deployGitSync(profile, env, cfg, cfg.BaseDir, start, vars); err != nil {
+			return err
+		}
+	}
+
+	// 2b. Blue-green slot switch (after artifacts land, before PATH / post)
+	if sel.Active {
+		if err := s.runSwitch(sel, env, cfg); err != nil {
+			ui.Log("-", "Slot switch failed")
+			resultFail(start)
 			return err
 		}
 	}
@@ -340,7 +373,7 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 	// 4. Post-deployment Commands
 	if len(env.Deploy.PostCommands) > 0 {
 		ui.Section("Phase 5: Post-Deployment Commands")
-		if err := s.runCommands(env.Deploy.PostCommands, env, isRemote, cfg, vars); err != nil {
+		if err := s.runCommands(env.Deploy.PostCommands, env, isRemote, cfg, commandVars, commandsCwd); err != nil {
 			ui.Log("-", "Post-deployment commands failed")
 			resultFail(start)
 			return err
@@ -350,7 +383,7 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 	return nil
 }
 
-func (s *Service) runCommands(commands []string, env domain.Environment, isRemote bool, cfg *domain.Config, vars map[string]string) error {
+func (s *Service) runCommands(commands []string, env domain.Environment, isRemote bool, cfg *domain.Config, vars map[string]string, cwdOverride string) error {
 	if isRemote {
 		sshClient, err := s.getSSHClient(env, cfg)
 		if err != nil {
@@ -358,13 +391,18 @@ func (s *Service) runCommands(commands []string, env domain.Environment, isRemot
 		}
 		defer sshClient.Close()
 
+		cwd := env.Deploy.TargetPath
+		if cwdOverride != "" {
+			cwd = cwdOverride
+		}
+
 		for _, cmd := range commands {
 			ui.Log(">", cmd)
 			var envPrefix strings.Builder
 			for k, v := range vars {
-				envPrefix.WriteString(fmt.Sprintf("%s='%s' ", k, v))
+				envPrefix.WriteString(fmt.Sprintf("%s='%s' ", k, shellEscapeSingle(v)))
 			}
-			fullCmd := fmt.Sprintf("cd %s && %s%s", env.Deploy.TargetPath, envPrefix.String(), cmd)
+			fullCmd := fmt.Sprintf("cd %s && %s%s", cwd, envPrefix.String(), cmd)
 			if _, err := s.deployer.ExecuteRemoteCommand(sshClient, fullCmd); err != nil {
 				return err
 			}
@@ -372,7 +410,7 @@ func (s *Service) runCommands(commands []string, env domain.Environment, isRemot
 	} else {
 		for _, cmdStr := range commands {
 			ui.Log(">", cmdStr)
-			if err := hooks.Execute(cmdStr, "", vars); err != nil {
+			if err := hooks.Execute(cmdStr, cwdOverride, vars); err != nil {
 				return err
 			}
 		}
@@ -424,7 +462,7 @@ func logArtifacts(files []string, artifactBase string, verbose bool) {
 	}
 }
 
-func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, baseDir string, allowProtected, verbose bool, vars map[string]string, start time.Time) error {
+func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, baseDir string, allowProtected, verbose bool, vars map[string]string, start time.Time, sel *slotSelection) error {
 	ui.Log("*", "Local deployment initiated.")
 	artifactBase, include, exclude := s.resolveArtifacts(env, baseDir)
 	if err := os.MkdirAll(artifactBase, 0o755); err != nil {
@@ -444,19 +482,20 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 	}
 	logArtifacts(files, artifactBase, verbose)
 
-	targetPath := s.resolvePath(baseDir, env.Deploy.TargetPath)
-	if err := os.MkdirAll(targetPath, 0o755); err != nil {
-		ui.Log("-", "Failed to prepare deploy target directory")
-		resultFail(start)
-		return fmt.Errorf("failed to prepare deploy target directory: %w", err)
+	writePath := s.resolvePath(baseDir, env.Deploy.TargetPath)
+	if sel != nil && sel.Active {
+		writePath = s.resolvePath(baseDir, sel.Target)
+	} else {
+		if err := os.MkdirAll(writePath, 0o755); err != nil {
+			ui.Log("-", "Failed to prepare deploy target directory")
+			resultFail(start)
+			return fmt.Errorf("failed to prepare deploy target directory: %w", err)
+		}
 	}
-	strategy := env.Deploy.Strategy
-	if strategy == "" {
-		strategy = "overwrite"
-	}
+	strategy := defaultDeployStrategy(env)
 
-	ui.Log(">", fmt.Sprintf("Deploying to %s (Strategy: %s)", targetPath, strategy))
-	if err := s.deployer.Deploy(files, artifactBase, targetPath, strategy, allowProtected, ui.FileProgress("Copying")); err != nil {
+	ui.Log(">", fmt.Sprintf("Deploying to %s (Strategy: %s)", writePath, strategy))
+	if err := s.deployer.Deploy(files, artifactBase, writePath, strategy, allowProtected, ui.FileProgress("Copying")); err != nil {
 		ui.Log("-", "Deployment failed")
 		resultFail(start)
 		return err
@@ -465,7 +504,7 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 
 	if env.EnvConfig.EnvFile != "" && len(vars) > 0 {
 		ui.Log("*", fmt.Sprintf("Generating local env file: %s", env.EnvConfig.EnvFile))
-		envFilePath := filepath.Join(targetPath, env.EnvConfig.EnvFile)
+		envFilePath := filepath.Join(writePath, env.EnvConfig.EnvFile)
 		if err := s.writeEnvFile(envFilePath, vars); err != nil {
 			ui.Log("!", fmt.Sprintf("Failed to write local env file: %v", err))
 			return fmt.Errorf("failed to write local env file: %w", err)
@@ -475,7 +514,7 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 
 	if profile.Type != "docker" && len(vars) > 0 {
 		ui.Log("*", "Applying template variables...")
-		if err := template.ProcessFiles(targetPath, vars); err != nil {
+		if err := template.ProcessFiles(writePath, vars); err != nil {
 			ui.Log("-", "Template processing failed")
 			resultFail(start)
 			return err
@@ -563,7 +602,7 @@ func (s *Service) handlePathRegistration(env domain.Environment, cfg *domain.Con
 	return nil
 }
 
-func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environment, cfg *domain.Config, start time.Time, allowProtected, verbose bool, vars map[string]string) error {
+func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environment, cfg *domain.Config, start time.Time, allowProtected, verbose bool, vars map[string]string, sel *slotSelection) error {
 	ui.Log("*", "Remote SSH deployment initiated.")
 	sshClient, err := s.getSSHClient(env, cfg)
 	if err != nil {
@@ -587,25 +626,25 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 	}
 	logArtifacts(files, artifactBase, verbose)
 
-	targetPath := env.Deploy.TargetPath
-	strategy := env.Deploy.Strategy
-	if strategy == "" {
-		strategy = "overwrite"
+	writePath := env.Deploy.TargetPath
+	if sel != nil && sel.Active {
+		writePath = sel.Target
 	}
+	strategy := defaultDeployStrategy(env)
 
 	transfer := env.Deploy.Transfer
 	if transfer == "" {
 		transfer = "tar"
 	}
 
-	ui.Log(">", fmt.Sprintf("Deploying to %s:%s (Strategy: %s)", env.Remote.Host, targetPath, strategy))
+	ui.Log(">", fmt.Sprintf("Deploying to %s:%s (Strategy: %s)", env.Remote.Host, writePath, strategy))
 	var deployErr error
 	if transfer == "tar" {
 		deployErr = ui.WithSpinner("Transferring archive", func() error {
-			return s.deployer.DeployRemote(files, artifactBase, sshClient, targetPath, strategy, allowProtected, transfer, nil)
+			return s.deployer.DeployRemote(files, artifactBase, sshClient, writePath, strategy, allowProtected, transfer, nil)
 		})
 	} else {
-		deployErr = s.deployer.DeployRemote(files, artifactBase, sshClient, targetPath, strategy, allowProtected, transfer, ui.FileProgress("Transferring"))
+		deployErr = s.deployer.DeployRemote(files, artifactBase, sshClient, writePath, strategy, allowProtected, transfer, ui.FileProgress("Transferring"))
 	}
 	if deployErr != nil {
 		ui.Log("-", "Remote deployment failed")
@@ -616,7 +655,7 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 
 	if env.Deploy.VerifyChecksum {
 		if err := ui.WithSpinner("Verifying checksums", func() error {
-			return s.deployer.VerifyRemoteChecksums(sshClient, files, artifactBase, targetPath)
+			return s.deployer.VerifyRemoteChecksums(sshClient, files, artifactBase, writePath)
 		}); err != nil {
 			ui.Log("-", "Checksum verification failed")
 			resultFail(start)
@@ -627,7 +666,7 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 
 	if env.EnvConfig.EnvFile != "" && len(vars) > 0 {
 		ui.Log("*", fmt.Sprintf("Generating remote env file: %s", env.EnvConfig.EnvFile))
-		if err := s.writeRemoteEnvFile(sshClient, targetPath, env.EnvConfig.EnvFile, vars); err != nil {
+		if err := s.writeRemoteEnvFile(sshClient, writePath, env.EnvConfig.EnvFile, vars); err != nil {
 			ui.Log("!", fmt.Sprintf("Failed to write remote env file: %v", err))
 			return err
 		}
@@ -1017,6 +1056,17 @@ func (s *Service) Uninstall(manifestPath, profileName, envName string, removeBac
 	if _, err := os.Stat(targetPath); err == nil {
 		ui.Log(">", "Removing files...")
 		os.RemoveAll(targetPath)
+	}
+
+	if env.Deploy.BlueGreen != nil {
+		ui.Section("Remove Blue-Green Slots")
+		for _, slot := range env.Deploy.BlueGreen.Slots {
+			slotPath := s.resolvePath(cfg.BaseDir, slot.Path)
+			if _, err := os.Stat(slotPath); err == nil {
+				ui.Log(">", "Removing slot: "+slotPath)
+				os.RemoveAll(slotPath)
+			}
+		}
 	}
 
 	if profile.Type == "binary" && env.RegisterPath != nil {

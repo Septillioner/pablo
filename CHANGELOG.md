@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- **`deploy.blue_green`** — Slot-based deploy for `static` / `binary` (local + SSH): `detect_command` selects the idle slot, artifacts write there, then `switch_command` (global or per-slot) cuts traffic. See [Blue-green guide](docs/guides/blue-green.md).
+
 ## [2.2.3] - 2026-07-27
 
 ### Added

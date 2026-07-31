@@ -18,6 +18,7 @@ import (
 type sshPort interface {
 	Connect(host string, cred *domain.CredentialConfig, opts sshAdapter.HostKeyOptions) (*ssh.Client, error)
 	ExecuteCommand(client *ssh.Client, command string) (string, error)
+	ExecuteCommandStdout(client *ssh.Client, command string) (string, error)
 	ExecuteCommandWithStdin(client *ssh.Client, command string, stdin io.Reader) (string, error)
 	CreateBackup(client *ssh.Client, targetPath string) error
 	TransferPipeline(client *ssh.Client, files []string, sourceBase, remotePath string) error
@@ -245,4 +246,9 @@ func (s *Service) ConnectSSH(host string, cred *domain.CredentialConfig, opts ss
 // ExecuteRemoteCommand runs a command on the remote server
 func (s *Service) ExecuteRemoteCommand(client *ssh.Client, command string) (string, error) {
 	return s.ssh.ExecuteCommand(client, command)
+}
+
+// ExecuteRemoteCommandStdout runs a remote command and returns stdout only.
+func (s *Service) ExecuteRemoteCommandStdout(client *ssh.Client, command string) (string, error) {
+	return s.ssh.ExecuteCommandStdout(client, command)
 }

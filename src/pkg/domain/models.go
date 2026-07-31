@@ -71,10 +71,22 @@ type DeployConfig struct {
 	TargetPath     string           `yaml:"target_path"`
 	Strategy       string           `yaml:"strategy,omitempty"`
 	Docker         *DockerConfig    `yaml:"docker,omitempty"`
+	BlueGreen      *BlueGreenConfig `yaml:"blue_green,omitempty"`
 	PreCommands    []string         `yaml:"pre_commands,omitempty"`
 	PostCommands   []string         `yaml:"post_commands,omitempty"`
 	Transfer       string           `yaml:"transfer,omitempty"`
 	VerifyChecksum bool             `yaml:"verify_checksum,omitempty"`
+}
+
+type BlueGreenConfig struct {
+	Slots         []SlotConfig `yaml:"slots"`
+	DetectCommand string       `yaml:"detect_command"`
+	SwitchCommand string       `yaml:"switch_command,omitempty"`
+}
+
+type SlotConfig struct {
+	Path          string `yaml:"path"`
+	SwitchCommand string `yaml:"switch_command,omitempty"`
 }
 
 type DockerConfig struct {

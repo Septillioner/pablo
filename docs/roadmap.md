@@ -48,6 +48,7 @@ Pablo
 ├── Deployment
 │   ├── [x] Types: static, binary, docker, git-sync
 │   ├── [x] Strategies: overwrite, backup, recreate, rename-replace
+│   ├── [x] Blue-green slots (`deploy.blue_green`)
 │   ├── [x] Local deploy pipeline
 │   ├── [x] Remote SSH deploy (tar streaming)
 │   └── [x] Remote Docker Compose over SSH
@@ -104,6 +105,7 @@ Pablo
 
 - [x] Deployment types: `static`, `binary`, `docker`, `git-sync`
 - [x] Strategies: `overwrite`, `backup`, `recreate`, `rename-replace`
+- [x] Blue-green slots (`deploy.blue_green`) — detect idle slot, write, user `switch_command`
 - [x] Artifact filtering (include / exclude globs)
 - [x] Template variable substitution (`{{VAR}}`)
 - [x] Pre/post deploy commands (`deploy.pre_commands`, `deploy.post_commands`)

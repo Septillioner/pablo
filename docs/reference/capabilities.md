@@ -26,6 +26,15 @@ See also: [Configuration](configuration.md) · [Examples](../examples/README.md)
 | `recreate` | Delete target dir, create fresh, deploy | Working |
 | `rename-replace` | Rename existing artifact files, replace, cleanup on success | Working |
 
+### Blue-green (`deploy.blue_green`)
+
+| Capability | Status |
+|------------|--------|
+| Slot detect via `detect_command` + idle-slot write (`static` / `binary`, local + SSH) | Working |
+| User-supplied `switch_command` (global or per-slot) | Working |
+| Pablo-owned traffic switch (built-in symlink/junction) | Not provided — use your commands |
+| Health gate before switch | Not provided |
+
 ---
 
 ## Pipeline phases
@@ -34,10 +43,12 @@ Single-target `pablo run` (one profile + environment):
 
 1. Load and validate manifest
 2. Build (`build.command`) — skipped when `build` is omitted or empty; when `build.env_file` is set and the resolved variable map is non-empty, write that file under `build.path` first and inject keys into the build process env
-3. Pre-deployment commands (`deploy.pre_commands`)
-4. Deployment (local copy or SSH tar stream); when `env_file` is set and variables are non-empty, write the dotenv under `deploy.target_path`
-5. Post-deployment commands (`deploy.post_commands`)
-6. PATH registration (`register_path`, binary type)
+3. Blue-green detect (`deploy.blue_green.detect_command`) when configured — choose idle slot
+4. Pre-deployment commands (`deploy.pre_commands`)
+5. Deployment (local copy or SSH tar stream); when `env_file` is set and variables are non-empty, write the dotenv under the write path (`target_path`, or the idle slot with blue-green)
+6. Blue-green switch (`switch_command`) when configured
+7. PATH registration (`register_path`, binary type)
+8. Post-deployment commands (`deploy.post_commands`)
 
 ### Sequences
 
@@ -55,6 +66,7 @@ Root-level `sequences` name ordered lists of `profile/env` targets. `pablo run s
 - Named `sequences` — ordered multi-target runs via `pablo run sequence <name>` (stops on first failure).
 - Automatic PATH registration (Windows, macOS, Linux user and system scope).
 - Backup, recreate, and rename-replace strategies with protected path detection (backup/recreate only).
+- Blue-green slot deploy (`deploy.blue_green`) for `static` / `binary` — detect idle slot, write, run user `switch_command` (local + SSH).
 - `docker` type with local and remote (SSH) Docker Compose orchestration.
 - `git-sync` with local and remote (SSH) git clone/pull.
 - Environment-first variables — canonical map is environment `variables` (profile→env merge); optional `build.variables` overlay for build-only keys. Pablo **writes** dotenv files from YAML (`build.env_file` under `build.path` before build; deploy `env_file` under `target_path`); it does not load an existing `.env` into the process. Empty maps skip the write.
@@ -72,3 +84,4 @@ Root-level `sequences` name ordered lists of `profile/env` targets. `pablo run s
 - Schema validation coverage — core rules in `pkg/validate`; advanced cross-field rules still expanding (see [roadmap](../roadmap.md)).
 - `builder.Service` exists as a standalone service but is currently unused; builds run inline.
 - Snippet versions are hardcoded in the VS Code extension and not synced with the `VERSION` file.
+- Blue-green does not perform health checks or own the traffic switch — `switch_command` is opaque to Pablo; a failed post-switch command does not auto-rollback the pointer.
