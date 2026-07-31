@@ -86,6 +86,7 @@ type BlueGreenConfig struct {
 
 type SlotConfig struct {
 	Path          string `yaml:"path"`
+	Key           string `yaml:"key,omitempty"`
 	SwitchCommand string `yaml:"switch_command,omitempty"`
 }
 

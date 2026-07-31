@@ -128,13 +128,14 @@ var Root = &Field{
 													Description: "Blue-green slot deploy (static/binary). Detect active slot, write idle slot, run switch command.",
 													Children: map[string]*Field{
 														"slots": {
-															Description: "Exactly two slot objects (path required; optional per-slot switch_command).",
+															Description: "Exactly two slot objects (path required; optional key and switch_command).",
 															Children: map[string]*Field{
 																"path":           {Description: "Absolute or relative path of this slot."},
+																"key":            {Description: "Value detect_command returns for this slot. Defaults to path. Use when the target names the slot differently than Pablo writes it."},
 																"switch_command": {Description: "Switch traffic to this slot. Overrides blue_green.switch_command."},
 															},
 														},
-														"detect_command": {Description: "Command whose stdout is the active slot path (exact match). Empty = first slot."},
+														"detect_command": {Description: "Command whose stdout matches a slot key (exact). Empty key falls back to path. Empty stdout = first slot."},
 														"switch_command": {Description: "Default switch command when a slot omits switch_command."},
 													},
 												},

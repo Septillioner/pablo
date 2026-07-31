@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-07-31
+
+### Added
+
+- **`deploy.blue_green.slots[].key`** — Optional detect match value when `detect_command` stdout differs from the write `path` (defaults to `path`). See [Blue-green guide](docs/guides/blue-green.md).
+
+### Fixed
+
+- **Blue-green detect mismatch error** — Expected slot keys are quoted individually so literal backslashes and other special characters are visible in the failure message.
+
 ## [2.3.0] - 2026-07-31
 
 ### Added

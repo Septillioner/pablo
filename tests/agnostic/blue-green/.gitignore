@@ -1,3 +1,6 @@
 slots/
+slots-keyed/
 live.active
+live-keyed.active
 live/
+live-keyed/

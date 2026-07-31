@@ -727,6 +727,24 @@ pablo run -p frontend -e production
 
 Guide: [Blue-green](../guides/blue-green.md). Local fixture (Windows PowerShell detect/switch): [tests/agnostic/blue-green](../../tests/agnostic/blue-green/).
 
+### 17b. Blue-green with detect `key` (IIS / mapped drive)
+
+When Pablo writes via a mapped path but `detect_command` returns a different string (IIS physical path, UNC, container mount), set per-slot `key`:
+
+```yaml
+blue_green:
+  slots:
+    - path: W:\celka-api-bg\celka-api-blue
+      key: C:\Celka Web Production Servers\celka-api-bg\celka-api-blue
+      switch_command: ...
+    - path: W:\celka-api-bg\celka-api-green
+      key: C:\Celka Web Production Servers\celka-api-bg\celka-api-green
+      switch_command: ...
+  detect_command: ...  # stdout must exactly match a slot key
+```
+
+Empty `key` falls back to `path`. Guide: [Blue-green — Windows IIS](../guides/blue-green.md#windows-iis-mapped-drive-vs-local-path).
+
 ---
 
 ## Related

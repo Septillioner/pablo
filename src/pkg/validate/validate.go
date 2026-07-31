@@ -255,6 +255,7 @@ func validateBlueGreen(profile domain.Profile, env domain.Environment, envBase s
 	}
 
 	seen := make(map[string]int, blueGreenSlotCount)
+	seenKeys := make(map[string]int, blueGreenSlotCount)
 	for i, slot := range bg.Slots {
 		if slot.Path == "" {
 			diags = append(diags, nodeDiagnostic(positions, slotsBase, fmt.Sprintf("slots[%d].path is required", i), SeverityError))
@@ -268,6 +269,17 @@ func validateBlueGreen(profile domain.Profile, env domain.Environment, envBase s
 		} else {
 			seen[slot.Path] = i
 		}
+
+		detectKey := slot.Key
+		if detectKey == "" {
+			detectKey = slot.Path
+		}
+		if prev, ok := seenKeys[detectKey]; ok {
+			diags = append(diags, nodeDiagnostic(positions, slotsBase, fmt.Sprintf("slots[%d] detect key duplicates slots[%d] (key falls back to path when omitted)", i, prev), SeverityError))
+		} else {
+			seenKeys[detectKey] = i
+		}
+
 		switchCmd := slot.SwitchCommand
 		if switchCmd == "" {
 			switchCmd = bg.SwitchCommand

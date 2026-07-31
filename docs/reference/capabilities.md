@@ -31,6 +31,7 @@ See also: [Configuration](configuration.md) · [Examples](../examples/README.md)
 | Capability | Status |
 |------------|--------|
 | Slot detect via `detect_command` + idle-slot write (`static` / `binary`, local + SSH) | Working |
+| Optional per-slot `key` when detect stdout differs from write `path` | Working |
 | User-supplied `switch_command` (global or per-slot) | Working |
 | Pablo-owned traffic switch (built-in symlink/junction) | Not provided — use your commands |
 | Health gate before switch | Not provided |

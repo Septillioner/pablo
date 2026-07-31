@@ -14,7 +14,7 @@ Use blue-green when you need the live tree untouched while the next release is p
 
 ## Flow
 
-1. Run `detect_command` — stdout must exactly match one slot `path`, or be empty (first deploy → `slots[0]`).
+1. Run `detect_command` — stdout must exactly match one slot **key** (`key` if set, else `path`), or be empty (first deploy → `slots[0]`).
 2. Choose the idle slot.
 3. Run `pre_commands` with cwd = idle slot (slot env vars available).
 4. Deploy artifacts into the idle slot (`strategy` applies there; default `recreate`).
@@ -22,6 +22,16 @@ Use blue-green when you need the live tree untouched while the next release is p
 6. Run the resolved `switch_command` (slot-level overrides global).
 7. `register_path` (binary) still uses `target_path`.
 8. Run `post_commands` with cwd = idle slot.
+
+---
+
+## Slot `key` (optional)
+
+When the target system names a slot differently than Pablo writes it (mapped drive vs local path, UNC vs drive letter, container mount), set `key` to the exact string `detect_command` returns for that slot. Empty `key` falls back to `path`. Matching is strict equality after trim — no basename or case folding.
+
+Effective keys (`key` or `path`) must be unique across the two slots.
+
+**Windows YAML tip:** use single backslashes in unquoted or single-quoted paths (`W:\slot\blue`). Double-backslash escapes apply only inside double-quoted YAML scalars; unquoted `W:\\slot` keeps two literal backslashes and will never match `detect_command` output.
 
 ---
 
@@ -84,6 +94,39 @@ Slot-level `switch_command` overrides the global one. Every slot must still reso
 
 ---
 
+## Windows IIS (mapped drive vs local path)
+
+Pablo writes over a mapped share (`W:\...`) while IIS `appcmd` reports the server-local path (`C:\...`). Use `key` for the IIS physical path:
+
+```yaml
+deploy:
+  source:
+    dir: ./build/CWS.Core
+    exclude: ["*.map"]
+  target_path: W:\celka-api-bg
+  strategy: recreate
+  blue_green:
+    slots:
+      - path: W:\celka-api-bg\celka-api-blue
+        key: C:\Celka Web Production Servers\celka-api-bg\celka-api-blue
+        switch_command: >
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\send-cmd.ps1"
+          "CELKA\Administrator" "webserver"
+          "& '$env:windir\System32\inetsrv\appcmd.exe' set vdir \"cws-api/\" /physicalPath:'C:\Celka Web Production Servers\celka-api-bg\celka-api-blue'"
+      - path: W:\celka-api-bg\celka-api-green
+        key: C:\Celka Web Production Servers\celka-api-bg\celka-api-green
+        switch_command: >
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\send-cmd.ps1"
+          "CELKA\Administrator" "webserver"
+          "& '$env:windir\System32\inetsrv\appcmd.exe' set vdir \"cws-api/\" /physicalPath:'C:\Celka Web Production Servers\celka-api-bg\celka-api-green'"
+    detect_command: >
+      powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\send-cmd.ps1"
+      "CELKA\Administrator" "webserver"
+      "& '$env:windir\System32\inetsrv\appcmd.exe' list vdir 'cws-api/' /text:physicalPath"
+```
+
+---
+
 ## Environment variables
 
 | Variable | Meaning |
@@ -91,7 +134,7 @@ Slot-level `switch_command` overrides the global one. Every slot must still reso
 | `PABLO_TARGET_SLOT` | Slot path written this run (becomes active after switch) |
 | `PABLO_PREVIOUS_SLOT` | Previously active slot path; empty on first deploy |
 
-These are injected into command execution only — they do not appear in `env_file` or `{{VAR}}` substitution.
+These are injected into command execution only — they do not appear in `env_file` or `{{VAR}}` substitution. Slot `key` is match-only and is not exported as an environment variable.
 
 ---
 
@@ -115,6 +158,7 @@ Or set `PABLO_TARGET_SLOT` to the previous path and re-run the same `switch_comm
 
 - Only `static` and `binary`
 - Exactly two `slots`, distinct paths, none equal to `target_path`
+- Effective detect keys (`key` if set, else `path`) must be distinct
 - `detect_command` required
 - Each slot must resolve a `switch_command`
 - `strategy: backup` is rejected with `blue_green`

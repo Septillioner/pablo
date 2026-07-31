@@ -291,21 +291,29 @@ Slot-based deploy for `static` and `binary`. Pablo detects the active slot, writ
 
 | Field | Type | Description |
 |---|---|---|
-| `slots` | List\<Object\> | **Required.** Exactly two entries. Each has `path` (required) and optional `switch_command` |
-| `detect_command` | String | **Required.** Command whose stdout is the active slot path |
+| `slots` | List\<Object\> | **Required.** Exactly two entries. Each has `path` (required), optional `key`, optional `switch_command` |
+| `detect_command` | String | **Required.** Command whose stdout matches a slot key (`key` if set, else `path`) |
 | `switch_command` | String | Default switch command when a slot omits `switch_command` |
+
+### Slot fields
+
+| Field | Type | Description |
+|---|---|---|
+| `path` | String | **Required.** Directory Pablo writes this slot into |
+| `key` | String | Value `detect_command` returns for this slot. Defaults to `path`. Use when the target names the slot differently than Pablo writes it |
+| `switch_command` | String | Switch traffic to this slot; overrides `blue_green.switch_command` |
 
 ### Detect contract
 
 - Runs before `pre_commands` on the target machine (SSH when `remote` is set).
 - Local commands use the manifest directory as cwd so relative paths resolve against the project.
 - Remote: stdout only (stderr ignored). Exit code must be 0.
-- Trimmed stdout must **exactly** equal one slot `path`, or be empty.
+- Trimmed stdout must **exactly** equal one slot's effective key (`key` if set, else `path`), or be empty.
 
 | `detect_command` stdout | Behavior |
 |---|---|
 | Empty / whitespace | No active slot — deploy to `slots[0]` |
-| Exact match of a slot `path` | Deploy to the other slot |
+| Exact match of a slot key | Deploy to the other slot |
 | Unmatched value or multiple lines | Hard error |
 | Non-zero exit | Hard error |
 

@@ -52,7 +52,7 @@ func (s *Service) detectSlot(env domain.Environment, cfg *domain.Config) (*slotS
 
 	activeIndex := -1
 	for i, slot := range slots {
-		if slot.Path == active {
+		if resolveSlotKey(slot) == active {
 			activeIndex = i
 			break
 		}
@@ -60,7 +60,7 @@ func (s *Service) detectSlot(env domain.Environment, cfg *domain.Config) (*slotS
 	if activeIndex < 0 {
 		expected := make([]string, len(slots))
 		for i, slot := range slots {
-			expected[i] = slot.Path
+			expected[i] = fmt.Sprintf("%q", resolveSlotKey(slot))
 		}
 		return nil, fmt.Errorf("blue_green.detect_command returned %q; expected one of: %s", active, strings.Join(expected, ", "))
 	}
@@ -74,6 +74,13 @@ func (s *Service) detectSlot(env domain.Environment, cfg *domain.Config) (*slotS
 	}
 	ui.Log("*", fmt.Sprintf("Blue-green: active %s; deploying to %s", sel.Previous, sel.Target))
 	return sel, nil
+}
+
+func resolveSlotKey(slot domain.SlotConfig) string {
+	if slot.Key != "" {
+		return slot.Key
+	}
+	return slot.Path
 }
 
 func resolveSlotSwitch(slot domain.SlotConfig, bg *domain.BlueGreenConfig) string {
