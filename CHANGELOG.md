@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-07-31
+
 ### Added
 
 - **`deploy.blue_green`** — Slot-based deploy for `static` / `binary` (local + SSH): `detect_command` selects the idle slot, artifacts write there, then `switch_command` (global or per-slot) cuts traffic. See [Blue-green guide](docs/guides/blue-green.md).
@@ -318,7 +320,8 @@ Initial public release baseline tracked in `src/VERSION`.
 - `builder.Service` is unused; pipeline runs builds inline.
 - VS Code snippets hardcode an older version string instead of reading `src/VERSION`.
 
-[Unreleased]: https://github.com/septillioner/pablo/compare/v2.2.3...HEAD
+[Unreleased]: https://github.com/septillioner/pablo/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/septillioner/pablo/compare/v2.2.3...v2.3.0
 [2.2.3]: https://github.com/septillioner/pablo/compare/v2.2.2...v2.2.3
 [2.2.2]: https://github.com/septillioner/pablo/compare/v2.2.1...v2.2.2
 [2.2.1]: https://github.com/septillioner/pablo/compare/v2.2.0...v2.2.1
