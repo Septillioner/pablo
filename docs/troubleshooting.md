@@ -76,6 +76,10 @@ If too many files match, remember that `*.exe` matches at every depth; use `/*.e
 
 Static and binary environments require `deploy.source.dir`. It does not inherit from the profile.
 
+### Blue-green switch script not found
+
+Local `detect_command` and `switch_command` run with cwd = the manifest directory (not `target_path` or the process cwd). Point relative scripts at the project root, e.g. `.\scripts\switch.ps1`. Guide: [Blue-green](guides/blue-green.md).
+
 ---
 
 ## SSH issues

@@ -307,6 +307,7 @@ Slot-based deploy for `static` and `binary`. Pablo detects the active slot, writ
 
 - Runs before `pre_commands` on the target machine (SSH when `remote` is set).
 - Local commands use the manifest directory as cwd so relative paths resolve against the project.
+- Local `switch_command` uses the same cwd (manifest directory).
 - Remote: stdout only (stderr ignored). Exit code must be 0.
 - Trimmed stdout must **exactly** equal one slot's effective key (`key` if set, else `path`), or be empty.
 
@@ -323,7 +324,8 @@ Slot-based deploy for `static` and `binary`. Pablo detects the active slot, writ
 |---|---|
 | Artifact write, `env_file`, templates, checksum | Selected (idle) slot |
 | `pre_commands` / `post_commands` cwd | Selected slot |
-| `switch_command` cwd | `target_path` if it exists as a directory; otherwise manifest dir (local) / no `cd` fallback (remote) |
+| `detect_command` / `switch_command` cwd (local) | Manifest directory |
+| `switch_command` cwd (remote) | `target_path` if it exists as a directory; otherwise no `cd` |
 | `register_path` | `target_path` |
 | `uninstall` | Removes `target_path` and both slots |
 

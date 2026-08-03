@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"pablo/internal/services/hooks"
@@ -134,11 +133,9 @@ func (s *Service) runSwitch(sel *slotSelection, env domain.Environment, cfg *dom
 		return nil
 	}
 
-	cwd := s.resolvePath(cfg.BaseDir, env.Deploy.TargetPath)
-	if info, err := os.Stat(cwd); err != nil || !info.IsDir() {
-		cwd = cfg.BaseDir
-	}
-	if err := hooks.Execute(sel.Switch, cwd, slotEnv); err != nil {
+	// Local: same cwd as detect_command (manifest dir) so relative paths
+	// like .\send-cmd.ps1 resolve against the project.
+	if err := hooks.Execute(sel.Switch, cfg.BaseDir, slotEnv); err != nil {
 		return err
 	}
 	ui.Log("+", "Slot switch completed")

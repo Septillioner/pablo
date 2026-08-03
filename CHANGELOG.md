@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.4.1] - 2026-08-03
+
+### Fixed
+
+- **Blue-green local `switch_command` cwd** — Runs with cwd = manifest directory (same as `detect_command`), so relative script paths resolve against the project.
+
 ## [2.4.0] - 2026-07-31
 
 ### Added
