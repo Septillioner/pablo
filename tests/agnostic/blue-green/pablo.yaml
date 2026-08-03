@@ -18,6 +18,9 @@ profiles:
               - path: ./slots/green
             detect_command: if (Test-Path './live.active') { (Get-Content './live.active' -Raw).Trim() }
             switch_command: Set-Content -Path './live.active' -Value $env:PABLO_TARGET_SLOT -NoNewline
+          post_commands:
+            - command: Set-Content -Path './cwd-project.marker' -Value 'from-project' -NoNewline
+              cwd: project
 
   # key decouples detect stdout from the write path (mapped-drive / IIS style).
   site-keyed:

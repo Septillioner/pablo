@@ -114,8 +114,20 @@ var Root = &Field{
 												"strategy":        {Description: "Deployment strategy. With blue_green, default is recreate (backup is rejected).", Enum: []string{"overwrite", "backup", "recreate", "rename-replace"}},
 												"transfer":        {Description: "Remote transfer method. Default: tar.", Enum: []string{"tar", "legacy"}},
 												"verify_checksum": {Description: "After remote static/binary deploy, verify SHA-256 (default false)."},
-												"pre_commands":    {Description: "Commands to run before artifacts are transferred."},
-												"post_commands":   {Description: "Commands to run after artifacts are transferred."},
+												"pre_commands": {
+													Description: "Commands before artifacts transfer. Each entry is a string or {command, cwd}. cwd: project (manifest dir, local only) or target (target_path / blue-green slot).",
+													Children: map[string]*Field{
+														"command": {Description: "Shell command to run."},
+														"cwd":     {Description: "Working directory: project (manifest) or target (deploy path / idle slot).", Enum: []string{"project", "target"}},
+													},
+												},
+												"post_commands": {
+													Description: "Commands after artifacts transfer. Each entry is a string or {command, cwd}. cwd: project (manifest dir, local only) or target (target_path / blue-green slot).",
+													Children: map[string]*Field{
+														"command": {Description: "Shell command to run."},
+														"cwd":     {Description: "Working directory: project (manifest) or target (deploy path / idle slot).", Enum: []string{"project", "target"}},
+													},
+												},
 												"docker": {
 													Description: "Docker Compose settings (docker type).",
 													Children: map[string]*Field{

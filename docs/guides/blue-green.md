@@ -16,12 +16,12 @@ Use blue-green when you need the live tree untouched while the next release is p
 
 1. Run `detect_command` — stdout must exactly match one slot **key** (`key` if set, else `path`), or be empty (first deploy → `slots[0]`). Local cwd is the manifest directory.
 2. Choose the idle slot.
-3. Run `pre_commands` with cwd = idle slot (slot env vars available).
+3. Run `pre_commands` (default cwd = idle slot / `target`; use `cwd: project` for manifest-dir scripts; slot env vars available).
 4. Deploy artifacts into the idle slot (`strategy` applies there; default `recreate`).
 5. Write `env_file` / templates / optional checksum inside the idle slot.
 6. Run the resolved `switch_command` (slot-level overrides global). Local cwd is the manifest directory (same as `detect_command`).
 7. `register_path` (binary) still uses `target_path`.
-8. Run `post_commands` with cwd = idle slot.
+8. Run `post_commands` (same cwd rules as pre).
 
 ---
 

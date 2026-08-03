@@ -1,5 +1,11 @@
 package domain
 
+import (
+	"fmt"
+
+	"gopkg.in/yaml.v3"
+)
+
 type Config struct {
 	Name        string                      `yaml:"name"`
 	Version     string                      `yaml:"version"`
@@ -72,10 +78,47 @@ type DeployConfig struct {
 	Strategy       string           `yaml:"strategy,omitempty"`
 	Docker         *DockerConfig    `yaml:"docker,omitempty"`
 	BlueGreen      *BlueGreenConfig `yaml:"blue_green,omitempty"`
-	PreCommands    []string         `yaml:"pre_commands,omitempty"`
-	PostCommands   []string         `yaml:"post_commands,omitempty"`
+	PreCommands    []DeployCommand  `yaml:"pre_commands,omitempty"`
+	PostCommands   []DeployCommand  `yaml:"post_commands,omitempty"`
 	Transfer       string           `yaml:"transfer,omitempty"`
 	VerifyChecksum bool             `yaml:"verify_checksum,omitempty"`
+}
+
+const (
+	DeployCwdProject = "project"
+	DeployCwdTarget  = "target"
+)
+
+// DeployCommand is a pre/post shell step. YAML may be a plain string or
+// { command, cwd } where cwd is "project" (manifest dir) or "target"
+// (target_path / blue-green idle slot).
+type DeployCommand struct {
+	Command string `yaml:"command,omitempty"`
+	Cwd     string `yaml:"cwd,omitempty"`
+}
+
+func (c *DeployCommand) UnmarshalYAML(value *yaml.Node) error {
+	if value == nil {
+		return nil
+	}
+	switch value.Kind {
+	case yaml.ScalarNode:
+		c.Command = value.Value
+		return nil
+	case yaml.MappingNode:
+		var raw struct {
+			Command string `yaml:"command"`
+			Cwd     string `yaml:"cwd"`
+		}
+		if err := value.Decode(&raw); err != nil {
+			return err
+		}
+		c.Command = raw.Command
+		c.Cwd = raw.Cwd
+		return nil
+	default:
+		return fmt.Errorf("deploy command must be a string or an object with command")
+	}
 }
 
 type BlueGreenConfig struct {

@@ -278,10 +278,52 @@ By default Pablo verifies the remote host key using `~/.ssh/known_hosts` (Window
 | `strategy` | String | `overwrite` (default), `backup`, `recreate`, `rename-replace`. With `blue_green`, default is `recreate` (`backup` is rejected) |
 | `transfer` | String | Remote transfer method: `tar` (default) or `legacy` (SCP one-by-one) |
 | `verify_checksum` | Boolean | After remote static/binary deploy, verify SHA-256 (default: `false`) |
-| `pre_commands` | List<String> | Commands before artifacts are transferred |
-| `post_commands` | List<String> | Commands after artifacts are transferred |
+| `pre_commands` | List\<String\|Object\> | Commands before artifacts are transferred. See [Pre/Post commands](#prepost-commands) |
+| `post_commands` | List\<String\|Object\> | Commands after artifacts are transferred. See [Pre/Post commands](#prepost-commands) |
 | `docker` | [Docker](#docker) | Docker Compose settings (`docker` type only) |
 | `blue_green` | [Blue-Green](#blue-green) | Slot-based deploy (`static` / `binary` only) |
+
+---
+
+## Pre/Post commands
+
+Each entry in `pre_commands` / `post_commands` may be a plain string or an object:
+
+| Form | Example |
+|---|---|
+| String | `- echo ready` |
+| Object | `- command: .\scripts\notify.ps1` / `cwd: project` |
+
+| Field | Type | Description |
+|---|---|---|
+| `command` | String | **Required** for object form. Shell command to run |
+| `cwd` | String | Optional. `project` (manifest directory) or `target` (`target_path`, or the blue-green idle slot when `blue_green` is set) |
+
+### `cwd` resolution
+
+| `cwd` | Local | Remote |
+|---|---|---|
+| `project` | Manifest directory | **Not allowed** — validation error (`remote:` set) |
+| `target` | Resolved `target_path`, or idle slot with blue-green | Same paths on the remote host |
+
+**Default when `cwd` is omitted** (including plain strings):
+
+- Blue-green active → idle slot (`target`)
+- Remote, no blue-green → `target_path` (`target`)
+- Local, no blue-green → manifest directory (`project`)
+
+Local `detect_command` / `switch_command` always use the manifest directory and do not take `cwd`.
+
+```yaml
+deploy:
+  target_path: ./live
+  pre_commands:
+    - echo string form uses default cwd
+    - command: .\scripts\from-repo.ps1
+      cwd: project
+    - command: .\healthcheck.ps1
+      cwd: target
+```
 
 ---
 
@@ -323,7 +365,7 @@ Slot-based deploy for `static` and `binary`. Pablo detects the active slot, writ
 | Role | Path |
 |---|---|
 | Artifact write, `env_file`, templates, checksum | Selected (idle) slot |
-| `pre_commands` / `post_commands` cwd | Selected slot |
+| `pre_commands` / `post_commands` cwd | Default: idle slot (`target`). Override with `cwd: project` for manifest-dir scripts |
 | `detect_command` / `switch_command` cwd (local) | Manifest directory |
 | `switch_command` cwd (remote) | `target_path` if it exists as a directory; otherwise no `cd` |
 | `register_path` | `target_path` |

@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-08-03
+
+### Added
+
+- **`deploy.pre_commands` / `post_commands` `cwd`** — Optional per-command working directory: `project` (manifest dir, local only) or `target` (`target_path` / blue-green idle slot). Entries may still be plain strings. See [Pre/Post commands](docs/reference/configuration.md#prepost-commands).
+
+### Changed
+
+- **Local pre/post default cwd** — Without blue-green, omitted `cwd` uses the manifest directory (was the process cwd). Remote and blue-green defaults remain the deploy/slot path.
+
 ## [2.5.0] - 2026-08-03
 
 ### Added

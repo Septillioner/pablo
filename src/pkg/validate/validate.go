@@ -29,6 +29,7 @@ type Diagnostic struct {
 }
 
 var (
+	deployCommandCwds       = []string{"project", "target"}
 	profileTypes             = []string{"static", "binary", "docker", "git-sync"}
 	credentialTypes          = []string{"ssh", "token", "basic"}
 	deployStrategies         = []string{"overwrite", "backup", "recreate", "rename-replace"}
@@ -221,8 +222,38 @@ func validateEnvironment(cfg *domain.Config, profile domain.Profile, env domain.
 		}
 	}
 
+	diags = append(diags, validateDeployCommands(env, envBase, positions)...)
 	diags = append(diags, validateBlueGreen(profile, env, envBase, positions)...)
 
+	return diags
+}
+
+func validateDeployCommands(env domain.Environment, envBase string, positions map[string]*yaml.Node) []Diagnostic {
+	var diags []Diagnostic
+	diags = append(diags, validateDeployCommandList(env.Deploy.PreCommands, env, envBase+".deploy.pre_commands", positions)...)
+	diags = append(diags, validateDeployCommandList(env.Deploy.PostCommands, env, envBase+".deploy.post_commands", positions)...)
+	return diags
+}
+
+func validateDeployCommandList(commands []domain.DeployCommand, env domain.Environment, listBase string, positions map[string]*yaml.Node) []Diagnostic {
+	var diags []Diagnostic
+	for i, dc := range commands {
+		itemBase := fmt.Sprintf("%s[%d]", listBase, i)
+		if dc.Command == "" {
+			diags = append(diags, nodeDiagnostic(positions, listBase, fmt.Sprintf("%s: command is required", itemBase), SeverityError))
+			continue
+		}
+		if dc.Cwd == "" {
+			continue
+		}
+		if !contains(deployCommandCwds, dc.Cwd) {
+			diags = append(diags, enumDiagnostic(positions, listBase, dc.Cwd, deployCommandCwds))
+			continue
+		}
+		if dc.Cwd == domain.DeployCwdProject && env.Remote != nil {
+			diags = append(diags, nodeDiagnostic(positions, listBase, fmt.Sprintf("%s: cwd project is not allowed with remote (manifest dir is local-only)", itemBase), SeverityError))
+		}
+	}
 	return diags
 }
 

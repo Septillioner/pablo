@@ -1,24 +1,14 @@
-## Pablo v2.5.0
+## Pablo v2.6.0
 
-CLI UX polish: quieter defaults, richer verbose detail, named pipeline sections, blue-green slot clarity, and optional JSON run summaries.
+Per-command working directory for deploy pre/post hooks: run scripts from the project root or the deploy target without hard-coding absolute paths.
 
 ### Added
 
-- **`--quiet`** — Global flag (also `PABLO_QUIET`) that skips brand header and section chrome; keeps fail/warn lines and the final Result. Cannot combine with `--verbose`.
-- **`--json-summary`** — Optional `run` flag: after Result, print one JSON object to stdout (`project`, `version`, `profile`/`env`/`type`/`mode`, optional `paths`, `duration_ms`, `ok`; sequences use `sequence` instead of per-step fields).
-- **Deployment Info** — Shows `Type`, `Mode` (`local`|`remote`), and `Strategy` (static/binary) alongside project/profile/target.
+- **`deploy.pre_commands` / `post_commands` `cwd`** — Optional per-command working directory: `project` (manifest dir, local only) or `target` (`target_path` / blue-green idle slot). Entries may still be plain strings. See [Pre/Post commands](docs/reference/configuration.md#prepost-commands).
 
 ### Changed
 
-- **`--verbose`** — Beyond artifact paths: also logs build/hook command cwd (and detect `Capture` command). Help text updated. Env `PABLO_VERBOSE` is respected when the flag is unset.
-- **Pipeline section titles** — Named sections (`Build`, `Pre-Deployment`, `Deployment`, `Post-Deployment`, `Slot Switch`) instead of `Phase 2`…`Phase 5` (no Phase 1 gap).
-- **Blue-green slot logging** — Detect and switch print active/target paths (and `key` when it differs from `path`), plus cutover direction before running `switch_command`.
-- **`run` / `uninstall` SilenceUsage** — Validation and deploy failures no longer dump Cobra USAGE; pipeline failures already shown via `ui.Log` are not reprinted on stderr.
-
-### Fixed
-
-- **Windows hooks UTF-8** — Local PowerShell hooks (`Execute` / `Capture`) set console input/output encoding to UTF-8 so Turkish and other non-ASCII native tool output (e.g. IIS `appcmd`) is less likely to mojibake in UTF-8 terminals.
-- **Hook / backup chatter** — Removed raw `Executing hook…` printf (commands already use `ui.Log`); backup messages use `ui.Log`. Verbose mode can still show hook cwd.
+- **Local pre/post default cwd** — Without blue-green, omitted `cwd` uses the manifest directory (was the process cwd). Remote and blue-green defaults remain the deploy/slot path.
 
 ### Downloads
 

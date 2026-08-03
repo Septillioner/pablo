@@ -435,7 +435,7 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 	return nil
 }
 
-func (s *Service) runCommands(commands []string, env domain.Environment, isRemote bool, cfg *domain.Config, vars map[string]string, cwdOverride string) error {
+func (s *Service) runCommands(commands []domain.DeployCommand, env domain.Environment, isRemote bool, cfg *domain.Config, vars map[string]string, targetWriteCwd string) error {
 	if isRemote {
 		sshClient, err := s.getSSHClient(env, cfg)
 		if err != nil {
@@ -443,34 +443,82 @@ func (s *Service) runCommands(commands []string, env domain.Environment, isRemot
 		}
 		defer sshClient.Close()
 
-		cwd := env.Deploy.TargetPath
-		if cwdOverride != "" {
-			cwd = cwdOverride
-		}
-
-		for _, cmd := range commands {
-			ui.Log(">", cmd)
+		for _, dc := range commands {
+			if dc.Command == "" {
+				continue
+			}
+			cwd, err := s.resolveDeployCommandCwd(dc, env, cfg, isRemote, targetWriteCwd)
+			if err != nil {
+				return err
+			}
+			ui.Log(">", dc.Command)
+			if ui.Verbose() {
+				ui.Log("*", fmt.Sprintf("Command cwd: %s", cwd))
+			}
 			var envPrefix strings.Builder
 			for k, v := range vars {
 				envPrefix.WriteString(fmt.Sprintf("%s='%s' ", k, shellEscapeSingle(v)))
 			}
-			fullCmd := fmt.Sprintf("cd %s && %s%s", cwd, envPrefix.String(), cmd)
+			fullCmd := fmt.Sprintf("cd %s && %s%s", cwd, envPrefix.String(), dc.Command)
 			if _, err := s.deployer.ExecuteRemoteCommand(sshClient, fullCmd); err != nil {
 				return err
 			}
 		}
-	} else {
-		for _, cmdStr := range commands {
-			ui.Log(">", cmdStr)
-			if ui.Verbose() && cwdOverride != "" {
-				ui.Log("*", fmt.Sprintf("Command cwd: %s", cwdOverride))
+		return nil
+	}
+
+	for _, dc := range commands {
+		if dc.Command == "" {
+			continue
+		}
+		cwd, err := s.resolveDeployCommandCwd(dc, env, cfg, isRemote, targetWriteCwd)
+		if err != nil {
+			return err
+		}
+		if effectiveDeployCwd(dc, targetWriteCwd, isRemote) == domain.DeployCwdTarget {
+			if err := os.MkdirAll(cwd, 0o755); err != nil {
+				return fmt.Errorf("failed to prepare command target directory %s: %w", cwd, err)
 			}
-			if err := hooks.Execute(cmdStr, cwdOverride, vars); err != nil {
-				return err
-			}
+		}
+		ui.Log(">", dc.Command)
+		if ui.Verbose() {
+			ui.Log("*", fmt.Sprintf("Command cwd: %s", cwd))
+		}
+		if err := hooks.Execute(dc.Command, cwd, vars); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+func effectiveDeployCwd(dc domain.DeployCommand, targetWriteCwd string, isRemote bool) string {
+	if dc.Cwd != "" {
+		return dc.Cwd
+	}
+	if targetWriteCwd != "" || isRemote {
+		return domain.DeployCwdTarget
+	}
+	return domain.DeployCwdProject
+}
+
+// resolveDeployCommandCwd returns the working directory for a pre/post command.
+// targetWriteCwd is the resolved blue-green idle slot path when active; otherwise empty.
+func (s *Service) resolveDeployCommandCwd(dc domain.DeployCommand, env domain.Environment, cfg *domain.Config, isRemote bool, targetWriteCwd string) (string, error) {
+	kind := effectiveDeployCwd(dc, targetWriteCwd, isRemote)
+	switch kind {
+	case domain.DeployCwdProject:
+		return cfg.BaseDir, nil
+	case domain.DeployCwdTarget:
+		if targetWriteCwd != "" {
+			return targetWriteCwd, nil
+		}
+		if isRemote {
+			return env.Deploy.TargetPath, nil
+		}
+		return s.resolvePath(cfg.BaseDir, env.Deploy.TargetPath), nil
+	default:
+		return "", fmt.Errorf("invalid deploy command cwd %q", dc.Cwd)
+	}
 }
 
 func (s *Service) getSSHClient(env domain.Environment, cfg *domain.Config) (*ssh.Client, error) {
