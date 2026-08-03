@@ -11,6 +11,7 @@ import (
 	sshAdapter "pablo/internal/adapters/ssh"
 	"pablo/pkg/domain"
 	"pablo/pkg/pathutil"
+	"pablo/pkg/ui"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -205,7 +206,7 @@ func (s *Service) backup(targetPath string) error {
 	}
 
 	backupName := fmt.Sprintf("%s_backup_%s", targetPath, time.Now().Format("20060102_150405"))
-	fmt.Printf("Backing up %s to %s\n", targetPath, backupName)
+	ui.Log("*", fmt.Sprintf("Backing up %s to %s", targetPath, backupName))
 	return os.Rename(targetPath, backupName)
 }
 

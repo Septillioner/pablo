@@ -56,33 +56,30 @@ func resultFail(start time.Time) {
 	ui.Result(false, time.Since(start))
 }
 
-func (s *Service) Run(manifestPath, profileName, envName string, allowProtected, verbose bool) error {
-	return s.run(manifestPath, profileName, envName, allowProtected, verbose)
+func (s *Service) Run(manifestPath, profileName, envName string, opts RunOptions) error {
+	return s.run(manifestPath, profileName, envName, opts)
 }
 
-func (s *Service) run(manifestPath, profileName, envName string, allowProtected, verbose bool) error {
+func (s *Service) run(manifestPath, profileName, envName string, opts RunOptions) error {
 	start := time.Now()
 
 	ui.Log("*", fmt.Sprintf("Loading manifest: %s", manifestPath))
 	absManifest, err := filepath.Abs(manifestPath)
 	if err != nil {
 		ui.Log("-", "Failed to resolve manifest path")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 
 	manifestData, err := os.ReadFile(absManifest)
 	if err != nil {
 		ui.Log("-", "Failed to load manifest")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 
 	diags, _, err := validate.ValidateYAML(manifestData, filepath.Dir(absManifest))
 	if err != nil {
 		ui.Log("-", "Failed to validate manifest")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	for _, d := range diags {
 		if d.Severity == validate.SeverityError {
@@ -90,74 +87,109 @@ func (s *Service) run(manifestPath, profileName, envName string, allowProtected,
 		}
 	}
 	if validate.HasErrors(diags) {
-		resultFail(start)
-		return fmt.Errorf("manifest validation failed")
+		return failReturn(start, fmt.Errorf("manifest validation failed"))
 	}
 
 	cfg, err := s.loader.Load(manifestPath)
 	if err != nil {
 		ui.Log("-", "Failed to load manifest")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 
 	profile, err := cfg.GetProfile(profileName)
 	if err != nil || profile == nil {
 		ui.Log("-", fmt.Sprintf("Profile '%s' not found", profileName))
-		resultFail(start)
-		return fmt.Errorf("profile not found")
+		return failReturn(start, fmt.Errorf("profile not found"))
 	}
 
 	env, ok := profile.Environments[envName]
 	if !ok {
 		ui.Log("-", fmt.Sprintf("Environment '%s' not found in profile '%s'", envName, profileName))
-		resultFail(start)
-		return fmt.Errorf("environment not found")
+		return failReturn(start, fmt.Errorf("environment not found"))
+	}
+
+	mode := environmentMode(env)
+	strategy := ""
+	if profile.Type == "static" || profile.Type == "binary" {
+		strategy = defaultDeployStrategy(env)
 	}
 
 	ui.Section("Deployment Info")
 	ui.Log("*", fmt.Sprintf("Project: %s", cfg.Name))
 	ui.Log("*", fmt.Sprintf("Version: %s", cfg.Version))
-	ui.Log("*", fmt.Sprintf("Profile: %s (%s)", profileName, profile.Type))
+	ui.Log("*", fmt.Sprintf("Profile: %s", profileName))
 	ui.Log("*", fmt.Sprintf("Target:  %s", envName))
+	ui.Log("*", fmt.Sprintf("Type:    %s", profile.Type))
+	ui.Log("*", fmt.Sprintf("Mode:    %s", mode))
+	if strategy != "" {
+		ui.Log("*", fmt.Sprintf("Strategy: %s", strategy))
+	}
 
 	vars := s.resolveVariables(env)
 
+	summary := RunSummary{
+		Project: cfg.Name,
+		Version: cfg.Version,
+		Profile: profileName,
+		Env:     envName,
+		Type:    profile.Type,
+		Mode:    mode,
+		Paths:   map[string]string{},
+	}
+	if env.Deploy.TargetPath != "" {
+		summary.Paths["target"] = env.Deploy.TargetPath
+	}
+
 	if err := s.handleBuild(profile, env, cfg.BaseDir, start); err != nil {
+		summary.DurationMs = time.Since(start).Milliseconds()
+		summary.OK = false
+		if opts.JSONSummary {
+			_ = emitJSONSummary(summary)
+		}
 		return err
 	}
 
-	if err := s.handleDeployment(profile, env, cfg, vars, allowProtected, verbose, start); err != nil {
+	if err := s.handleDeployment(profile, env, cfg, vars, opts.AllowProtected, opts.Verbose, start); err != nil {
+		summary.DurationMs = time.Since(start).Milliseconds()
+		summary.OK = false
+		if opts.JSONSummary {
+			_ = emitJSONSummary(summary)
+		}
 		return err
 	}
 
-	ui.Result(true, time.Since(start))
+	elapsed := time.Since(start)
+	ui.Result(true, elapsed)
+	summary.DurationMs = elapsed.Milliseconds()
+	summary.OK = true
+	if opts.JSONSummary {
+		if err := emitJSONSummary(summary); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (s *Service) RunSequence(manifestPath, sequenceName string, allowProtected, verbose bool) error {
+func (s *Service) RunSequence(manifestPath, sequenceName string, opts RunOptions) error {
 	start := time.Now()
 
 	ui.Log("*", fmt.Sprintf("Loading manifest: %s", manifestPath))
 	absManifest, err := filepath.Abs(manifestPath)
 	if err != nil {
 		ui.Log("-", "Failed to resolve manifest path")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 
 	manifestData, err := os.ReadFile(absManifest)
 	if err != nil {
 		ui.Log("-", "Failed to load manifest")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 
 	diags, _, err := validate.ValidateYAML(manifestData, filepath.Dir(absManifest))
 	if err != nil {
 		ui.Log("-", "Failed to validate manifest")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	for _, d := range diags {
 		if d.Severity == validate.SeverityError {
@@ -165,22 +197,19 @@ func (s *Service) RunSequence(manifestPath, sequenceName string, allowProtected,
 		}
 	}
 	if validate.HasErrors(diags) {
-		resultFail(start)
-		return fmt.Errorf("manifest validation failed")
+		return failReturn(start, fmt.Errorf("manifest validation failed"))
 	}
 
 	cfg, err := s.loader.Load(manifestPath)
 	if err != nil {
 		ui.Log("-", "Failed to load manifest")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 
 	steps, ok := cfg.Sequences[sequenceName]
 	if !ok {
 		ui.Log("-", fmt.Sprintf("Sequence '%s' not found", sequenceName))
-		resultFail(start)
-		return fmt.Errorf("sequence not found")
+		return failReturn(start, fmt.Errorf("sequence not found"))
 	}
 
 	total := len(steps)
@@ -188,23 +217,49 @@ func (s *Service) RunSequence(manifestPath, sequenceName string, allowProtected,
 	ui.Log("*", fmt.Sprintf("Project: %s", cfg.Name))
 	ui.Log("*", fmt.Sprintf("Sequence: %s (%d steps)", sequenceName, total))
 
+	// Per-step JSON summaries are suppressed; one sequence-level summary is emitted.
+	stepOpts := opts
+	stepOpts.JSONSummary = false
+
 	for i, step := range steps {
 		profileName, envName, err := target.Parse(step)
 		if err != nil {
 			ui.Log("-", fmt.Sprintf("Sequence step %d/%d: %v", i+1, total, err))
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 
 		ui.Log("*", fmt.Sprintf("Sequence step %d/%d: %s", i+1, total, step))
-		if err := s.run(manifestPath, profileName, envName, allowProtected, verbose); err != nil {
+		if err := s.run(manifestPath, profileName, envName, stepOpts); err != nil {
 			ui.Log("-", fmt.Sprintf("Sequence aborted at step %d/%d", i+1, total))
-			resultFail(start)
-			return err
+			summary := RunSummary{
+				Project:    cfg.Name,
+				Version:    cfg.Version,
+				Sequence:   sequenceName,
+				DurationMs: time.Since(start).Milliseconds(),
+				OK:         false,
+			}
+			if opts.JSONSummary {
+				_ = emitJSONSummary(summary)
+			}
+			// Step already printed Result; avoid a second fail Result.
+			return ui.Logged(err)
 		}
 	}
 
-	ui.Result(true, time.Since(start))
+	elapsed := time.Since(start)
+	ui.Result(true, elapsed)
+	if opts.JSONSummary {
+		summary := RunSummary{
+			Project:    cfg.Name,
+			Version:    cfg.Version,
+			Sequence:   sequenceName,
+			DurationMs: elapsed.Milliseconds(),
+			OK:         true,
+		}
+		if err := emitJSONSummary(summary); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -251,7 +306,7 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 		buildConfig = env.Build
 	}
 
-	ui.Section("Phase 2: Build")
+	ui.Section("Build")
 	ui.Log(">", fmt.Sprintf("Running build: %s", buildConfig.Command))
 
 	path := buildConfig.Path
@@ -261,6 +316,10 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 		path = filepath.Join(baseDir, path)
 	}
 
+	if ui.Verbose() {
+		ui.Log("*", fmt.Sprintf("Build cwd: %s", path))
+	}
+
 	buildVars := s.resolveBuildVariables(env, buildConfig)
 
 	if buildConfig.EnvFile != "" && len(buildVars) > 0 {
@@ -268,8 +327,7 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 		ui.Log("*", fmt.Sprintf("Writing build variables to %s", envFilePath))
 		if err := s.writeEnvFile(envFilePath, buildVars); err != nil {
 			ui.Log("-", "Failed to write build env file")
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 	}
 
@@ -287,8 +345,7 @@ func (s *Service) handleBuild(profile *domain.Profile, env domain.Environment, b
 
 	if err := cmd.Run(); err != nil {
 		ui.Log("-", "Build failed")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	ui.Log("+", "Build completed")
 	return nil
@@ -300,8 +357,7 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 	sel, err := s.detectSlot(env, cfg)
 	if err != nil {
 		ui.Log("-", fmt.Sprintf("Blue-green slot detection failed: %v", err))
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 
 	slotEnv := slotCommandEnv(sel)
@@ -315,24 +371,22 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 			commandsCwd = s.resolvePath(cfg.BaseDir, sel.Target)
 			if err := os.MkdirAll(commandsCwd, 0o755); err != nil {
 				ui.Log("-", "Failed to prepare blue-green slot directory")
-				resultFail(start)
-				return fmt.Errorf("failed to prepare blue-green slot directory: %w", err)
+				return failReturn(start, fmt.Errorf("failed to prepare blue-green slot directory: %w", err))
 			}
 		}
 	}
 
 	// 1. Pre-deployment Commands
 	if len(env.Deploy.PreCommands) > 0 {
-		ui.Section("Phase 3: Pre-Deployment Commands")
+		ui.Section("Pre-Deployment")
 		if err := s.runCommands(env.Deploy.PreCommands, env, isRemote, cfg, commandVars, commandsCwd); err != nil {
 			ui.Log("-", "Pre-deployment commands failed")
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 	}
 
 	// 2. Main Deployment
-	ui.Section("Phase 4: Deployment")
+	ui.Section("Deployment")
 	switch profile.Type {
 	case "static", "binary":
 		if isRemote {
@@ -358,8 +412,7 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 	if sel.Active {
 		if err := s.runSwitch(sel, env, cfg); err != nil {
 			ui.Log("-", "Slot switch failed")
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 	}
 
@@ -372,11 +425,10 @@ func (s *Service) handleDeployment(profile *domain.Profile, env domain.Environme
 
 	// 4. Post-deployment Commands
 	if len(env.Deploy.PostCommands) > 0 {
-		ui.Section("Phase 5: Post-Deployment Commands")
+		ui.Section("Post-Deployment")
 		if err := s.runCommands(env.Deploy.PostCommands, env, isRemote, cfg, commandVars, commandsCwd); err != nil {
 			ui.Log("-", "Post-deployment commands failed")
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 	}
 
@@ -410,6 +462,9 @@ func (s *Service) runCommands(commands []string, env domain.Environment, isRemot
 	} else {
 		for _, cmdStr := range commands {
 			ui.Log(">", cmdStr)
+			if ui.Verbose() && cwdOverride != "" {
+				ui.Log("*", fmt.Sprintf("Command cwd: %s", cwdOverride))
+			}
 			if err := hooks.Execute(cmdStr, cwdOverride, vars); err != nil {
 				return err
 			}
@@ -467,8 +522,7 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 	artifactBase, include, exclude := s.resolveArtifacts(env, baseDir)
 	if err := os.MkdirAll(artifactBase, 0o755); err != nil {
 		ui.Log("-", "Failed to prepare artifact directory")
-		resultFail(start)
-		return fmt.Errorf("failed to prepare artifact directory: %w", err)
+		return failReturn(start, fmt.Errorf("failed to prepare artifact directory: %w", err))
 	}
 	var files []string
 	if err := ui.WithSpinner("Filtering files", func() error {
@@ -477,8 +531,7 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 		return filterErr
 	}); err != nil {
 		ui.Log("-", "Filtering failed")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	logArtifacts(files, artifactBase, verbose)
 
@@ -488,8 +541,7 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 	} else {
 		if err := os.MkdirAll(writePath, 0o755); err != nil {
 			ui.Log("-", "Failed to prepare deploy target directory")
-			resultFail(start)
-			return fmt.Errorf("failed to prepare deploy target directory: %w", err)
+			return failReturn(start, fmt.Errorf("failed to prepare deploy target directory: %w", err))
 		}
 	}
 	strategy := defaultDeployStrategy(env)
@@ -497,8 +549,7 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 	ui.Log(">", fmt.Sprintf("Deploying to %s (Strategy: %s)", writePath, strategy))
 	if err := s.deployer.Deploy(files, artifactBase, writePath, strategy, allowProtected, ui.FileProgress("Copying")); err != nil {
 		ui.Log("-", "Deployment failed")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	ui.Log("+", "Deployment successful")
 
@@ -516,8 +567,7 @@ func (s *Service) deployLocal(profile *domain.Profile, env domain.Environment, b
 		ui.Log("*", "Applying template variables...")
 		if err := template.ProcessFiles(writePath, vars); err != nil {
 			ui.Log("-", "Template processing failed")
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 		ui.Log("+", "Template processing completed")
 	}
@@ -607,8 +657,7 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 	sshClient, err := s.getSSHClient(env, cfg)
 	if err != nil {
 		ui.Log("-", fmt.Sprintf("SSH connection failed: %v", err))
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	defer sshClient.Close()
 	ui.Log("+", "SSH connection established")
@@ -621,8 +670,7 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 		return filterErr
 	}); err != nil {
 		ui.Log("-", "Filtering failed")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	logArtifacts(files, artifactBase, verbose)
 
@@ -648,8 +696,7 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 	}
 	if deployErr != nil {
 		ui.Log("-", "Remote deployment failed")
-		resultFail(start)
-		return deployErr
+		return failReturn(start, deployErr)
 	}
 	ui.Log("+", "Remote deployment successful")
 
@@ -658,8 +705,7 @@ func (s *Service) deployRemoteSSH(profile *domain.Profile, env domain.Environmen
 			return s.deployer.VerifyRemoteChecksums(sshClient, files, artifactBase, writePath)
 		}); err != nil {
 			ui.Log("-", "Checksum verification failed")
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 		ui.Log("+", "Checksum verification passed")
 	}
@@ -694,15 +740,13 @@ func (s *Service) deployDocker(profile *domain.Profile, env domain.Environment, 
 		composeFile = s.resolvePath(baseDir, env.Deploy.Docker.ComposeFile)
 		if err := s.stopComposeBeforeSyncLocal(env.Deploy.Docker, composeFile, targetPath); err != nil {
 			ui.Log("-", "Compose precheck failed")
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 	}
 
 	if err := s.scm.CloneOrPull(profile.Git, targetPath); err != nil {
 		ui.Log("-", "SCM operation failed")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	ui.Log("+", "SCM operation completed")
 
@@ -711,8 +755,7 @@ func (s *Service) deployDocker(profile *domain.Profile, env domain.Environment, 
 		envFile := filepath.Join(targetPath, env.EnvConfig.EnvFile)
 		if err := s.writeEnvFile(envFile, vars); err != nil {
 			ui.Log("-", "Failed to write env file")
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 		ui.Log("+", "Env file generated")
 	}
@@ -723,8 +766,7 @@ func (s *Service) deployDocker(profile *domain.Profile, env domain.Environment, 
 
 		if err := s.docker.ComposeUp(composeFile, build, targetPath); err != nil {
 			ui.Log("-", "Docker compose failed")
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 		ui.Log("+", "Docker compose started")
 	}
@@ -741,8 +783,7 @@ func (s *Service) deployDockerRemote(profile *domain.Profile, env domain.Environ
 	sshClient, err := s.getSSHClient(env, cfg)
 	if err != nil {
 		ui.Log("-", fmt.Sprintf("SSH connection failed: %v", err))
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	defer sshClient.Close()
 	ui.Log("+", "SSH connection established")
@@ -758,15 +799,13 @@ func (s *Service) deployDockerRemote(profile *domain.Profile, env domain.Environ
 		}
 		if err := s.stopComposeBeforeSyncRemote(sshClient, env.Deploy.Docker, composeFile, targetPath); err != nil {
 			ui.Log("-", "Compose precheck failed")
-			resultFail(start)
-			return err
+			return failReturn(start, err)
 		}
 	}
 
 	if err := s.syncRepoRemote(sshClient, profile.Git, targetPath); err != nil {
 		ui.Log("-", err.Error())
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 
 	if env.EnvConfig.EnvFile != "" && len(vars) > 0 {
@@ -793,8 +832,7 @@ func (s *Service) deployDockerRemote(profile *domain.Profile, env domain.Environ
 		if err != nil {
 			ui.Log("-", "Remote docker compose failed")
 			logRemoteCommandOutput(out)
-			resultFail(start)
-			return fmt.Errorf("remote docker compose failed: %w%s", err, formatRemoteCommandOutput(out))
+			return failReturn(start, fmt.Errorf("remote docker compose failed: %w%s", err, formatRemoteCommandOutput(out)))
 		}
 		ui.Log("+", "Docker compose started on remote")
 	}
@@ -982,8 +1020,7 @@ func (s *Service) deployGitSync(profile *domain.Profile, env domain.Environment,
 
 	if err := s.scm.CloneOrPull(profile.Git, targetPath); err != nil {
 		ui.Log("-", "Git sync failed")
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	ui.Log("+", "Git sync completed")
 
@@ -1009,8 +1046,7 @@ func (s *Service) deployGitSyncRemote(profile *domain.Profile, env domain.Enviro
 	sshClient, err := s.getSSHClient(env, cfg)
 	if err != nil {
 		ui.Log("-", fmt.Sprintf("SSH connection failed: %v", err))
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 	defer sshClient.Close()
 	ui.Log("+", "SSH connection established")
@@ -1019,8 +1055,7 @@ func (s *Service) deployGitSyncRemote(profile *domain.Profile, env domain.Enviro
 
 	if err := s.syncRepoRemote(sshClient, profile.Git, targetPath); err != nil {
 		ui.Log("-", err.Error())
-		resultFail(start)
-		return err
+		return failReturn(start, err)
 	}
 
 	if env.EnvConfig.EnvFile != "" && len(vars) > 0 {

@@ -40,16 +40,18 @@ See also: [Configuration](configuration.md) · [Examples](../examples/README.md)
 
 ## Pipeline phases
 
-Single-target `pablo run` (one profile + environment):
+Single-target `pablo run` (one profile + environment). Interactive chrome uses named sections (not numbered “Phase N” labels):
 
-1. Load and validate manifest
-2. Build (`build.command`) — skipped when `build` is omitted or empty; when `build.env_file` is set and the resolved variable map is non-empty, write that file under `build.path` first and inject keys into the build process env
-3. Blue-green detect (`deploy.blue_green.detect_command`) when configured — choose idle slot
-4. Pre-deployment commands (`deploy.pre_commands`)
-5. Deployment (local copy or SSH tar stream); when `env_file` is set and variables are non-empty, write the dotenv under the write path (`target_path`, or the idle slot with blue-green)
-6. Blue-green switch (`switch_command`) when configured
+1. Load and validate manifest → **Deployment Info** (`Type`, `Mode` local|remote, `Strategy` when applicable)
+2. **Build** (`build.command`) — skipped when `build` is omitted or empty; when `build.env_file` is set and the resolved variable map is non-empty, write that file under `build.path` first and inject keys into the build process env
+3. Blue-green detect (`deploy.blue_green.detect_command`) when configured — choose idle slot (logged under detect/switch lines)
+4. **Pre-Deployment** (`deploy.pre_commands`)
+5. **Deployment** (local copy or SSH tar stream); when `env_file` is set and variables are non-empty, write the dotenv under the write path (`target_path`, or the idle slot with blue-green)
+6. **Slot Switch** (`switch_command`) when blue-green is configured
 7. PATH registration (`register_path`, binary type)
-8. Post-deployment commands (`deploy.post_commands`)
+8. **Post-Deployment** (`deploy.post_commands`)
+
+`--quiet` skips header/section chrome; `--verbose` adds artifact paths and relevant cwd lines; `--json-summary` prints one JSON object after Result.
 
 ### Sequences
 

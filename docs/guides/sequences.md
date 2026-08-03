@@ -50,6 +50,7 @@ profiles:
 ```bash
 pablo run sequence ship
 pablo run sequence ship -f pablo.yaml --verbose
+pablo run sequence ship --quiet --json-summary
 ```
 
 | Flag | Applies to sequences? |
@@ -57,6 +58,8 @@ pablo run sequence ship -f pablo.yaml --verbose
 | `-f` / `--file` | Yes — all steps use that manifest |
 | `--force` | Yes — every step |
 | `--verbose` | Yes — every step |
+| `--quiet` | Yes — every step |
+| `--json-summary` | Yes — one summary for the whole sequence |
 | `-p` / `--profile` | No — cannot combine with `sequence` |
 | `-e` / `--env` | No — cannot combine with `sequence` |
 

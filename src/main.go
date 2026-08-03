@@ -34,6 +34,8 @@ var (
 	manifest       string
 	allowProtected bool
 	verbose        bool
+	quiet          bool
+	jsonSummary    bool
 	Version        string
 )
 
@@ -57,11 +59,16 @@ func main() {
 		Long: `Pablo is a production-ready CLI tool designed to simplify deployments. 
 It supports multiple profiles, environment-based configurations, and automatic 
 artifact filtering, path registration, and health checks.`,
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if quiet && verbose {
+				return fmt.Errorf("cannot combine --quiet and --verbose")
+			}
+			ui.Configure(quiet, verbose)
 			if shouldSkipBrandHeader(cmd) {
-				return
+				return nil
 			}
 			ui.Header(Version)
+			return nil
 		},
 	}
 
@@ -89,18 +96,25 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
   pablo update
   pablo update check`
 
-	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "List each artifact path during deployment")
+	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Show extra detail (artifact paths, hook/build cwd)")
+	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "Minimize chrome (skip header/sections; keep fail and result)")
 
 	var runCmd = &cobra.Command{
-		Use:   "run [profile/env | sequence <name>]",
-		Short: "Executes the deployment pipeline",
-		Args:  cobra.MaximumNArgs(2),
+		Use:          "run [profile/env | sequence <name>]",
+		Short:        "Executes the deployment pipeline",
+		Args:         cobra.MaximumNArgs(2),
+		SilenceUsage: true,
 		Example: `  pablo run default/windows-local
   pablo run default.windows-local -f pablo.yaml
   pablo run sequence extension
   pablo run -p api -e staging`,
 		ValidArgsFunction: completeRunArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts := pipeline.RunOptions{
+				AllowProtected: allowProtected,
+				Verbose:        verbose,
+				JSONSummary:    jsonSummary,
+			}
 			if len(args) > 0 && args[0] == "sequence" {
 				if len(args) < 2 {
 					return fmt.Errorf("sequence name is required (usage: pablo run sequence <name>)")
@@ -108,7 +122,7 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 				if cmd.Flags().Changed("profile") || cmd.Flags().Changed("env") {
 					return fmt.Errorf("cannot combine sequence with -p/--profile or -e/--env")
 				}
-				return pipelineSvc.RunSequence(manifest, args[1], allowProtected, verbose)
+				return pipelineSvc.RunSequence(manifest, args[1], opts)
 			}
 			if len(args) == 2 {
 				return fmt.Errorf("unexpected second argument; use 'pablo run sequence <name>' for sequences")
@@ -117,13 +131,14 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 			if err != nil {
 				return err
 			}
-			return pipelineSvc.Run(manifest, profile, env, allowProtected, verbose)
+			return pipelineSvc.Run(manifest, profile, env, opts)
 		},
 	}
 	runCmd.Flags().StringVarP(&envName, "env", "e", "production", "Target environment")
 	runCmd.Flags().StringVarP(&profileName, "profile", "p", "default", "Target profile")
 	runCmd.Flags().StringVarP(&manifest, "file", "f", "pablo.yaml", "Path to manifest")
 	runCmd.Flags().BoolVar(&allowProtected, "force", false, "Allow deployment to protected system directories")
+	runCmd.Flags().BoolVar(&jsonSummary, "json-summary", false, "Print a JSON run summary to stdout after Result")
 	registerManifestCompletions(runCmd)
 
 	var useTemplate bool
@@ -181,12 +196,13 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 
 	var removeBackups bool
 	var uninstallCmd = &cobra.Command{
-		Use:   "uninstall",
-		Short: "Removes deployed files and cleans up PATH entries",
+		Use:          "uninstall",
+		Short:        "Removes deployed files and cleans up PATH entries",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if envName == "" {
 				ui.Log("-", "Environment (-e) is required for uninstall")
-				return fmt.Errorf("environment flag is required")
+				return ui.Logged(fmt.Errorf("environment flag is required"))
 			}
 			return pipelineSvc.Uninstall(manifest, profileName, envName, removeBackups)
 		},
@@ -218,8 +234,8 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 	registerManifestCompletions(inspectCmd)
 
 	var lspCmd = &cobra.Command{
-		Use:   "lsp",
-		Short: "Start Pablo language server (stdio)",
+		Use:           "lsp",
+		Short:         "Start Pablo language server (stdio)",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -259,7 +275,9 @@ USE "pablo [command] --help" FOR MORE INFORMATION ABOUT A COMMAND.
 	rootCmd.AddCommand(runCmd, initCmd, checkCmd, uninstallCmd, versionCmd, inspectCmd, lspCmd, updateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		if !ui.IsLogged(err) {
+			fmt.Fprintln(os.Stderr, err)
+		}
 		os.Exit(1)
 	}
 }

@@ -12,11 +12,12 @@ See also: [Exit codes](exit-codes.md) · [Configuration](configuration.md)
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--verbose` | `false` | During `run`, list each artifact path after the deploy count |
+| `--verbose` | `false` | Extra detail during `run`: list each artifact path; log build/hook cwd; show detect `Capture` command. Also `PABLO_VERBOSE=1` when the flag is unset. Cannot combine with `--quiet`. |
+| `--quiet` | `false` | Minimize chrome: skip brand header and section dividers; keep fail/warn lines and Result. Also `PABLO_QUIET=1` when the flag is unset. Cannot combine with `--verbose`. |
 
 ### Terminal output
 
-On an interactive TTY, `pablo run` uses the standard CLI chrome: `Header` / `Section` phase dividers, marked `Log` lines (`ok` / `fail` / `warn` / `info` / `run`), `Spinner` for indeterminate work, `ProgressBar` / `FileProgress` for file copy/transfer, and `Result` for the final outcome. Build and other subprocesses stream stdout/stderr normally. Animations are disabled when stdout is not a TTY, or when `NO_COLOR`, `CI`, or `PABLO_PLAIN` is set — then only plain `Section` / `Log` lines are used.
+On an interactive TTY, `pablo run` uses the standard CLI chrome: `Header` / named `Section` dividers (`Build`, `Pre-Deployment`, `Deployment`, `Post-Deployment`, `Slot Switch`), marked `Log` lines (`ok` / `fail` / `warn` / `info` / `run`), `Spinner` for indeterminate work, `ProgressBar` / `FileProgress` for file copy/transfer, and `Result` for the final outcome. Build and other subprocesses stream stdout/stderr normally. Animations are disabled when stdout is not a TTY, or when `NO_COLOR`, `CI`, or `PABLO_PLAIN` is set — then only plain `Section` / `Log` lines are used. With `--quiet`, header and sections are omitted.
 
 ### Shell completion
 
@@ -77,6 +78,7 @@ Executes the deployment pipeline for a single profile/environment, or runs a nam
 | `--env` | `-e` | `production` | Target environment (not used with `sequence`) |
 | `--file` | `-f` | `pablo.yaml` | Path to manifest |
 | `--force` | | `false` | Allow deployment to protected system directories |
+| `--json-summary` | | `false` | After Result, print one JSON summary object to stdout |
 
 Single target:
 
@@ -85,6 +87,7 @@ pablo run -p frontend -e production
 pablo run -p api -e production -f deploy.yaml
 pablo run -e staging --force
 pablo run -p local-test -e dev --verbose
+pablo run default/windows-local --quiet --json-summary
 pablo run default/windows-local
 ```
 
@@ -93,9 +96,12 @@ Sequence:
 ```bash
 pablo run sequence extension
 pablo run sequence extension -f pablo-sepy.yaml --verbose
+pablo run sequence extension --json-summary
 ```
 
-Runs each step in manifest list order; stops on the first failure. `-p` / `-e` cannot be combined with `sequence`. Guide: [Sequences](../guides/sequences.md).
+Runs each step in manifest list order; stops on the first failure. `-p` / `-e` cannot be combined with `sequence`. With `--json-summary`, a single sequence-level JSON object is printed after the final Result (not one object per step). Guide: [Sequences](../guides/sequences.md).
+
+Deployment Info at the start of a single-target run includes project, version, profile, target env, profile `Type`, `Mode` (`local` or `remote`), and `Strategy` for `static` / `binary`.
 
 ---
 

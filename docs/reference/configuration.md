@@ -134,7 +134,7 @@ sequences:
 pablo run sequence release
 ```
 
-Cannot combine `pablo run sequence` with `-p` / `-e`. Global flags (`-f`, `--force`, `--verbose`) apply to every step.
+Cannot combine `pablo run sequence` with `-p` / `-e`. Global flags (`-f`, `--force`, `--verbose`, `--quiet`) and `run --json-summary` apply across the sequence (one JSON summary for the whole sequence).
 
 Guide: [Sequences](../guides/sequences.md) · [Examples #11](../examples/README.md#11-sequences).
 

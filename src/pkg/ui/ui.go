@@ -71,7 +71,11 @@ func envTruthy(value string) bool {
 }
 
 // Header prints a compact brand block with a light accent rule.
+// Skipped in quiet mode.
 func Header(version string) {
+	if Quiet() {
+		return
+	}
 	wordmark := ThemeColor(`    ┓ ┓
 ┏┓┏┓┣┓┃┏┓
 ┣┛┗┻┗┛┗┗┛
@@ -84,7 +88,12 @@ func Header(version string) {
 }
 
 // Log prints a structured status line: time, aligned mark, message.
+// In quiet mode only fail (-) and warn (!) lines are kept; info/run/ok chrome is skipped.
 func Log(mark string, message string) {
+	if Quiet() && mark != "-" && mark != "!" {
+		return
+	}
+
 	chromeMu.Lock()
 	defer chromeMu.Unlock()
 
@@ -120,7 +129,11 @@ func padMark(mark string) string {
 }
 
 // Section prints a light titled divider (title stays readable; no shouty uppercase).
+// Skipped in quiet mode.
 func Section(title string) {
+	if Quiet() {
+		return
+	}
 	label := strings.TrimSpace(title)
 	if label == "" {
 		return

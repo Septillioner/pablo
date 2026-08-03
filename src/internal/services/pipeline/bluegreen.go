@@ -15,10 +15,12 @@ const (
 )
 
 type slotSelection struct {
-	Active   bool
-	Target   string // configured slot path written this run
-	Previous string // detected slot path; empty on first deploy
-	Switch   string // resolved switch command
+	Active      bool
+	Target      string // configured slot path written this run
+	Previous    string // detected slot path; empty on first deploy
+	TargetKey   string // detect match value for target (key or path)
+	PreviousKey string // detect match value for previous; empty on first deploy
+	Switch      string // resolved switch command
 }
 
 func (s *Service) detectSlot(env domain.Environment, cfg *domain.Config) (*slotSelection, error) {
@@ -40,12 +42,14 @@ func (s *Service) detectSlot(env domain.Environment, cfg *domain.Config) (*slotS
 	slots := bg.Slots
 	if active == "" {
 		sel := &slotSelection{
-			Active:   true,
-			Target:   slots[0].Path,
-			Previous: "",
-			Switch:   resolveSlotSwitch(slots[0], bg),
+			Active:    true,
+			Target:    slots[0].Path,
+			Previous:  "",
+			TargetKey: resolveSlotKey(slots[0]),
+			Switch:    resolveSlotSwitch(slots[0], bg),
 		}
-		ui.Log("*", fmt.Sprintf("Blue-green: no active slot; deploying to %s", sel.Target))
+		ui.Log("*", "Blue-green: detect returned empty (first deploy)")
+		ui.Log("*", fmt.Sprintf("Blue-green: deploy target %s", formatSlotRef(sel.Target, sel.TargetKey)))
 		return sel, nil
 	}
 
@@ -65,13 +69,20 @@ func (s *Service) detectSlot(env domain.Environment, cfg *domain.Config) (*slotS
 	}
 
 	idleIndex := 1 - activeIndex
+	activeSlot := slots[activeIndex]
+	idleSlot := slots[idleIndex]
 	sel := &slotSelection{
-		Active:   true,
-		Target:   slots[idleIndex].Path,
-		Previous: slots[activeIndex].Path,
-		Switch:   resolveSlotSwitch(slots[idleIndex], bg),
+		Active:      true,
+		Target:      idleSlot.Path,
+		Previous:    activeSlot.Path,
+		TargetKey:   resolveSlotKey(idleSlot),
+		PreviousKey: resolveSlotKey(activeSlot),
+		Switch:      resolveSlotSwitch(idleSlot, bg),
 	}
-	ui.Log("*", fmt.Sprintf("Blue-green: active %s; deploying to %s", sel.Previous, sel.Target))
+	ui.Log("*", fmt.Sprintf("Blue-green: detect matched %q", active))
+	ui.Log("*", fmt.Sprintf("Blue-green: active %s; deploy target %s",
+		formatSlotRef(sel.Previous, sel.PreviousKey),
+		formatSlotRef(sel.Target, sel.TargetKey)))
 	return sel, nil
 }
 
@@ -87,6 +98,14 @@ func resolveSlotSwitch(slot domain.SlotConfig, bg *domain.BlueGreenConfig) strin
 		return slot.SwitchCommand
 	}
 	return bg.SwitchCommand
+}
+
+// formatSlotRef shows path, and key when it differs from path.
+func formatSlotRef(path, key string) string {
+	if key != "" && key != path {
+		return fmt.Sprintf("%s (key %q)", path, key)
+	}
+	return path
 }
 
 func (s *Service) runDetectCommand(command string, env domain.Environment, cfg *domain.Config) (string, error) {
@@ -109,6 +128,13 @@ func (s *Service) runSwitch(sel *slotSelection, env domain.Environment, cfg *dom
 	}
 
 	ui.Section("Slot Switch")
+	if sel.Previous == "" {
+		ui.Log("*", fmt.Sprintf("Activating slot %s", formatSlotRef(sel.Target, sel.TargetKey)))
+	} else {
+		ui.Log("*", fmt.Sprintf("Cutover %s -> %s",
+			formatSlotRef(sel.Previous, sel.PreviousKey),
+			formatSlotRef(sel.Target, sel.TargetKey)))
+	}
 	ui.Log(">", sel.Switch)
 
 	slotEnv := slotCommandEnv(sel)
@@ -129,7 +155,7 @@ func (s *Service) runSwitch(sel *slotSelection, env domain.Environment, cfg *dom
 		if _, err := s.deployer.ExecuteRemoteCommand(sshClient, fullCmd); err != nil {
 			return err
 		}
-		ui.Log("+", "Slot switch completed")
+		ui.Log("+", fmt.Sprintf("Slot switch completed (%s now active)", formatSlotRef(sel.Target, sel.TargetKey)))
 		return nil
 	}
 
@@ -138,7 +164,7 @@ func (s *Service) runSwitch(sel *slotSelection, env domain.Environment, cfg *dom
 	if err := hooks.Execute(sel.Switch, cfg.BaseDir, slotEnv); err != nil {
 		return err
 	}
-	ui.Log("+", "Slot switch completed")
+	ui.Log("+", fmt.Sprintf("Slot switch completed (%s now active)", formatSlotRef(sel.Target, sel.TargetKey)))
 	return nil
 }
 

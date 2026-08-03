@@ -52,7 +52,7 @@ profiles:
           target_path: ./dist-a
           strategy: overwrite
 `)
-		err := s.RunSequence(path, "missing", false, false)
+		err := s.RunSequence(path, "missing", RunOptions{})
 		if err == nil {
 			t.Fatal("expected error for missing sequence")
 		}
@@ -97,7 +97,7 @@ profiles:
           target_path: ./dist-second
           strategy: overwrite
 `)
-		if err := s.RunSequence(path, "local", false, false); err != nil {
+		if err := s.RunSequence(path, "local", RunOptions{}); err != nil {
 			t.Fatalf("RunSequence() error = %v", err)
 		}
 
@@ -150,7 +150,7 @@ profiles:
           target_path: ./dist-ok
           strategy: overwrite
 `)
-		err := s.RunSequence(path, "local", false, false)
+		err := s.RunSequence(path, "local", RunOptions{})
 		if err == nil {
 			t.Fatal("expected RunSequence to fail on first step")
 		}

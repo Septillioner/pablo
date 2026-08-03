@@ -80,6 +80,10 @@ Static and binary environments require `deploy.source.dir`. It does not inherit 
 
 Local `detect_command` and `switch_command` run with cwd = the manifest directory (not `target_path` or the process cwd). Point relative scripts at the project root, e.g. `.\scripts\switch.ps1`. Guide: [Blue-green](guides/blue-green.md).
 
+### Garbled Turkish / non-ASCII text from Windows hooks
+
+Pablo’s local PowerShell hooks set UTF-8 console encoding before your command. If nested scripts still print mojibake (e.g. IIS `appcmd` via a remote `send-cmd.ps1`), set UTF-8 in that nested shell too (`[Console]::OutputEncoding` / `$OutputEncoding`), or run the tool under a UTF-8 console (code page 65001). Pablo only controls the outer hook process.
+
 ---
 
 ## SSH issues
